@@ -141,7 +141,8 @@ describe('Event processing', () => {
       const event = makeEvent()
       await processEvent(event)
 
-      expect(mockWriteEventToOutbox).toHaveBeenCalledWith(event)
+      // Marked: processEvent ran the in-process reactions, so the drain must not.
+      expect(mockWriteEventToOutbox).toHaveBeenCalledWith(event, { reactionsRan: true })
       expect(bulkEnqueued).toHaveLength(0)
     })
   })

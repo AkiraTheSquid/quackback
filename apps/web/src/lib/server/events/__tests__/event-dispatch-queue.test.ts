@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import postgres from 'postgres'
@@ -14,6 +14,19 @@ vi.mock('@/lib/server/db', async (importOriginal) => {
     db: createDb(url, { max: 5, prepare: false }),
   }
 })
+
+// The drain starts the in-process reactions for natively emitted rows; record
+// the close-summary entry point it reaches for a closed ticket.
+const summarizeTicketOnClose = vi.hoisted(() => vi.fn(async (_ticketId: unknown) => {}))
+vi.mock('@/lib/server/domains/assistant/ticket-summary.service', () => ({
+  summarizeTicketOnClose,
+}))
+vi.mock('@/lib/server/domains/sla/sla.event-hooks', () => ({
+  recordSlaFromEvent: vi.fn(async () => {}),
+}))
+vi.mock('@/lib/server/domains/tickets/ticket.event-hooks', () => ({
+  autoReopenPairTicketFromEvent: vi.fn(async () => {}),
+}))
 
 import { db, events, eq, sql } from '@/lib/server/db'
 import { getExecuteRows } from '@/lib/server/utils/execute-rows'
@@ -48,6 +61,7 @@ async function insertEvent(opts: {
   published?: boolean
   depth?: number
   type?: string
+  payload?: Record<string, unknown>
 }): Promise<string> {
   const eventId = opts.eventId ?? createId('event')
   await db.insert(events).values({
@@ -56,7 +70,7 @@ async function insertEvent(opts: {
     entityType: 'post',
     entityId: createId('post'),
     actorType: 'system',
-    payload: {},
+    payload: opts.payload ?? {},
     context: { depth: opts.depth ?? 0 },
     dispatchOwner: opts.owner,
     publishedAt: opts.published ? new Date() : null,
@@ -287,5 +301,58 @@ describe('runEventDispatch', () => {
 
     const again = await convertRelayOwnedEvents()
     expect(again.converted).toBe(0)
+  })
+
+  describe('in-process reactions', () => {
+    beforeEach(() => summarizeTicketOnClose.mockClear())
+
+    const closedTicketEvent = async () => {
+      const ticketId = createId('ticket')
+      const eventId = await insertEvent({
+        owner: 'job',
+        type: 'ticket.status_changed',
+        payload: { ticket: { id: ticketId }, previousStatus: 'open', newStatus: 'closed' },
+      })
+      return { ticketId, eventId }
+    }
+
+    /** Wait for the fire-and-forget summary, then count the calls for this ticket. */
+    const summariesFor = async (ticketId: string) => {
+      await vi.waitFor(() => expect(summarizeTicketOnClose).toHaveBeenCalledWith(ticketId))
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return summarizeTicketOnClose.mock.calls.filter(([id]) => id === ticketId).length
+    }
+
+    it('start once when two duplicate runs race the same event to its publish', async () => {
+      const { ticketId, eventId } = await closedTicketEvent()
+      // Hold both runs in resolve until each has passed the published check, so
+      // both reach the publish: only the run that flips published_at reacts.
+      let entered = 0
+      let release!: () => void
+      const bothIn = new Promise<void>((resolve) => (release = resolve))
+      const resolve = async (): Promise<HookTarget[]> => {
+        if (++entered === 2) release()
+        await bothIn
+        return []
+      }
+
+      await Promise.all([
+        runEventDispatch(job(eventId), { resolve }),
+        runEventDispatch(job(eventId), { resolve }),
+      ])
+
+      expect(entered).toBe(2)
+      expect(await summariesFor(ticketId)).toBe(1)
+    })
+
+    it('still start when the last attempt publishes without fan-out', async () => {
+      const { ticketId, eventId } = await closedTicketEvent()
+      await runEventDispatch(job(eventId, 10), {
+        resolve: async () => {
+          throw new Error('all sinks down')
+        },
+      })
+      expect(await summariesFor(ticketId)).toBe(1)
+    })
   })
 })

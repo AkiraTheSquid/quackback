@@ -255,8 +255,8 @@ const POSITIVE_CSAT_RATING = 4
 /**
  * Resolve Quinn's active involvement as confirmed off a positive CSAT rating
  * when it already gave a real answer. Subscribed to conversation.csat_submitted
- * (events/process.ts), which fires only on the first submission — a later
- * rating change does not re-run it. No-op without an active involvement, one
+ * (events/in-process-reactions.ts), which fires only on the first submission;
+ * a later rating change does not re-run it. No-op without an active involvement, one
  * Quinn hasn't yet answered, or a rating below the positive threshold.
  * Best-effort: a failure never surfaces to the CSAT submission that raised it.
  */

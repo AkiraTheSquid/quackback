@@ -1,9 +1,9 @@
 /**
  * Ticket side effects driven off the shared event bus (convergence Phase 1a —
  * scratchpad/convergence-design.md, second-opinion dealbreaker 3). Same
- * fire-and-forget + lazy-import pattern as sla.event-hooks.ts: process.ts
- * routes every event here, the hook swallows its own errors, and the pure-DB
- * recorders never re-enter the bus.
+ * fire-and-forget + lazy-import pattern as sla.event-hooks.ts: the event
+ * reactions (events/in-process-reactions.ts) route every event here, the hook
+ * swallows its own errors, and the pure-DB recorders never re-enter the bus.
  *
  * Today exactly one reaction lives here: a VISITOR `message.created` on a
  * conversation paired with a CUSTOMER ticket reopens that ticket

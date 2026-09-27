@@ -7,19 +7,23 @@
  * hook jobs with deterministic keys. Destination failure throws so the
  * job retries; it cannot roll back the domain mutation (that transaction
  * already committed). After the last attempt a best-effort failure still
- * marks the event published so the spent dedupe key cannot pin it.
+ * marks the event published so the spent dedupe key cannot pin it. The run
+ * that publishes a natively emitted event also starts its in-process
+ * reactions (`in-process-reactions.ts`).
  */
-import { db, events, eq, sql } from '@/lib/server/db'
+import { and, db, events, eq, isNull, sql } from '@/lib/server/db'
 import { enqueueJob, type ClaimedJob } from '@/lib/server/jobs/job-queue'
 import { logger } from '@/lib/server/logger'
 import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import { SINGLE_WORKSPACE_KEY } from '@/lib/server/workspaces/after-commit'
 import { getCurrentWorkspace } from '@/lib/server/workspaces/workspace-context'
+import { runInProcessReactions } from './in-process-reactions'
 import { enqueueHookJobsWithIds } from './process'
 import { hydrateEvent, MAX_DEPTH, MAX_STRICT_RESOLVE_ATTEMPTS } from './outbox'
 import { registerAllResolvers, resolveTargets } from './resolvers'
 import { toLegacyEvent } from './to-legacy-event'
 import crypto from 'crypto'
+import type { DbOrTx } from './emit'
 import type { HookTarget } from './hook-types'
 
 const log = logger.child({ component: 'event-dispatch' })
@@ -181,11 +185,12 @@ export async function runEventDispatch(
 
   const lastAttempt = job.attempts >= job.maxAttempts
   const degraded = job.attempts >= MAX_STRICT_RESOLVE_ATTEMPTS || lastAttempt
+  let published: boolean
 
   try {
     const targets = await resolve(event, degraded ? { bestEffort: true } : undefined)
 
-    await db.transaction(async (tx) => {
+    published = await db.transaction(async (tx) => {
       if (targets.length > 0) {
         const legacy = toLegacyEvent(event)
         const jobs = targets.map((t) => ({
@@ -195,7 +200,7 @@ export async function runEventDispatch(
         }))
         await enqueue(jobs, { executor: tx })
       }
-      await tx.update(events).set({ publishedAt: new Date() }).where(eq(events.id, row.id))
+      return markPublished(tx, row.id)
     })
 
     if (degraded) {
@@ -208,7 +213,7 @@ export async function runEventDispatch(
     // A terminal failure must not leave the event unpublished under a spent
     // `event-dispatch:${eventId}` key. Same last-resort publish the relay used.
     if (lastAttempt) {
-      await db.update(events).set({ publishedAt: new Date() }).where(eq(events.id, row.id))
+      published = await markPublished(db, row.id)
       log.error(
         {
           err,
@@ -219,8 +224,24 @@ export async function runEventDispatch(
         },
         'event published after dispatch exhausted all attempts — destinations were not fully fanned out'
       )
-      return
+    } else {
+      throw err
     }
-    throw err
   }
+
+  // In-process reactions for natively emitted events, once, by the run that
+  // published the row: a retry never gets here twice (the row is published)
+  // and a racing duplicate run loses the publish. Legacy rows are marked
+  // because `processEvent` already ran them at dispatch time.
+  if (published && !event.context.reactionsRan) runInProcessReactions(toLegacyEvent(event))
+}
+
+/** Publish the row; true only for the run whose update flipped `published_at`. */
+async function markPublished(exec: DbOrTx, id: bigint): Promise<boolean> {
+  const flipped = await exec
+    .update(events)
+    .set({ publishedAt: new Date() })
+    .where(and(eq(events.id, id), isNull(events.publishedAt)))
+    .returning({ id: events.id })
+  return flipped.length > 0
 }

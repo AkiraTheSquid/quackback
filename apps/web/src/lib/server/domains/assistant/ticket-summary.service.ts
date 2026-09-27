@@ -26,7 +26,7 @@
  * `summarizeTicketOnClose` is best-effort end to end: every failure
  * (unconfigured AI, a malformed model response, a DB error) is caught and
  * logged here, so it never throws into its caller — the event hook
- * (events/process.ts) fires it fire-and-forget off `ticket.status_changed →
+ * (events/in-process-reactions.ts) fires it fire-and-forget off `ticket.status_changed →
  * closed`, exactly as the conversation-close branch fires its sibling.
  */
 import { chat } from '@tanstack/ai'
