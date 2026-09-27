@@ -41,7 +41,11 @@ describe('<DomainsCard>', () => {
       {
         ...base,
         readiness: 'pending',
-        ownershipTxt: { name: '_quackback-challenge.feedback.example.com', value: 'proof-token-1' },
+        ownershipTxt: null,
+        ownershipProof: {
+          name: '_quackback-challenge.feedback.example.com',
+          value: 'proof-token-1',
+        },
       } as CustomDomainInstruction,
     ])
     expect(screen.getByText('edge.example.net')).toBeTruthy()
@@ -50,8 +54,31 @@ describe('<DomainsCard>', () => {
   })
 
   it('asks for no TXT record once ownership is proven', () => {
-    renderCard([{ ...base, readiness: 'pending', ownershipTxt: null } as CustomDomainInstruction])
+    renderCard([
+      {
+        ...base,
+        readiness: 'pending',
+        ownershipTxt: null,
+        ownershipProof: null,
+      } as CustomDomainInstruction,
+    ])
     expect(screen.getByText('edge.example.net')).toBeTruthy()
+    expect(screen.queryByText(/TXT record/i)).toBeNull()
+  })
+
+  it('never shows the hosting provider validation record', () => {
+    renderCard([
+      {
+        ...base,
+        readiness: 'pending',
+        ownershipTxt: {
+          name: '_provider-validation.feedback.example.com',
+          value: 'provider-token',
+        },
+        ownershipProof: null,
+      } as CustomDomainInstruction,
+    ])
+    expect(screen.queryByText(/provider-token/)).toBeNull()
     expect(screen.queryByText(/TXT record/i)).toBeNull()
   })
 
