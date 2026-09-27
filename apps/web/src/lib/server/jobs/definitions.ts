@@ -350,6 +350,18 @@ export const JOB_DEFINITIONS: readonly JobDefinition[] = [
       import('@/lib/server/events/event-dispatch-queue').then((m) => m.runEventDispatch),
   },
   {
+    // Runs one event's reactions (SLA clocks, pair-ticket reopen, CSAT confirm,
+    // close summaries). Queued in emit()'s transaction next to event-dispatch
+    // and independent of it, so outbound delivery never gates a reaction.
+    name: 'event-reactions',
+    concurrency: 5,
+    maxAttempts: 5,
+    retentionMs: DAY_MS,
+    failedRetentionMs: 30 * DAY_MS,
+    handler: () =>
+      import('@/lib/server/events/event-reactions-queue').then((m) => m.runEventReactions),
+  },
+  {
     // Was `{segment-evaluation}`. Its schedules are rows in the workspace's own
     // `segments` table, so they are derived per tick rather than registered.
     name: 'segment-evaluation',

@@ -21,8 +21,8 @@
  *
  * `summarizeConversationOnClose` is best-effort end to end: every failure
  * (unconfigured AI, a malformed model response, a DB error) is caught and
- * logged here, so it never throws into its caller — the event hook
- * (events/in-process-reactions.ts) that fires it fire-and-forget.
+ * logged here, so it never throws into its caller: the event reaction
+ * (events/event-reactions.ts) that runs it.
  */
 import { chat } from '@tanstack/ai'
 import { openaiCompatibleText } from '@tanstack/ai-openai/compatible'

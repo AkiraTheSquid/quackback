@@ -1,24 +1,25 @@
 /**
- * The in-process event reactions (SLA clocks, pair-ticket reopen, CSAT
- * confirm, conversation and ticket close summaries) run exactly once per
- * event, whichever path produced it:
+ * The event reactions (SLA clocks, pair-ticket reopen, CSAT confirm,
+ * conversation and ticket close summaries) run from one durable
+ * `event-reactions` job per event, whichever path produced it:
  *
- * - a native `emit()` producer (here the integration status sync, which
- *   writes `ticket.status_changed` straight to the outbox) gets them from the
- *   event-dispatch drain;
- * - a legacy `dispatch*()` producer gets them in-process from `processEvent`
- *   at dispatch time, and the drain of the row it wrote must not run them a
- *   second time.
+ * - `emit()` queues the job in the event's own transaction, so it exists the
+ *   moment the event commits, before and apart from the event-dispatch drain.
+ *   A failing target resolver or a crash after publish cannot lose it.
+ * - a native `emit()` producer (here the integration status sync) and a legacy
+ *   `dispatch*()` producer both get their reactions from that job, and neither
+ *   `processEvent` nor the drain runs them a second time.
  *
- * Real DB (rolled back per test), real producers, real outbox and drain. Only
- * the five reaction entry points are mocked, so every call below is recorded
- * with the event it received.
+ * Real DB (rolled back per test), real producers, outbox, drain and job
+ * handler (`event-reactions-queue.ts`). Only the five reaction entry points are mocked, so every call below
+ * is recorded with the arguments it received.
  */
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest'
 import { createId, type PrincipalId, type TicketId, type TicketStatusId } from '@quackback/ids'
 import { createDbTestFixture, testDb } from '@/lib/server/__tests__/db-test-fixture'
-import { events, eq, principal, tickets, ticketStatuses } from '@/lib/server/db'
+import { events, eq, principal, sql, tickets, ticketStatuses } from '@/lib/server/db'
 import type { ClaimedJob } from '@/lib/server/jobs/job-queue'
+import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import type { EventActor, EventConversationRef, EventData, EventTicketRef } from '../types'
 
 vi.mock('@/lib/server/db', async (importOriginal) => ({
@@ -53,6 +54,8 @@ vi.mock('@/lib/server/domains/assistant/ticket-summary.service', () => ({
   summarizeTicketOnClose: reactions.summarizeTicketOnClose,
 }))
 
+import { EVENT_REACTIONS_QUEUE } from '../event-reactions'
+import { runEventReactions } from '../event-reactions-queue'
 import { runEventDispatch } from '../event-dispatch-queue'
 import * as dispatch from '../dispatch'
 import { applySyncedTicketStatus } from '@/lib/server/domains/tickets/ticket-status-sync'
@@ -70,9 +73,41 @@ const REACTION_NAMES = Object.keys(reactions) as ReactionName[]
 
 const suffix = () => `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
 
-function dispatchJob(eventId: string): ClaimedJob {
-  return {
-    id: 1n as unknown as ClaimedJob['id'],
+const eventRowsFor = (entityId: string) =>
+  testDb.select().from(events).where(eq(events.entityId, entityId)).orderBy(events.id)
+
+/** The reactions jobs `emit()` queued for one event, as the worker would claim them. */
+async function reactionJobsFor(eventId: string): Promise<ClaimedJob[]> {
+  const result = await testDb.execute(sql`
+    SELECT job_id, dedupe_key, payload, max_attempts, run_at FROM job_queue
+    WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${eventId}
+      AND status = 'pending'
+  `)
+  return getExecuteRows<{
+    job_id: string
+    dedupe_key: string | null
+    payload: Record<string, unknown>
+    max_attempts: number
+    run_at: string
+  }>(result).map((row) => ({
+    id: '1',
+    jobId: row.job_id,
+    queue: EVENT_REACTIONS_QUEUE,
+    dedupeKey: row.dedupe_key,
+    payload: row.payload,
+    workspaceKey: null,
+    attempts: 1,
+    maxAttempts: row.max_attempts,
+    leaseToken: 'test',
+    lockedUntil: new Date(),
+    runAt: new Date(row.run_at),
+  }))
+}
+
+/** One event-dispatch run, as the worker would make it. */
+function drain(eventId: string, resolve: () => Promise<[]> = async () => []) {
+  const job: ClaimedJob = {
+    id: '1',
     jobId: createId('job'),
     queue: 'event-dispatch',
     dedupeKey: `event-dispatch:${eventId}`,
@@ -84,27 +119,30 @@ function dispatchJob(eventId: string): ClaimedJob {
     lockedUntil: new Date(),
     runAt: new Date(),
   }
+  return runEventDispatch(job, { resolve })
 }
 
-/** Drain every outbox row for one entity, as the event-dispatch worker would. */
-async function drainEventsFor(entityId: string): Promise<string[]> {
-  const rows = await testDb
-    .select()
-    .from(events)
-    .where(eq(events.entityId, entityId))
-    .orderBy(events.id)
-  for (const row of rows) {
-    // No destinations: this suite is about the reactions, not the fan-out.
-    await runEventDispatch(dispatchJob(row.eventId), { resolve: async () => [] })
-  }
-  return rows.map((row) => row.type)
-}
-
-/** Reactions are fire-and-forget; give any straggler time to land before counting. */
+/** Long enough for any fire-and-forget straggler to land before counting. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 100))
 
-const eventsSeenBy = (name: 'recordSlaFromEvent' | 'autoReopenPairTicketFromEvent') =>
-  reactions[name].mock.calls.map(([event]) => event as EventData)
+const eventsSeenBySla = () =>
+  reactions.recordSlaFromEvent.mock.calls.map(([event]) => event as EventData)
+
+/** Each reaction in `expected` ran exactly once with its arguments; every other one never ran. */
+function expectReacted(
+  expected: Partial<Record<ReactionName, (entityId: string) => unknown[]>>,
+  entityId: string
+) {
+  for (const name of REACTION_NAMES) {
+    const args = expected[name]
+    if (args) {
+      expect(reactions[name], name).toHaveBeenCalledTimes(1)
+      expect(reactions[name], name).toHaveBeenCalledWith(...args(entityId))
+    } else {
+      expect(reactions[name], name).not.toHaveBeenCalled()
+    }
+  }
+}
 
 async function seedTicket() {
   const [open, closed] = await testDb
@@ -129,61 +167,115 @@ async function seedTicket() {
   }
 }
 
-describe.skipIf(!fixture.available)('in-process event reactions (real DB, rolled back)', () => {
+/** Close the ticket through the integration inbound sync, a native `emit()` producer. */
+async function closeBySync() {
+  const { ticketId, closedStatusId, principalId } = await seedTicket()
+  await testDb.transaction((tx) =>
+    applySyncedTicketStatus(tx, ticketId, closedStatusId, principalId, {
+      integrationType: 'linear',
+      externalDisplayId: 'ENG-1',
+      externalUrl: null,
+      externalStatus: 'Done',
+      transition: 'closed',
+      deliveryKey: `delivery_${suffix()}`,
+    })
+  )
+  const rows = await eventRowsFor(ticketId)
+  const statusRow = rows.find((row) => row.type === 'ticket.status_changed')
+  if (!statusRow) throw new Error('status sync wrote no ticket.status_changed event')
+  return { ticketId, rows, statusRow }
+}
+
+const ticketClosedReactions = {
+  recordSlaFromEvent: () => [expect.objectContaining({ type: 'ticket.status_changed' })],
+  summarizeTicketOnClose: (ticketId: string) => [ticketId],
+}
+
+describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', () => {
   beforeEach(() => {
     for (const name of REACTION_NAMES) reactions[name].mockReset()
     return fixture.begin()
   })
   afterEach(fixture.rollback)
 
-  it('a ticket closed by integration status sync gets its SLA settle and close summary', async () => {
-    const { ticketId, closedStatusId, principalId } = await seedTicket()
+  it('a ticket closed by integration status sync commits its reactions job with the event', async () => {
+    const { ticketId, rows, statusRow } = await closeBySync()
 
-    await testDb.transaction((tx) =>
-      applySyncedTicketStatus(tx, ticketId, closedStatusId, principalId, {
-        integrationType: 'linear',
-        externalDisplayId: 'ENG-1',
-        externalUrl: null,
-        externalStatus: 'Done',
-        transition: 'closed',
-        deliveryKey: `delivery_${suffix()}`,
-      })
-    )
-    const drained = await drainEventsFor(ticketId)
-    expect(drained).toContain('ticket.status_changed')
+    // Queued in the event's transaction: there before any drain has run.
+    expect(statusRow.publishedAt).toBeNull()
+    for (const row of rows) {
+      const expectedJobs = row.type === 'ticket.status_changed' ? 1 : 0
+      expect(await reactionJobsFor(row.eventId), row.type).toHaveLength(expectedJobs)
+    }
+    const [job] = await reactionJobsFor(statusRow.eventId)
+    expect(job.dedupeKey).toBe(`event-reactions:${statusRow.eventId}`)
+    expect(job.maxAttempts).toBeGreaterThan(1)
 
-    await vi.waitFor(() => expect(reactions.summarizeTicketOnClose).toHaveBeenCalled(), {
-      timeout: 10_000,
-    })
-    await settle()
+    await runEventReactions(job)
 
-    expect(reactions.summarizeTicketOnClose).toHaveBeenCalledTimes(1)
-    expect(reactions.summarizeTicketOnClose).toHaveBeenCalledWith(ticketId)
-
-    const statusEvents = eventsSeenBy('recordSlaFromEvent').filter(
-      (event) => event.type === 'ticket.status_changed'
-    )
-    expect(statusEvents).toHaveLength(1)
-    expect(statusEvents[0]).toMatchObject({
+    expectReacted(ticketClosedReactions, ticketId)
+    expect(eventsSeenBySla()[0]).toMatchObject({
       type: 'ticket.status_changed',
-      data: {
-        ticket: { id: ticketId },
-        previousStatus: 'open',
-        newStatus: 'closed',
-      },
+      data: { ticket: { id: ticketId }, previousStatus: 'open', newStatus: 'closed' },
     })
     // The SLA clock settles at the event's own time, so it must be a real instant.
-    expect(Number.isNaN(new Date(statusEvents[0].timestamp).getTime())).toBe(false)
+    expect(Number.isNaN(new Date(eventsSeenBySla()[0].timestamp).getTime())).toBe(false)
+  })
 
-    // Every drained event reached the always-on reactions exactly once.
-    const typesSeenBy = (name: 'recordSlaFromEvent' | 'autoReopenPairTicketFromEvent') =>
-      eventsSeenBy(name)
-        .map((event) => event.type)
-        .sort()
-    expect(typesSeenBy('recordSlaFromEvent')).toEqual([...drained].sort())
-    expect(typesSeenBy('autoReopenPairTicketFromEvent')).toEqual([...drained].sort())
-    expect(reactions.confirmResolutionFromCsat).not.toHaveBeenCalled()
-    expect(reactions.summarizeConversationOnClose).not.toHaveBeenCalled()
+  it('a failing target resolver does not hold the reactions back, and publishing does not spend them', async () => {
+    const { ticketId, statusRow } = await closeBySync()
+
+    // Outbound delivery fails and retries: the event stays unpublished.
+    await expect(
+      drain(statusRow.eventId, async () => {
+        throw new Error('webhook target lookup down')
+      })
+    ).rejects.toThrow('webhook target lookup down')
+    // Then it publishes. Neither drain run reacts.
+    await drain(statusRow.eventId)
+    const [published] = await testDb.select().from(events).where(eq(events.id, statusRow.id))
+    expect(published.publishedAt).not.toBeNull()
+    await settle()
+    expectReacted({}, ticketId)
+
+    // A worker that dies after the publish leaves this job pending, so the
+    // reactions still run.
+    const jobs = await reactionJobsFor(statusRow.eventId)
+    expect(jobs).toHaveLength(1)
+    await runEventReactions(jobs[0])
+    expectReacted(ticketClosedReactions, ticketId)
+  })
+
+  it('a failing reaction does not starve the others, and fails the job so it retries', async () => {
+    const { ticketId, statusRow } = await closeBySync()
+    reactions.recordSlaFromEvent.mockImplementation(() => {
+      throw new Error('sla store down')
+    })
+
+    const [job] = await reactionJobsFor(statusRow.eventId)
+    await expect(runEventReactions(job)).rejects.toThrow('sla store down')
+
+    expect(reactions.recordSlaFromEvent).toHaveBeenCalledTimes(1)
+    expect(reactions.summarizeTicketOnClose).toHaveBeenCalledWith(ticketId)
+  })
+
+  it('a job whose event row is gone is a no-op', async () => {
+    await expect(
+      runEventReactions({
+        id: '1',
+        jobId: createId('job'),
+        queue: EVENT_REACTIONS_QUEUE,
+        dedupeKey: null,
+        payload: { eventId: createId('event') },
+        workspaceKey: null,
+        attempts: 1,
+        maxAttempts: 5,
+        leaseToken: 'test',
+        lockedUntil: new Date(),
+        runAt: new Date(),
+      })
+    ).resolves.toBeUndefined()
+    expectReacted({}, '')
   })
 
   const actor = (): EventActor => ({
@@ -208,12 +300,13 @@ describe.skipIf(!fixture.available)('in-process event reactions (real DB, rolled
     assignedPrincipalId: null,
     assignedTeamId: null,
   })
+  const slaSaw = (type: EventData['type']) => () => [expect.objectContaining({ type })]
 
   interface LegacyCase {
     type: EventData['type']
     /** Dispatch through the real legacy path; returns the outbox entity id. */
     run: () => Promise<string>
-    /** The conditional reactions this event must reach, with their arguments. */
+    /** Every reaction this event must reach, with its arguments. */
     expected: Partial<Record<ReactionName, (entityId: string) => unknown[]>>
   }
 
@@ -234,7 +327,7 @@ describe.skipIf(!fixture.available)('in-process event reactions (real DB, rolled
         )
         return ticket.id
       },
-      expected: { summarizeTicketOnClose: (id) => [id] },
+      expected: ticketClosedReactions,
     },
     {
       type: 'conversation.status_changed',
@@ -243,7 +336,10 @@ describe.skipIf(!fixture.available)('in-process event reactions (real DB, rolled
         await dispatch.dispatchConversationStatusChanged(actor(), conversation, 'open', 'closed')
         return conversation.id
       },
-      expected: { summarizeConversationOnClose: (id) => [id] },
+      expected: {
+        recordSlaFromEvent: slaSaw('conversation.status_changed'),
+        summarizeConversationOnClose: (id) => [id],
+      },
     },
     {
       type: 'conversation.csat_submitted',
@@ -281,81 +377,35 @@ describe.skipIf(!fixture.available)('in-process event reactions (real DB, rolled
         )
         return conversation.id
       },
-      expected: {},
+      expected: {
+        recordSlaFromEvent: slaSaw('message.created'),
+        autoReopenPairTicketFromEvent: slaSaw('message.created'),
+      },
     },
   ]
 
   it.each(legacyCases)(
-    'a legacy-dispatched $type reacts once at dispatch and not again in the drain',
+    'a legacy-dispatched $type reacts once, from its reactions job',
     async ({ type, run, expected }) => {
       const entityId = await run()
 
-      const assertOnce = async () => {
-        await vi.waitFor(
-          () => {
-            expect(reactions.recordSlaFromEvent).toHaveBeenCalled()
-            expect(reactions.autoReopenPairTicketFromEvent).toHaveBeenCalled()
-            for (const name of Object.keys(expected) as ReactionName[]) {
-              expect(reactions[name]).toHaveBeenCalled()
-            }
-          },
-          { timeout: 10_000 }
-        )
-        await settle()
-        expect(eventsSeenBy('recordSlaFromEvent').map((event) => event.type)).toEqual([type])
-        expect(eventsSeenBy('autoReopenPairTicketFromEvent').map((event) => event.type)).toEqual([
-          type,
-        ])
-        for (const name of REACTION_NAMES) {
-          if (name === 'recordSlaFromEvent' || name === 'autoReopenPairTicketFromEvent') continue
-          const args = expected[name]
-          if (args) {
-            expect(reactions[name], name).toHaveBeenCalledTimes(1)
-            expect(reactions[name], name).toHaveBeenCalledWith(...args(entityId))
-          } else {
-            expect(reactions[name], name).not.toHaveBeenCalled()
-          }
-        }
-      }
+      // Nothing reacts in-process at dispatch time.
+      await settle()
+      expectReacted({}, entityId)
 
-      // At dispatch time, before any drain: the legacy timing is unchanged.
-      await assertOnce()
+      const rows = await eventRowsFor(entityId)
+      expect(rows.map((row) => row.type)).toEqual([type])
+      const jobs = await reactionJobsFor(rows[0].eventId)
+      expect(jobs).toHaveLength(1)
+      await runEventReactions(jobs[0])
+      expectReacted(expected, entityId)
 
-      // The drain publishes the row the legacy path wrote and must not react again.
-      expect(await drainEventsFor(entityId)).toEqual([type])
-      const [row] = await testDb.select().from(events).where(eq(events.entityId, entityId))
+      // The drain publishes the row and does not react again.
+      await drain(rows[0].eventId)
+      const [row] = await eventRowsFor(entityId)
       expect(row.publishedAt).not.toBeNull()
-      await assertOnce()
+      await settle()
+      expectReacted(expected, entityId)
     }
   )
-
-  it('a failing reaction neither fails the drain nor starves the other reactions', async () => {
-    const { ticketId, closedStatusId, principalId } = await seedTicket()
-    reactions.recordSlaFromEvent.mockImplementation(() => {
-      throw new Error('sla store down')
-    })
-
-    await testDb.transaction((tx) =>
-      applySyncedTicketStatus(tx, ticketId, closedStatusId, principalId, {
-        integrationType: 'linear',
-        externalDisplayId: 'ENG-2',
-        externalUrl: null,
-        externalStatus: 'Done',
-        transition: 'closed',
-        deliveryKey: `delivery_${suffix()}`,
-      })
-    )
-    await expect(drainEventsFor(ticketId)).resolves.toContain('ticket.status_changed')
-
-    await vi.waitFor(
-      () => expect(reactions.summarizeTicketOnClose).toHaveBeenCalledWith(ticketId),
-      {
-        timeout: 10_000,
-      }
-    )
-    await settle()
-    expect(reactions.recordSlaFromEvent).toHaveBeenCalled()
-    const rows = await testDb.select().from(events).where(eq(events.entityId, ticketId))
-    expect(rows.every((row) => row.publishedAt !== null)).toBe(true)
-  })
 })

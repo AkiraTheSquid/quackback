@@ -16,7 +16,6 @@
 import { cancelJob, enqueueJob, enqueueJobs } from '@/lib/server/jobs/job-queue'
 import { queueHookSync } from '@/lib/server/integrations/sync/hooks'
 import { HOOK_RETRY_ATTEMPTS } from './retry-schedule'
-import { runInProcessReactions } from './in-process-reactions'
 import type { HookJobData } from './hook-job'
 import type { EventData } from './types'
 import { logger } from '@/lib/server/logger'
@@ -39,17 +38,14 @@ export async function processEvent(event: EventData): Promise<void> {
   // outbox makes the trigger durable up to the workflow engine's own dispatch
   // queue — closing the crash window the old branch could drop a trigger in.
 
-  // In-process reactions (SLA clocks, pair-ticket reopen, CSAT confirm, close
-  // summaries) run here, at dispatch time, fire-and-forget. The outbox row is
-  // marked so the event-dispatch drain does not run them a second time.
-  runInProcessReactions(event)
-
   // EVENTING-V2 (WO-18 cutover): the durable outbox is the ONLY path. The event
   // is written transactionally (closing the commit-vs-enqueue loss window) and
   // `event-dispatch` resolves targets and enqueues onto the `events` queue.
-  // The legacy direct getHookTargets + bulk-add path is deleted.
+  // The legacy direct getHookTargets + bulk-add path is deleted. The write also
+  // queues the event's reactions (SLA clocks, pair-ticket reopen, CSAT confirm,
+  // close summaries; see event-reactions.ts), so nothing reacts in-process.
   const { writeEventToOutbox } = await import('./outbox-dispatch')
-  await writeEventToOutbox(event, { reactionsRan: true })
+  await writeEventToOutbox(event)
 }
 
 /**

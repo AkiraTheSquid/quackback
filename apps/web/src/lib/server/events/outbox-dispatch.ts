@@ -74,14 +74,8 @@ export function extractEntityId(event: EventData): string {
  * Write one legacy event to the outbox. Returns true if written, false if the
  * type has no catalogue entry (defensive — the coverage test makes this
  * impossible for real EVENT_TYPES, but a stray call shouldn't throw).
- *
- * `reactionsRan` records on the row that the caller already ran the
- * in-process reactions, so the event-dispatch drain skips them.
  */
-export async function writeEventToOutbox(
-  event: EventData,
-  opts?: { reactionsRan?: boolean }
-): Promise<boolean> {
+export async function writeEventToOutbox(event: EventData): Promise<boolean> {
   const def = getEventDefinition(event.type)
   if (!def) {
     log.warn({ type: event.type }, 'no catalogue definition for event; not written to outbox')
@@ -94,11 +88,7 @@ export async function writeEventToOutbox(
         payload: event.data as unknown as Record<string, unknown>,
         actor: mapActor(event.actor),
         entityId: extractEntityId(event),
-        context: {
-          source: event.actor.service,
-          correlationId: event.id,
-          ...(opts?.reactionsRan ? { reactionsRan: true } : {}),
-        },
+        context: { source: event.actor.service, correlationId: event.id },
         dedupeKey,
       })
     )

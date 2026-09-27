@@ -26,11 +26,6 @@ export interface EventContext {
   depth: number
   /** Provenance: 'api' | 'admin' | 'widget' | 'scheduler' | 'workflow' | 'import' | ... */
   source?: string
-  /**
-   * The producer already ran the in-process reactions (`in-process-reactions.ts`),
-   * so the drain must not run them again. Set only by the legacy dispatch path.
-   */
-  reactionsRan?: boolean
 }
 
 /** The canonical in-memory event, hydrated from an `events` row. */

@@ -171,6 +171,64 @@ describe('emit()', () => {
     expect(getExecuteRows(jobs).length).toBeGreaterThan(0)
   })
 
+  it('queues a reactions job in the same tx, only for a type that has reactions', async () => {
+    const reactedDef: EventDefinition<{ ticketId: string }> = {
+      ...plainDef,
+      type: 'ticket.status_changed',
+      entity: 'ticket',
+      payload: z.object({ ticketId: z.string() }),
+    }
+    const reactionJobsFor = async (eventId: string) =>
+      getExecuteRows<{ dedupe_key: string }>(
+        await db.execute(sql`
+          SELECT dedupe_key FROM job_queue
+          WHERE queue = 'event-reactions' AND payload->>'eventId' = ${eventId}
+        `)
+      )
+
+    const reactedEntity = createId('ticket')
+    const reactedId = await db.transaction((tx) =>
+      emit(tx, reactedDef, {
+        payload: { ticketId: reactedEntity },
+        actor: { type: 'service' },
+        entityId: reactedEntity,
+      })
+    )
+    expect(await reactionJobsFor(reactedId)).toEqual([
+      { dedupe_key: `event-reactions:${reactedId}` },
+    ])
+
+    const plainEntity = createId('post')
+    const plainId = await db.transaction((tx) =>
+      emit(tx, plainDef, {
+        payload: { postId: plainEntity },
+        actor: { type: 'service' },
+        entityId: plainEntity,
+      })
+    )
+    expect(await reactionJobsFor(plainId)).toEqual([])
+
+    let rolledBackId = ''
+    await expect(
+      db.transaction(async (tx) => {
+        rolledBackId = await emit(tx, reactedDef, {
+          payload: { ticketId: createId('ticket') },
+          actor: { type: 'service' },
+          entityId: reactedEntity,
+        })
+        throw new Error('abort the tx')
+      })
+    ).rejects.toThrow('abort the tx')
+    expect(await reactionJobsFor(rolledBackId)).toEqual([])
+
+    // Committed to the shared database: leave no reactions job for another
+    // suite's drain to claim.
+    await db.execute(sql`
+      DELETE FROM job_queue
+      WHERE queue = 'event-reactions' AND payload->>'eventId' IN (${reactedId}, ${plainId})
+    `)
+  })
+
   it('rejects a payload that fails the catalogue zod schema', async () => {
     const entityId = createId('post')
     await expect(

@@ -372,6 +372,7 @@ went stale the moment a queue moved.
 | `integration-sync`              | —              | 5           | 6        | 90s   |
 | `integration-sync-sweep`        | `* * * * *`    | 1           | 1        | 60s   |
 | `event-dispatch`                | —              | 5           | 10       | 60s   |
+| `event-reactions`               | —              | 5           | 5        | 60s   |
 | `segment-evaluation`            | dynamic        | 2           | 3        | 60s   |
 | `help-center-translate`         | —              | 1           | 3        | 120s  |
 | `email-imap`                    | `* * * * *`    | 1           | 1        | 60s   |
@@ -522,6 +523,12 @@ BullMQ worker was never started under pooled tenancy either.
 outbox relay (`LISTEN outbox_wake`, `outbox_relay_leader`, `relay-tier.ts`)
 is gone; see `events/RELAY.md`. Leftover `dispatch_owner = relay` rows are
 converted onto the job path when the job worker start.
+
+**An event's reactions ride their own queue.** For a type that has reactions
+(SLA clocks, pair-ticket reopen, CSAT confirm, close summaries), `emit()` also
+writes an `event-reactions` job in that transaction. It does not wait on
+`event-dispatch`, so a failing target resolver never delays a reaction and a
+crash after the event is published cannot lose one.
 
 ## 11. Running the evidence
 
