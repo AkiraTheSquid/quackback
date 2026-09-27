@@ -77,10 +77,7 @@ export function DomainsCard(props: {
   onRemove: (hostname: string) => void
 }) {
   return (
-    <SettingsCard
-      title="Custom domain"
-      description="Point a hostname you own at this workspace. Traffic goes through Quackback Cloud."
-    >
+    <SettingsCard title="Custom domain" description="Point a hostname you own at this workspace.">
       {!props.entitled ? (
         <UpgradeNotice entitlement="customDomain" />
       ) : (
@@ -177,6 +174,15 @@ export function DomainsCard(props: {
                     Add a CNAME from <span className="font-mono">{domain.hostname}</span> to{' '}
                     <span className="font-mono">{domain.cnameTarget}</span>.
                   </p>
+                  {domain.ownershipTxt && (
+                    <p className="mt-1 text-muted-foreground">
+                      Then add a TXT record at{' '}
+                      <span className="font-mono break-all">{domain.ownershipTxt.name}</span> with
+                      the value{' '}
+                      <span className="font-mono break-all">{domain.ownershipTxt.value}</span> to
+                      prove you own the domain.
+                    </p>
+                  )}
                 </div>
               )}
             </li>
