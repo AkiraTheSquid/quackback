@@ -350,16 +350,30 @@ export const JOB_DEFINITIONS: readonly JobDefinition[] = [
       import('@/lib/server/events/event-dispatch-queue').then((m) => m.runEventDispatch),
   },
   {
-    // Runs one event's reactions (SLA clocks, pair-ticket reopen, CSAT confirm,
-    // close summaries). Queued in emit()'s transaction next to event-dispatch
-    // and independent of it, so outbound delivery never gates a reaction.
+    // One event's order-dependent reactions (SLA clocks, pair-ticket reopen,
+    // CSAT confirm), queued in emit()'s transaction. `concurrency: 1` is a
+    // deliberate global FIFO, as for workflow-dispatch: the SLA recorders read
+    // the clock state the previous event left, so a visitor message and the
+    // reply after it must apply in enqueue order.
     name: 'event-reactions',
-    concurrency: 5,
-    maxAttempts: 5,
+    concurrency: 1,
+    maxAttempts: 3,
+    retryBackoffMs: 1_000,
     retentionMs: DAY_MS,
     failedRetentionMs: 30 * DAY_MS,
     handler: () =>
       import('@/lib/server/events/event-reactions-queue').then((m) => m.runEventReactions),
+  },
+  {
+    // The close summaries, queued next to event-reactions. Slow AI calls that
+    // do not depend on order, so they run concurrently off the serial queue.
+    name: 'event-summaries',
+    concurrency: 2,
+    maxAttempts: 3,
+    retentionMs: DAY_MS,
+    failedRetentionMs: 30 * DAY_MS,
+    handler: () =>
+      import('@/lib/server/events/event-summaries-queue').then((m) => m.runEventSummaries),
   },
   {
     // Was `{segment-evaluation}`. Its schedules are rows in the workspace's own

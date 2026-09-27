@@ -372,7 +372,8 @@ went stale the moment a queue moved.
 | `integration-sync`              | —              | 5           | 6        | 90s   |
 | `integration-sync-sweep`        | `* * * * *`    | 1           | 1        | 60s   |
 | `event-dispatch`                | —              | 5           | 10       | 60s   |
-| `event-reactions`               | —              | 5           | 5        | 60s   |
+| `event-reactions`               | —              | 1           | 3        | 60s   |
+| `event-summaries`               | —              | 2           | 3        | 60s   |
 | `segment-evaluation`            | dynamic        | 2           | 3        | 60s   |
 | `help-center-translate`         | —              | 1           | 3        | 120s  |
 | `email-imap`                    | `* * * * *`    | 1           | 1        | 60s   |
@@ -524,11 +525,14 @@ outbox relay (`LISTEN outbox_wake`, `outbox_relay_leader`, `relay-tier.ts`)
 is gone; see `events/RELAY.md`. Leftover `dispatch_owner = relay` rows are
 converted onto the job path when the job worker start.
 
-**An event's reactions ride their own queue.** For a type that has reactions
-(SLA clocks, pair-ticket reopen, CSAT confirm, close summaries), `emit()` also
-writes an `event-reactions` job in that transaction. It does not wait on
-`event-dispatch`, so a failing target resolver never delays a reaction and a
-crash after the event is published cannot lose one.
+**An event's reactions ride their own queues.** For a type that has reactions,
+`emit()` also writes a job per reaction queue in that transaction. They do not
+wait on `event-dispatch`, so a failing target resolver never delays a reaction
+and a crash after the event is published cannot lose one. `event-reactions`
+(SLA clocks, pair-ticket reopen, CSAT confirm) is a global FIFO like
+`workflow-dispatch`, because the SLA recorders must apply in event order.
+`event-summaries` (the close summaries) runs concurrently, so a slow AI call
+cannot hold up an SLA clock.
 
 ## 11. Running the evidence
 

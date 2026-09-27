@@ -6,8 +6,8 @@
  * payload against the catalogue definition, INSERTs one `events` row on the
  * passed transaction (so the event commits atomically with the mutation), writes
  * an `audit_log` row in the same transaction when the definition opts in, and
- * inserts an `event-dispatch` job_queue row in that same transaction, plus an
- * `event-reactions` row for a type that has reactions (`event-reactions.ts`).
+ * inserts an `event-dispatch` job_queue row in that same transaction, plus a
+ * row per reaction queue for a type that has reactions (`event-reactions.ts`).
  * The job_queue trigger NOTIFYs on commit. Leftover unpublished rows may still
  * carry `dispatch_owner = relay`; job-worker / scheduler start converts them.
  */
@@ -16,7 +16,7 @@ import { createId, type EvtId } from '@quackback/ids'
 import { logger } from '@/lib/server/logger'
 import { enqueueJob } from '@/lib/server/jobs/job-queue'
 import { EVENT_DISPATCH_QUEUE } from './event-dispatch-queue'
-import { EVENT_REACTIONS_QUEUE, hasEventReactions } from './event-reactions'
+import { reactionQueuesFor } from './event-reactions'
 import type { EventDefinition } from './catalogue/define'
 import type { DomainEvent, EventActorType, EventContext } from './envelope'
 
@@ -92,14 +92,14 @@ export async function emit<P>(
     maxAttempts: 10,
     executor: tx,
   })
-  // The reactions ride their own job, so they never wait on outbound delivery
+  // The reactions ride their own jobs, so they never wait on outbound delivery
   // and a crash after the event is published cannot lose them.
-  if (hasEventReactions(def.type)) {
+  for (const queue of reactionQueuesFor(def.type)) {
     await enqueueJob({
-      queue: EVENT_REACTIONS_QUEUE,
+      queue,
       payload: { eventId },
-      dedupeKey: `event-reactions:${eventId}`,
-      maxAttempts: 5,
+      dedupeKey: `${queue}:${eventId}`,
+      maxAttempts: 3,
       executor: tx,
     })
   }

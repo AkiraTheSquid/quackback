@@ -171,7 +171,7 @@ describe('emit()', () => {
     expect(getExecuteRows(jobs).length).toBeGreaterThan(0)
   })
 
-  it('queues a reactions job in the same tx, only for a type that has reactions', async () => {
+  it('queues a job per reaction queue in the same tx, only for a type that has reactions', async () => {
     const reactedDef: EventDefinition<{ ticketId: string }> = {
       ...plainDef,
       type: 'ticket.status_changed',
@@ -179,10 +179,12 @@ describe('emit()', () => {
       payload: z.object({ ticketId: z.string() }),
     }
     const reactionJobsFor = async (eventId: string) =>
-      getExecuteRows<{ dedupe_key: string }>(
+      getExecuteRows<{ queue: string; dedupe_key: string }>(
         await db.execute(sql`
-          SELECT dedupe_key FROM job_queue
-          WHERE queue = 'event-reactions' AND payload->>'eventId' = ${eventId}
+          SELECT queue, dedupe_key FROM job_queue
+          WHERE queue IN ('event-reactions', 'event-summaries')
+            AND payload->>'eventId' = ${eventId}
+          ORDER BY queue
         `)
       )
 
@@ -194,8 +196,10 @@ describe('emit()', () => {
         entityId: reactedEntity,
       })
     )
+    // The ordered reactions and the close summary each get their own job.
     expect(await reactionJobsFor(reactedId)).toEqual([
-      { dedupe_key: `event-reactions:${reactedId}` },
+      { queue: 'event-reactions', dedupe_key: `event-reactions:${reactedId}` },
+      { queue: 'event-summaries', dedupe_key: `event-summaries:${reactedId}` },
     ])
 
     const plainEntity = createId('post')
@@ -221,11 +225,12 @@ describe('emit()', () => {
     ).rejects.toThrow('abort the tx')
     expect(await reactionJobsFor(rolledBackId)).toEqual([])
 
-    // Committed to the shared database: leave no reactions job for another
+    // Committed to the shared database: leave no reaction job for another
     // suite's drain to claim.
     await db.execute(sql`
       DELETE FROM job_queue
-      WHERE queue = 'event-reactions' AND payload->>'eventId' IN (${reactedId}, ${plainId})
+      WHERE queue IN ('event-reactions', 'event-summaries')
+        AND payload->>'eventId' IN (${reactedId}, ${plainId})
     `)
   })
 
