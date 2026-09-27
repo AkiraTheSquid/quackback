@@ -22,15 +22,16 @@ vi.mock('@/lib/server/kv/pg-kv', () => ({
 // The one stored settings row: reads copy it, writes patch it.
 let stored: Record<string, unknown> | undefined
 const mockFindFirst = vi.fn(async () => (stored ? structuredClone(stored) : undefined))
+const update = () => ({
+  set: (patch: Record<string, unknown>) => ({
+    where: async () => void Object.assign(stored!, patch),
+  }),
+})
 vi.mock('@/lib/server/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/server/db')>()),
   db: {
     query: { settings: { findFirst: () => mockFindFirst() } },
-    update: () => ({
-      set: (patch: Record<string, unknown>) => ({
-        where: async () => void Object.assign(stored!, patch),
-      }),
-    }),
+    update,
     select: () => ({
       from: () => ({
         where: () => Promise.resolve([]),
@@ -38,6 +39,22 @@ vi.mock('@/lib/server/db', async (importOriginal) => ({
         orderBy: () => Promise.resolve([]),
       }),
     }),
+    // A write reads the row under its lock, inside a transaction. Only the
+    // locking form of that read is faked, so an unlocked read fails here.
+    transaction: async <T>(fn: (tx: unknown) => Promise<T>) =>
+      fn({
+        update,
+        select: () => ({
+          from: () => ({
+            limit: () => ({
+              for: async (strength: string) => {
+                if (strength !== 'update') throw new Error(`unexpected lock: ${strength}`)
+                return stored ? [structuredClone(stored)] : []
+              },
+            }),
+          }),
+        }),
+      }),
   },
 }))
 
