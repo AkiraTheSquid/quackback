@@ -12,6 +12,10 @@
  * its next-response cycle and settles it at that reply in one write, so the
  * breach sweep never sees an answered cycle as overdue.
  *
+ * The SLA reaction also lets its errors propagate, so a fault inside a recorder
+ * fails the job and the retry records the clock, instead of the fault being
+ * logged and the settle lost.
+ *
  * Real DB (rolled back), real legacy dispatch, outbox, job runner, shipped
  * definition and the real SLA recorders. Two seams only perturb timing: a
  * one-off failure of the reaction job's own events read, and a delay in
@@ -153,12 +157,10 @@ async function sendMessage(
 }
 
 /**
- * A conversation under a 1h first-response / 2h next-response policy whose
- * first response has settled, then a customer message and, an hour later, the
- * agent's reply to it. The reply is inside the 2h target, so the only correct
- * outcome is one met cycle.
+ * A conversation under a 1h first-response / 2h next-response policy, applied
+ * four hours ago, whose first response settled half an hour in.
  */
-async function customerMessageThenReply() {
+async function seedAnsweredConversation() {
   const start = Date.now() - 4 * 60 * MINUTE
   const customer = await seedPrincipal()
   const agent = await seedPrincipal()
@@ -174,26 +176,42 @@ async function customerMessageThenReply() {
   })
   await applySlaToConversation(conversationId, policy.id, new Date(start))
   await recordFirstResponse(conversationId, new Date(start + 30 * MINUTE))
+  return { conversationId, customer, agent, start }
+}
 
-  const customerAt = new Date(start + 40 * MINUTE)
-  const replyAt = new Date(start + 100 * MINUTE)
-  await sendMessage(conversationId, 'visitor', customer, customerAt)
-  await sendMessage(conversationId, 'agent', agent, replyAt)
-
+/** The pending reaction jobs of every event on `entityId`, oldest first; other suites' leftovers are parked. */
+async function ownReactionJobsFirst(entityId: string): Promise<string[]> {
   const ours = (
-    await testDb.select().from(events).where(eq(events.entityId, conversationId)).orderBy(events.id)
+    await testDb.select().from(events).where(eq(events.entityId, entityId)).orderBy(events.id)
   ).map((row) => row.eventId)
-  expect(ours).toHaveLength(2)
-  // Park other suites' leftover rows so this test's customer message is the head.
   await testDb.execute(sql`
     UPDATE job_queue SET run_at = now() + interval '1 day'
     WHERE id IN (
       SELECT id FROM job_queue
       WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
-        AND payload->>'eventId' NOT IN (${ours[0]}, ${ours[1]})
+        AND payload->>'eventId' NOT IN (${sql.join(
+          ours.map((id) => sql`${id}`),
+          sql`, `
+        )})
       FOR UPDATE SKIP LOCKED
     )
   `)
+  return ours
+}
+
+/**
+ * A customer message and, an hour later, the agent's reply to it. The reply is
+ * inside the 2h target, so the only correct outcome is one met cycle.
+ */
+async function customerMessageThenReply() {
+  const { conversationId, customer, agent, start } = await seedAnsweredConversation()
+  const customerAt = new Date(start + 40 * MINUTE)
+  const replyAt = new Date(start + 100 * MINUTE)
+  await sendMessage(conversationId, 'visitor', customer, customerAt)
+  await sendMessage(conversationId, 'agent', agent, replyAt)
+
+  const ours = await ownReactionJobsFirst(conversationId)
+  expect(ours).toHaveLength(2)
   return { conversationId, customerAt, replyAt, customerEventId: ours[0] }
 }
 
@@ -265,5 +283,58 @@ describe.skipIf(!fixture.available)('SLA reactions that run out of order', () =>
 
     expect(sla.finished).toEqual(['agent', 'visitor'])
     await expectOneMetCycle(conversationId, customerAt, replyAt)
+  })
+})
+
+describe.skipIf(!fixture.available)('an SLA reaction that fails', () => {
+  beforeEach(() => {
+    resetJobHandlers()
+    __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
+    return fixture.begin()
+  })
+  afterEach(async () => {
+    __setJobDefinitionsForTests(null)
+    resetJobHandlers()
+    await fixture.rollback()
+  })
+
+  /** Replace the stamp's schedule snapshot, which the next-response clock computes its deadline on. */
+  const setSchedule = (conversationId: ConversationId, timezone: string) =>
+    testDb
+      .update(conversations)
+      .set({
+        slaApplied: sql`${conversations.slaApplied} || ${JSON.stringify({
+          scheduleSnapshot: {
+            timezone,
+            intervals: [{ day: 1, start: '09:00', end: '17:00' }],
+            holidays: [],
+          },
+        })}::jsonb`,
+      })
+      .where(eq(conversations.id, conversationId))
+
+  it('fails its job so it retries, and the retry arms the clock', async () => {
+    const { conversationId, customer, start } = await seedAnsweredConversation()
+    // A real failure inside the real recorder: a schedule whose timezone the
+    // deadline math cannot resolve.
+    await setSchedule(conversationId, 'Nowhere/Invalid')
+    await sendMessage(conversationId, 'visitor', customer, new Date(start + 40 * MINUTE))
+    const [eventId] = await ownReactionJobsFirst(conversationId)
+
+    expect(await drain()).toMatchObject({ claimed: 1, retrying: 1 })
+
+    // The fault clears (here, the schedule is repaired) and the retry runs.
+    await setSchedule(conversationId, 'UTC')
+    await testDb.execute(sql`
+      UPDATE job_queue SET run_at = now()
+      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${eventId}
+    `)
+    expect(await drain()).toMatchObject({ claimed: 1, succeeded: 1 })
+
+    const [row] = await testDb
+      .select({ slaApplied: conversations.slaApplied })
+      .from(conversations)
+      .where(eq(conversations.id, conversationId))
+    expect((row.slaApplied as SlaApplied).nextResponseDueAt).toBeTruthy()
   })
 })

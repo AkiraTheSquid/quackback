@@ -44,14 +44,16 @@
  * closed for tickets), so the close settles against the pause-shifted deadline
  * rather than the stale pre-pause one.
  *
- * recordSlaFromEvent is safe to call fire-and-forget: it swallows every error, so
- * a breach-recording fault never touches the event pipeline. Unlike the
- * conversation mutations, the recorders are pure DB writes (no realtime/events),
- * so nothing re-enters the bus.
+ * recordSlaFromEvent lets its errors propagate. It runs from the
+ * event-reactions job (events/event-reactions.ts), which logs a failure and
+ * retries the job, so a transient fault in a recorder is retried rather than
+ * lost (a lost settle would later be recorded as a breach by the sweep). A
+ * retry is safe: every recorder is idempotent and guarded on the state it
+ * read. Unlike the conversation mutations, the recorders are pure DB writes (no
+ * realtime/events), so nothing re-enters the bus.
  */
 import type { EventData } from '@/lib/server/events/types'
 import type { ConversationId, TicketId } from '@quackback/ids'
-import { logger } from '@/lib/server/logger'
 import {
   recordFirstResponse,
   recordNextResponse,
@@ -68,8 +70,6 @@ import {
   type TicketSlaApplied,
 } from './ticket-sla.service'
 
-const log = logger.child({ component: 'sla-event-hooks' })
-
 /** When the message was written, falling back to the event's time when the payload lacks it. */
 function messageTime(createdAt: string | undefined, eventTimestamp: string): Date {
   const written = createdAt ? new Date(createdAt) : null
@@ -77,85 +77,81 @@ function messageTime(createdAt: string | undefined, eventTimestamp: string): Dat
 }
 
 export async function recordSlaFromEvent(event: EventData): Promise<void> {
-  try {
-    switch (event.type) {
-      case 'message.created': {
-        const conversationId = event.data.message.conversationId as ConversationId
-        // The message's own time, not the event's: the reaction runs from a
-        // queued job that can run late, and the recorders compare this time
-        // with the conversation's message rows.
-        const at = messageTime(event.data.message.createdAt, event.timestamp)
-        if (event.data.message.senderType === 'agent' && event.actor?.type !== 'service') {
-          // Service actors (Quinn, workflow blocks) never satisfy human-response
-          // semantics — the same vocabulary the wait-interrupt path uses.
-          // Ordered: the first-response clock settles first, then the armed
-          // next-response cycle (if any) — a first reply never double-settles
-          // a cycle that only a LATER customer message could have armed.
-          await recordFirstResponse(conversationId, at)
-          await recordNextResponse(conversationId, at)
-        } else {
-          // Resume BEFORE re-arming: a visitor message on a snoozed
-          // conversation flips it back to open inside the message transaction
-          // (applyVisitorReopenStatus) WITHOUT emitting
-          // conversation.status_changed — the only other resume trigger — so
-          // without this the stamp would keep pausedAt forever: the sweep
-          // skips paused stamps and every later settle would exclude the
-          // whole post-reopen span. No-op when the stamp isn't paused, or
-          // when the pause began after this message.
-          await resumeSlaFromSnooze(conversationId, at)
-          // A visitor message (re-)arms the next-response clock for the fresh
-          // customer-message cycle. When the reply to it already exists (the
-          // reaction ran late), the re-arm settles the cycle at that reply.
-          // Runs after the resume so it reads the post-shift stamp.
-          await rearmNextResponse(conversationId, at)
-        }
-        break
+  switch (event.type) {
+    case 'message.created': {
+      const conversationId = event.data.message.conversationId as ConversationId
+      // The message's own time, not the event's: the reaction runs from a
+      // queued job that can run late, and the recorders compare this time
+      // with the conversation's message rows.
+      const at = messageTime(event.data.message.createdAt, event.timestamp)
+      if (event.data.message.senderType === 'agent' && event.actor?.type !== 'service') {
+        // Service actors (Quinn, workflow blocks) never satisfy human-response
+        // semantics — the same vocabulary the wait-interrupt path uses.
+        // Ordered: the first-response clock settles first, then the armed
+        // next-response cycle (if any) — a first reply never double-settles
+        // a cycle that only a LATER customer message could have armed.
+        await recordFirstResponse(conversationId, at)
+        await recordNextResponse(conversationId, at)
+      } else {
+        // Resume BEFORE re-arming: a visitor message on a snoozed
+        // conversation flips it back to open inside the message transaction
+        // (applyVisitorReopenStatus) WITHOUT emitting
+        // conversation.status_changed — the only other resume trigger — so
+        // without this the stamp would keep pausedAt forever: the sweep
+        // skips paused stamps and every later settle would exclude the
+        // whole post-reopen span. No-op when the stamp isn't paused, or
+        // when the pause began after this message.
+        await resumeSlaFromSnooze(conversationId, at)
+        // A visitor message (re-)arms the next-response clock for the fresh
+        // customer-message cycle. When the reply to it already exists (the
+        // reaction ran late), the re-arm settles the cycle at that reply.
+        // Runs after the resume so it reads the post-shift stamp.
+        await rearmNextResponse(conversationId, at)
       }
-      case 'conversation.status_changed': {
-        const conversationId = event.data.conversation.id as ConversationId
-        const at = new Date(event.timestamp)
-        const { previousStatus, newStatus } = event.data
-        // Resolve the snooze transition first so a direct snoozed -> closed
-        // move settles against the already-shifted deadline, not the stale
-        // one. When it actually wrote a resume, its return value is threaded
-        // into recordResolution below so that case doesn't pay for two
-        // loadSlaApplied SELECTs of the same row.
-        let resumed: SlaApplied | null = null
-        if (previousStatus === 'snoozed' && newStatus !== 'snoozed') {
-          resumed = await resumeSlaFromSnooze(conversationId, at)
-        } else if (newStatus === 'snoozed' && previousStatus !== 'snoozed') {
-          await pauseSlaOnSnooze(conversationId, at)
-        }
-        if (newStatus === 'closed') {
-          await recordResolution(conversationId, at, resumed)
-        }
-        break
-      }
-      case 'ticket.status_changed': {
-        const ticketId = event.data.ticket.id as TicketId
-        const at = new Date(event.timestamp)
-        const { previousStatus, newStatus } = event.data
-        // The ticket twin of the conversation case above, on the pending
-        // axis: resolve the pause transition first so a direct pending ->
-        // closed move settles against the already-shifted deadline, and
-        // thread the resume's fresh stamp into recordTicketResolution to
-        // save the second SELECT. Categories, not raw status names — a
-        // pending -> pending move between two statuses hits neither branch.
-        let resumed: TicketSlaApplied | null = null
-        if (previousStatus === 'pending' && newStatus !== 'pending') {
-          resumed = await resumeTicketSlaFromPending(ticketId, at)
-        } else if (newStatus === 'pending' && previousStatus !== 'pending') {
-          await pauseTicketSlaOnPending(ticketId, at)
-        }
-        if (newStatus === 'closed') {
-          await recordTicketResolution(ticketId, at, resumed)
-        }
-        break
-      }
-      default:
-        break
+      break
     }
-  } catch (err) {
-    log.error({ err, eventType: event.type }, 'SLA event recording failed')
+    case 'conversation.status_changed': {
+      const conversationId = event.data.conversation.id as ConversationId
+      const at = new Date(event.timestamp)
+      const { previousStatus, newStatus } = event.data
+      // Resolve the snooze transition first so a direct snoozed -> closed
+      // move settles against the already-shifted deadline, not the stale
+      // one. When it actually wrote a resume, its return value is threaded
+      // into recordResolution below so that case doesn't pay for two
+      // loadSlaApplied SELECTs of the same row.
+      let resumed: SlaApplied | null = null
+      if (previousStatus === 'snoozed' && newStatus !== 'snoozed') {
+        resumed = await resumeSlaFromSnooze(conversationId, at)
+      } else if (newStatus === 'snoozed' && previousStatus !== 'snoozed') {
+        await pauseSlaOnSnooze(conversationId, at)
+      }
+      if (newStatus === 'closed') {
+        await recordResolution(conversationId, at, resumed)
+      }
+      break
+    }
+    case 'ticket.status_changed': {
+      const ticketId = event.data.ticket.id as TicketId
+      const at = new Date(event.timestamp)
+      const { previousStatus, newStatus } = event.data
+      // The ticket twin of the conversation case above, on the pending
+      // axis: resolve the pause transition first so a direct pending ->
+      // closed move settles against the already-shifted deadline, and
+      // thread the resume's fresh stamp into recordTicketResolution to
+      // save the second SELECT. Categories, not raw status names — a
+      // pending -> pending move between two statuses hits neither branch.
+      let resumed: TicketSlaApplied | null = null
+      if (previousStatus === 'pending' && newStatus !== 'pending') {
+        resumed = await resumeTicketSlaFromPending(ticketId, at)
+      } else if (newStatus === 'pending' && previousStatus !== 'pending') {
+        await pauseTicketSlaOnPending(ticketId, at)
+      }
+      if (newStatus === 'closed') {
+        await recordTicketResolution(ticketId, at, resumed)
+      }
+      break
+    }
+    default:
+      break
   }
 }
