@@ -605,7 +605,9 @@ remove it. The known remaining effects:
   the next wake.
 - **Stamps from before this build.** A stamp without `pausedSpans` takes the
   completed spans in its history as already excluded, which holds when its
-  resumes ran. A cycle armed without `nextResponseCycleAt` is adopted at the
+  resumes ran. A pause that completes during the rollout before its own first
+  reaction succeeds (its pause job retried behind its wake) is taken as
+  excluded too, so that span counts toward the clock once. A cycle armed without `nextResponseCycleAt` is adopted at the
   next message reaction: its opener is the latest customer message (before its
   reply, or at or before its deadline) whose own deadline is no later than the
   stamp's, read from at most 20 of them. The adopted cycle keeps its deadline
@@ -625,6 +627,11 @@ remove it. The known remaining effects:
   reply although its own event does not (see `sla.messages.ts`). Its own
   reaction settles an armed next-response cycle at its time, and a later human
   reply's reaction settles the first response at it.
+- **The history follows the order events were written.** Status changes on the
+  older emit path are written to the event log without waiting, so two moves
+  in quick succession can be written in the opposite order to the moves
+  themselves, and a pause span rebuilt from them can be wrong. The inline
+  reactions before this change ran in the same written order.
 - **Timestamps within the same instant.** A status move recorded in the same
   instant as the message can let a late reopen through or stop a legitimate
   one.
