@@ -558,18 +558,26 @@ So the reactions that would go wrong out of order read the database instead of
 relying on it:
 
 - The response clocks read the conversation's message rows
-  (`domains/sla/sla.messages.ts`). A customer message whose reply already
-  exists arms its cycle and settles it at that reply. A message never re-arms
-  a cycle opened by the same or a later message: the stamp records which
-  message opened the cycle. A reply settles at the first human reply after the
-  customer message it answers, and never settles a cycle opened after it was
-  written: the cycle it did answer gets its outcome logged instead, once
-  (next-response events name their cycle in `meta.cycleAt`).
-- A pause or resume checks the conversation's (or ticket's) status when it
-  runs: a resume is skipped while it is snoozed or pending again. A pause that
-  runs after its paused state already ended excludes the span up to the
-  recorded wake instead, once: the stamp lists the pause starts already
-  excluded (`excludedPauses`), which a resume appends to as well.
+  (`domains/sla/sla.messages.ts`). The first response settles at the first
+  human reply since the SLA was applied. Every message reaction rebuilds the
+  next-response cycles from the rows: after the first response each customer
+  message restarts the wait, and the next human reply answers the latest one.
+  The stamp carries the latest cycle and records which message opened it;
+  moving it past an answered cycle logs that cycle's outcome in the same
+  write, once (next-response events name their cycle in `meta.cycleAt`).
+- Pauses are rebuilt from history (`domains/sla/sla.pause-history.ts`): the
+  status changes in the events log, where a span starts on entering the paused
+  state and ends on leaving it (a move within it is neither), plus a
+  conversation's customer messages, which wake a snooze. Every SLA reaction
+  first reconciles the stamp with them (`sla.pause-reconcile.ts`): the stamp
+  lists the spans it has excluded (`pausedSpans`) and holds the current one
+  (`pausedAt`), and every ledger write is pinned to `pauseRevision`. So each
+  span is excluded once, and a wake that runs after the next pause began ends
+  the first pause at its own time.
+- A close settles time-to-close or time-to-resolve at the first close since
+  the SLA was applied, read from the status changes. A settle judges its clock
+  as it stood at the settle's own time and stores that deadline, so a pause
+  excluded before the settle ran leaves no trace on it.
 - The pair-ticket reopen leaves the ticket alone when its status moved after
   the message (a close, read from the row, or any move its activity log
   records; a status move and its record are written in one transaction), and
@@ -584,29 +592,32 @@ relying on it:
 That narrows what a late, retried or replayed reaction can do; it does not
 remove it. The known remaining effects:
 
-- **A replaced cycle is judged without its pauses.** The outcome a late reply
-  logs for a cycle a later message already replaced is judged against the
-  deadline its opener gives, without any pause that cycle saw.
-- **A late pause cannot reach a clock that already settled.** The span it
-  excludes shifts only the clocks still unsettled when it runs; a clock settled
-  in the meantime was judged without the span.
-- **A customer message right after a snooze may not resume the clock.** The
-  pause is stamped with the status event's time, written just after the status
-  commits, so a customer message written within milliseconds of a snooze can
-  read as earlier than the pause. The clock then stays paused while the
-  conversation is open, until the next resume.
-- **Stamps armed before this build have no cycle marker.** They fall back to
-  comparing deadlines, so a conversation's first cycle after the upgrade can
-  still miss a re-arm once when office hours and pause-on-snooze are both on.
-- **A rollback leaves the cycle marker behind.** An older build re-arms without
-  `nextResponseCycleAt`, so the marker from before the rollback stays on the
-  stamp and, after a later roll-forward, can make a newer cycle look older than
-  its opener (a false breach). Step 5 of the runbook below strips it. A
-  conversation re-armed by an older web process during a forward rollout can
-  carry the same stale marker for that one cycle. Likewise an older build's
-  resume does not add to `excludedPauses`, so a pause replayed after a
-  rollback and roll-forward can exclude that span a second time; the runbook's
-  purge is what prevents the replay.
+- **An outcome of a replaced application is lost.** A reaction that runs
+  after the SLA was applied again is ignored, so what it would have recorded
+  against the replaced application is never logged.
+- **The sweep reads the stamp as the last reaction left it.** While a pause's
+  reactions are still queued, a deadline the pause would move can pass on the
+  stamp, and the sweep logs that breach.
+- **A customer message right after a snooze may not end it.** A snooze is
+  timed by its status event, written just after the status commits, so a
+  customer message written within milliseconds of it can read as earlier than
+  the snooze. The pause then stays open while the conversation is open, until
+  the next wake.
+- **Stamps from before this build.** A stamp without `pausedSpans` takes the
+  completed spans in its history as already excluded, which holds when its
+  resumes ran. A cycle without `nextResponseCycleAt` is rebuilt from the
+  messages at the next message reaction, its deadline recomputed from its
+  opener plus the spans the stamp has excluded.
+- **An older build's resume does not record its span.** During a rollout
+  overlap, a resume run by an older build shifts the deadlines without adding
+  the span to `pausedSpans`, so the next reconcile excludes that span a second
+  time. An older build also re-arms without `nextResponseCycleAt`. After a
+  rollback, both would outlive it and, after a later roll-forward, exclude
+  spans twice or make a newer cycle look older than its opener; step 5 of the
+  runbook below strips them.
+- **A reply through an older API key reads as a person's.** Its row is stored
+  like the person's inbox reply, so the response clocks count it as a human
+  reply although its own event does not (see `sla.messages.ts`).
 - **Timestamps within the same instant.** A status move recorded in the same
   instant as the message can let a late reopen through or stop a legitimate
   one.
@@ -644,12 +655,18 @@ DELETE FROM job_queue
 WHERE queue IN ('event-reactions', 'event-summaries') AND status = 'pending';
 ```
 
-5. Strip the next-response cycle marker, which the older build neither writes
-   nor clears, so it cannot outlive the rollback:
+5. Strip the next-response cycle marker and the pause ledger, which the older
+   build neither writes nor clears, so they cannot outlive the rollback. A
+   stamp without a ledger takes the spans in its history as already excluded
+   after a roll-forward, which the older build's resumes did:
 
 ```sql
-UPDATE conversations SET sla_applied = sla_applied - 'nextResponseCycleAt'
-WHERE sla_applied ? 'nextResponseCycleAt';
+UPDATE conversations
+SET sla_applied = sla_applied - 'nextResponseCycleAt' - 'pausedSpans' - 'pauseRevision'
+WHERE sla_applied ?| array['nextResponseCycleAt', 'pausedSpans', 'pauseRevision'];
+UPDATE tickets
+SET sla_applied = sla_applied - 'pausedSpans' - 'pauseRevision'
+WHERE sla_applied ?| array['pausedSpans', 'pauseRevision'];
 ```
 
 Dropping those few reactions is better than running them days later. Any
