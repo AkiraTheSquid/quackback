@@ -1008,7 +1008,7 @@ export async function resumeSlaFromSnooze(
   const shiftMs = Math.max(0, at.getTime() - new Date(pausedAt).getTime())
   // The merge patch carries ONLY the fields resume owns: the cleared pause,
   // the span added to the ledger, plus the shift of each still-unsettled
-  // deadline (a settled clock's due is left out of the patch entirely — it
+  // deadline (a settled clock's due is left out of the patch entirely: it
   // settled against whatever was live at the time, and merging nothing leaves
   // the field byte-identical). An armed next-response cycle shifts only by the
   // part of the pause after it opened.
