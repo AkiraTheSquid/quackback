@@ -23,7 +23,7 @@ import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vites
 import { createId, type PrincipalId, type TicketId, type TicketStatusId } from '@quackback/ids'
 import { createDbTestFixture, testDb } from '@/lib/server/__tests__/db-test-fixture'
 import { events, eq, principal, sql, tickets, ticketStatuses } from '@/lib/server/db'
-import type { ClaimedJob } from '@/lib/server/jobs/job-queue'
+import { enqueueJob, type ClaimedJob } from '@/lib/server/jobs/job-queue'
 import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import type {
   EventActor,
@@ -77,8 +77,7 @@ import { runEventSummaries } from '../event-summaries-queue'
 import { runEventDispatch } from '../event-dispatch-queue'
 import * as dispatch from '../dispatch'
 import { applySyncedTicketStatus } from '@/lib/server/domains/tickets/ticket-status-sync'
-import { JOB_DEFINITIONS, __setJobDefinitionsForTests } from '@/lib/server/jobs/definitions'
-import { drainOnce, runnerConfig } from '@/lib/server/jobs/runner'
+import { privateReactionQueue } from './private-reaction-queue'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -256,22 +255,6 @@ const ticketClosedReactions = {
   summarizeTicketOnClose: summaryOf,
 }
 
-/** Park other suites' leftover rows (the shared database commits some) so `eventIds` head the FIFO. */
-async function parkOtherReactionJobs(eventIds: string[]) {
-  await testDb.execute(sql`
-    UPDATE job_queue SET run_at = now() + interval '1 day'
-    WHERE id IN (
-      SELECT id FROM job_queue
-      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
-        AND payload->>'eventId' NOT IN (${sql.join(
-          eventIds.map((id) => sql`${id}`),
-          sql`, `
-        )})
-      FOR UPDATE SKIP LOCKED
-    )
-  `)
-}
-
 describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', () => {
   beforeEach(() => {
     for (const name of REACTION_NAMES) reactions[name].mockReset()
@@ -332,6 +315,49 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
     expectReacted(ticketClosedReactions, ticketId)
   })
 
+  it("a drain of the test's own jobs never claims or changes another suite's row", async () => {
+    // A row another suite queued on the shipped queue, older than this test's
+    // jobs, so a drain of the shipped queue would claim it first.
+    const foreignEventId = createId('event')
+    await enqueueJob({
+      queue: EVENT_REACTIONS_QUEUE,
+      payload: { eventId: foreignEventId },
+      runAt: new Date(Date.now() - 60 * 60_000),
+      maxAttempts: 3,
+    })
+    const foreignRow = async () =>
+      getExecuteRows<{ queue: string; status: string; attempts: number; run_at: string }>(
+        await testDb.execute(sql`
+          SELECT queue, status, attempts, run_at FROM job_queue
+          WHERE payload->>'eventId' = ${foreignEventId}
+        `)
+      )
+    const before = await foreignRow()
+    const conversation = convRef()
+    await dispatch.dispatchMessageCreated(
+      actor(),
+      messageIn(conversation, 'visitor'),
+      conversation,
+      true
+    )
+    const ours = (await eventRowsFor(conversation.id)).map((row) => row.eventId)
+
+    const queue = privateReactionQueue()
+    try {
+      await queue.adopt(ours)
+      expect(await queue.drain()).toMatchObject({ claimed: 1, succeeded: 1 })
+      expect(await queue.drain()).toMatchObject({ claimed: 0 })
+    } finally {
+      queue.release()
+    }
+
+    expect(await foreignRow()).toEqual(before)
+    expect(before).toMatchObject([{ queue: EVENT_REACTIONS_QUEUE, status: 'pending', attempts: 0 }])
+    expect(eventsSeenBySla().map((event) => event.data)).toEqual([
+      expect.objectContaining({ conversation: expect.objectContaining({ id: conversation.id }) }),
+    ])
+  })
+
   it("within one worker process, runs one event's reactions to completion before the next, in enqueue order", async () => {
     const conversation = convRef()
     const visitor = messageIn(conversation, 'visitor')
@@ -352,16 +378,17 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
 
     const ours = (await eventRowsFor(conversation.id)).map((row) => row.eventId)
     expect(ours).toHaveLength(2)
-    await parkOtherReactionJobs(ours)
 
-    // The real runner and the shipped definition, as the worker would drain it.
-    __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
+    // The real runner and the shipped definition, as the worker would drain
+    // it, over this test's own jobs only (private-reaction-queue.ts).
+    const queue = privateReactionQueue()
     try {
+      await queue.adopt(ours)
       for (let pass = 0; pass < 10; pass++) {
-        if ((await drainOnce({ ...runnerConfig(), batchSize: 5 })).claimed === 0) break
+        if ((await queue.drain()).claimed === 0) break
       }
     } finally {
-      __setJobDefinitionsForTests(null)
+      queue.release()
     }
 
     expect(steps).toEqual(['start visitor', 'end visitor', 'start agent', 'end agent'])
@@ -377,7 +404,6 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
       await dispatch.dispatchMessageCreated(actor(), messageIn(next, 'visitor'), next, true)
       const [stuckRow] = await eventRowsFor(stuck.id)
       const [nextRow] = await eventRowsFor(next.id)
-      await parkOtherReactionJobs([stuckRow.eventId, nextRow.eventId])
 
       // The first event's SLA reaction waits on something that never answers,
       // such as a row lock nobody releases.
@@ -388,27 +414,17 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
 
       const deadline = REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE]
       REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE] = 100
-      __setJobDefinitionsForTests(
-        JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE)
-      )
-      // Other suites commit reaction rows while this runs: park them before each drain.
-      const ours = [stuckRow.eventId, nextRow.eventId]
+      // This test's own jobs only (private-reaction-queue.ts).
+      const queue = privateReactionQueue()
       try {
+        await queue.adopt([stuckRow.eventId, nextRow.eventId])
         // The stuck job fails at its deadline and is requeued for a retry...
-        await parkOtherReactionJobs(ours)
-        expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
-          claimed: 1,
-          retrying: 1,
-        })
+        expect(await queue.drain()).toMatchObject({ claimed: 1, retrying: 1 })
         // ...which releases the lane, so the next event's reactions run.
-        await parkOtherReactionJobs(ours)
-        expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
-          claimed: 1,
-          succeeded: 1,
-        })
+        expect(await queue.drain()).toMatchObject({ claimed: 1, succeeded: 1 })
       } finally {
         REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE] = deadline
-        __setJobDefinitionsForTests(null)
+        queue.release()
       }
 
       expect(eventsSeenBySla().map((event) => event.data)).toEqual([
@@ -418,7 +434,7 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
       const [job] = getExecuteRows<{ status: string; attempts: number; last_error: string }>(
         await testDb.execute(sql`
           SELECT status, attempts, last_error FROM job_queue
-          WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${stuckRow.eventId}
+          WHERE queue = ${queue.name} AND payload->>'eventId' = ${stuckRow.eventId}
         `)
       )
       expect(job).toMatchObject({ status: 'pending', attempts: 1 })

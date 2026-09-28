@@ -10,6 +10,7 @@
  *
  * Real DB (rolled back), real legacy dispatch, outbox and job runner.
  */
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest'
@@ -50,9 +51,13 @@ const runbook = (() => {
 const forEvent = (statement: string, eventId: string) =>
   sql`${sql.raw(statement)} AND payload->>'eventId' = ${eventId}`
 
-/** The queue set of a worker built before the reaction queues existed. */
+/**
+ * The queue set of a worker built before the reaction queues existed. Its one
+ * queue is named for this run, so the drain below can claim no other suite's
+ * rows.
+ */
 const OLDER_BUILD: JobDefinition[] = [
-  { name: 'queue-of-an-older-build', handler: async () => async () => {} },
+  { name: `queue-of-an-older-build-${randomUUID()}`, handler: async () => async () => {} },
 ]
 
 /** A conversation closed through the legacy dispatch: one job on each reaction queue. */
@@ -98,16 +103,6 @@ describe.skipIf(!fixture.available)('rolling back past the reaction queues', () 
 
   it('a worker without the reaction queues never claims their jobs', async () => {
     const eventId = await closeConversation()
-    // Park other suites' leftover rows so this event's jobs head both queues.
-    await testDb.execute(sql`
-      UPDATE job_queue SET run_at = now() + interval '1 day'
-      WHERE id IN (
-        SELECT id FROM job_queue
-        WHERE queue IN (${EVENT_REACTIONS_QUEUE}, ${EVENT_SUMMARIES_QUEUE}) AND status = 'pending'
-          AND payload->>'eventId' <> ${eventId}
-        FOR UPDATE SKIP LOCKED
-      )
-    `)
 
     __setJobDefinitionsForTests(OLDER_BUILD)
     for (let pass = 0; pass < 3; pass++) await drainOnce({ ...runnerConfig(), batchSize: 5 })

@@ -17,7 +17,9 @@
  * logged and the settle lost.
  *
  * Real DB (rolled back), real legacy dispatch, outbox, job runner, shipped
- * definition and the real SLA recorders. Two seams only perturb timing: a
+ * definition and the real SLA recorders. The runner drains only this test's
+ * own jobs, on a private queue (private-reaction-queue.ts). Two seams only
+ * perturb timing: a
  * one-off failure of the reaction job's own events read, and a delay in
  * front of the real SLA reaction for the customer's message. The assertions
  * are on the SLA clock the real code leaves behind.
@@ -84,9 +86,8 @@ vi.mock('@/lib/server/domains/sla/sla.event-hooks', async (importOriginal) => {
 })
 
 import * as dispatch from '../dispatch'
-import { EVENT_REACTIONS_QUEUE } from '../event-reactions'
-import { JOB_DEFINITIONS, __setJobDefinitionsForTests } from '@/lib/server/jobs/definitions'
-import { drainOnce, runnerConfig, resetJobHandlers } from '@/lib/server/jobs/runner'
+import { resetJobHandlers } from '@/lib/server/jobs/runner'
+import { privateReactionQueue, type PrivateReactionQueue } from './private-reaction-queue'
 import { createSlaPolicy } from '@/lib/server/domains/sla/sla-policy.service'
 import {
   applySlaToConversation,
@@ -179,37 +180,16 @@ async function seedAnsweredConversation() {
   return { conversationId, customer, agent, start }
 }
 
-/** This test's own event ids: every drain parks every other reaction job first. */
-let ownEventIds: string[] = []
+/** This test's own reaction queue (see private-reaction-queue.ts). */
+let queue: PrivateReactionQueue
 
-/**
- * Park every reaction job but this test's, so the drain claims only this
- * test's jobs. Other suites commit reaction rows to the shared database while
- * this one runs, so it runs before every drain, not once.
- */
-async function parkOtherReactionJobs() {
-  if (ownEventIds.length === 0) return
-  await testDb.execute(sql`
-    UPDATE job_queue SET run_at = now() + interval '1 day'
-    WHERE id IN (
-      SELECT id FROM job_queue
-      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
-        AND payload->>'eventId' NOT IN (${sql.join(
-          ownEventIds.map((id) => sql`${id}`),
-          sql`, `
-        )})
-      FOR UPDATE SKIP LOCKED
-    )
-  `)
-}
-
-/** The event ids on `entityId`, oldest first, which the drains then claim alone. */
-async function ownReactionJobsFirst(entityId: string): Promise<string[]> {
-  ownEventIds = (
+/** The event ids on `entityId`, oldest first, their reaction jobs moved onto this test's queue. */
+async function ownReactionJobs(entityId: string): Promise<string[]> {
+  const ours = (
     await testDb.select().from(events).where(eq(events.entityId, entityId)).orderBy(events.id)
   ).map((row) => row.eventId)
-  await parkOtherReactionJobs()
-  return ownEventIds
+  await queue.adopt(ours)
+  return ours
 }
 
 /**
@@ -223,7 +203,7 @@ async function customerMessageThenReply() {
   await sendMessage(conversationId, 'visitor', customer, customerAt)
   await sendMessage(conversationId, 'agent', agent, replyAt)
 
-  const ours = await ownReactionJobsFirst(conversationId)
+  const ours = await ownReactionJobs(conversationId)
   expect(ours).toHaveLength(2)
   return { conversationId, customerAt, replyAt, customerEventId: ours[0] }
 }
@@ -248,23 +228,19 @@ async function expectOneMetCycle(conversationId: ConversationId, customerAt: Dat
   expect(stamp.nextResponseAt).toBe(replyAt.toISOString())
 }
 
-const drain = async () => {
-  await parkOtherReactionJobs()
-  return drainOnce({ ...runnerConfig(), batchSize: 5 })
-}
+const drain = () => queue.drain()
 
 describe.skipIf(!fixture.available)('SLA reactions that run out of order', () => {
   beforeEach(() => {
-    ownEventIds = []
     transient.failEventIds.clear()
     sla.finished = []
     sla.delayCustomerMs = 0
     resetJobHandlers()
-    __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
+    queue = privateReactionQueue()
     return fixture.begin()
   })
   afterEach(async () => {
-    __setJobDefinitionsForTests(null)
+    queue.release()
     resetJobHandlers()
     await fixture.rollback()
   })
@@ -280,10 +256,7 @@ describe.skipIf(!fixture.available)('SLA reactions that run out of order', () =>
     await drain()
     // The backoff elapses (now() is frozen inside the fixture's transaction,
     // so move run_at rather than sleeping) and the retry runs.
-    await testDb.execute(sql`
-      UPDATE job_queue SET run_at = now()
-      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${customerEventId}
-    `)
+    await queue.due(customerEventId)
     await drain()
 
     expect(sla.finished).toEqual(['agent', 'visitor'])
@@ -305,13 +278,12 @@ describe.skipIf(!fixture.available)('SLA reactions that run out of order', () =>
 
 describe.skipIf(!fixture.available)('an SLA reaction that fails', () => {
   beforeEach(() => {
-    ownEventIds = []
     resetJobHandlers()
-    __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
+    queue = privateReactionQueue()
     return fixture.begin()
   })
   afterEach(async () => {
-    __setJobDefinitionsForTests(null)
+    queue.release()
     resetJobHandlers()
     await fixture.rollback()
   })
@@ -337,16 +309,13 @@ describe.skipIf(!fixture.available)('an SLA reaction that fails', () => {
     // deadline math cannot resolve.
     await setSchedule(conversationId, 'Nowhere/Invalid')
     await sendMessage(conversationId, 'visitor', customer, new Date(start + 40 * MINUTE))
-    const [eventId] = await ownReactionJobsFirst(conversationId)
+    const [eventId] = await ownReactionJobs(conversationId)
 
     expect(await drain()).toMatchObject({ claimed: 1, retrying: 1 })
 
     // The fault clears (here, the schedule is repaired) and the retry runs.
     await setSchedule(conversationId, 'UTC')
-    await testDb.execute(sql`
-      UPDATE job_queue SET run_at = now()
-      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${eventId}
-    `)
+    await queue.due(eventId)
     expect(await drain()).toMatchObject({ claimed: 1, succeeded: 1 })
 
     const [row] = await testDb
