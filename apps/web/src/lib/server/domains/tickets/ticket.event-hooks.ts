@@ -44,10 +44,13 @@ export async function autoReopenPairTicketFromEvent(event: EventData): Promise<v
     // timeline record + event actor attribute the move to them (the function
     // no-ops unless the ticket is awaiting them or closed, so an already-open
     // ticket — e.g. the portal reply path's direct call having landed first —
-    // records nothing twice).
+    // records nothing twice). The message's own time lets a reaction that runs
+    // late leave standing a close made after the message.
+    const messageAt = new Date(event.data.message.createdAt)
     await autoReopenOnRequesterReply(
       ticketId,
-      (event.data.message.authorPrincipalId as PrincipalId | null) ?? null
+      (event.data.message.authorPrincipalId as PrincipalId | null) ?? null,
+      Number.isNaN(messageAt.getTime()) ? null : messageAt
     )
   } catch (err) {
     log.error({ err, eventType: event.type }, 'pair-ticket auto-reopen failed')

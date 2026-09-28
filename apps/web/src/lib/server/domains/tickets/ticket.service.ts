@@ -638,10 +638,17 @@ async function postTicketStatusEvent(ticketId: TicketId, stageLabel: string | nu
  * status move. The durable timeline keeps its distinct `ticket.reopened` type,
  * though: the history must read "reopened by the requester's reply", not an
  * anonymous status flip.
+ *
+ * `messageAt` is when the requester's message was written. The event reaction
+ * passes it because it runs from a queued job, possibly long after the
+ * message: a close made after the message has already answered it, so the
+ * reopen leaves that close standing. The status write only lands on the
+ * status this call read, so a concurrent status change is never overwritten.
  */
 export async function autoReopenOnRequesterReply(
   id: TicketId,
-  byPrincipalId: PrincipalId | null = null
+  byPrincipalId: PrincipalId | null = null,
+  messageAt: Date | null = null
 ): Promise<boolean> {
   const existing = await loadTicketOr404(id)
   const [current] = await db
@@ -656,6 +663,14 @@ export async function autoReopenOnRequesterReply(
   if (!current) return false
   const awaiting = resolveStage(current) === 'awaiting_requester'
   if (!awaiting && current.category !== 'closed') return false
+  if (
+    messageAt &&
+    current.category === 'closed' &&
+    existing.resolvedAt &&
+    existing.resolvedAt.getTime() > messageAt.getTime()
+  ) {
+    return false
+  }
 
   const [firstOpen] = await db
     .select({
@@ -676,7 +691,14 @@ export async function autoReopenOnRequesterReply(
   if (transition.reopenedIncrement) {
     patch.reopenedCount = sql`${tickets.reopenedCount} + 1` as unknown as number
   }
-  const [updated] = await db.update(tickets).set(patch).where(eq(tickets.id, id)).returning()
+  // Guarded on the status read above: a status change that lands in between
+  // wins, and of two overlapping runs for one message only one reopens.
+  const [updated] = await db
+    .update(tickets)
+    .set(patch)
+    .where(and(eq(tickets.id, id), eq(tickets.statusId, existing.statusId)))
+    .returning()
+  if (!updated) return false
 
   // Durable timeline record (fire-and-forget): a distinct 'ticket.reopened'
   // type — not 'status.changed' — so the timeline reads honestly ("reopened by
