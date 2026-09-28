@@ -483,3 +483,62 @@ describe.skipIf(!fixture.available)('SLA pauses reacted to after the paused stat
     })
   })
 })
+
+describe.skipIf(!fixture.available)('A stamp from before the pause ledger', () => {
+  beforeEach(fixture.begin)
+  afterEach(fixture.rollback)
+
+  // An earlier build paused and resumed 10:30 to 11:30, shifting the deadline
+  // an hour to 15:00, and paused again at 12:00, keeping no ledger (as does a
+  // stamp stripped after a rollback).
+  const legacy = { dueAt: iso('15:00'), pausedAt: iso('12:00') }
+
+  it("takes a conversation's ended snoozes as excluded and holds the current one", async () => {
+    const { conversationId } = await seedConversation()
+    await conversationMoves(conversationId, 'open', 'snoozed', '10:30')
+    await conversationMoves(conversationId, 'snoozed', 'open', '11:30')
+    const snooze = await conversationMoves(conversationId, 'open', 'snoozed', '12:00')
+    await testDb
+      .update(conversations)
+      .set({
+        slaApplied: sql`(${conversations.slaApplied} - 'pausedSpans' - 'pauseRevision') || ${JSON.stringify(
+          { timeToCloseDueAt: legacy.dueAt, pausedAt: legacy.pausedAt }
+        )}::jsonb`,
+      })
+      .where(eq(conversations.id, conversationId))
+
+    await recordSlaFromEvent(snooze) // a replay
+    await recordSlaFromEvent(await conversationMoves(conversationId, 'snoozed', 'open', '12:30'))
+
+    // Only the half hour from 12:00 is excluded now: due 15:30.
+    expect(await conversationClock(conversationId)).toEqual({
+      dueAt: iso('15:30'),
+      pausedAt: null,
+      breaches: [],
+    })
+  })
+
+  it("takes a ticket's ended pending spans as excluded and holds the current one", async () => {
+    const ticket = await seedTicket()
+    await ticketMoves(ticket, 'open', 'pending', '10:30')
+    await ticketMoves(ticket, 'pending', 'open', '11:30')
+    const pending = await ticketMoves(ticket, 'open', 'pending', '12:00')
+    await testDb
+      .update(tickets)
+      .set({
+        slaApplied: sql`(${tickets.slaApplied} - 'pausedSpans' - 'pauseRevision') || ${JSON.stringify(
+          { timeToResolveDueAt: legacy.dueAt, pausedAt: legacy.pausedAt }
+        )}::jsonb`,
+      })
+      .where(eq(tickets.id, ticket.ticketId))
+
+    await recordSlaFromEvent(pending) // a replay
+    await recordSlaFromEvent(await ticketMoves(ticket, 'pending', 'open', '12:30'))
+
+    expect(await ticketClock(ticket.ticketId)).toEqual({
+      dueAt: iso('15:30'),
+      pausedAt: null,
+      breaches: [],
+    })
+  })
+})
