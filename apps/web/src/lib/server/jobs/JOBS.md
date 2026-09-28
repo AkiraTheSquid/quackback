@@ -595,6 +595,18 @@ remove it. The known remaining effects:
 - **A late CSAT confirm confirms the current involvement.** It acts on
   whichever assistant involvement is active when it runs, which can be a later
   one.
+- **Stamps armed before this build have no cycle marker.** They fall back to
+  comparing deadlines, so a conversation's first cycle after the upgrade can
+  still miss a re-arm once when office hours and pause-on-snooze are both on.
+- **A rollback leaves the cycle marker behind.** An older build re-arms without
+  `nextResponseCycleAt`, so the marker from before the rollback stays on the
+  stamp and, after a later roll-forward, can make a newer cycle look older than
+  its opener (a false breach). Step 5 of the runbook below strips it. A
+  conversation re-armed by an older web process during a forward rollout can
+  carry the same stale marker for that one cycle.
+- **Timestamps within the same instant.** A status move recorded in the same
+  instant as the message can let a late reopen through or stop a legitimate
+  one.
 
 **Rolling back to a build that predates the reaction queues.** A worker built
 before `event-reactions` and `event-summaries` has no definition for either,
@@ -629,6 +641,14 @@ DELETE FROM job_queue
 WHERE queue IN ('event-reactions', 'event-summaries') AND status = 'pending';
 ```
 
+5. Strip the next-response cycle marker, which the older build neither writes
+   nor clears, so it cannot outlive the rollback:
+
+```sql
+UPDATE conversations SET sla_applied = sla_applied - 'nextResponseCycleAt'
+WHERE sla_applied ? 'nextResponseCycleAt';
+```
+
 Dropping those few reactions is better than running them days later. Any
 left behind and run after a later roll-forward are subject to the remaining
 effects listed above, with days of later activity to collide with instead of
@@ -636,7 +656,7 @@ seconds.
 
 An install that runs web and worker as one process cannot roll them back
 separately: its in-flight reaction rows are left behind at the rollback, so
-run step 4's purge once the older build is up.
+run steps 4 and 5 once the older build is up.
 
 ## 11. Running the evidence
 
