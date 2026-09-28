@@ -15,6 +15,8 @@ import {
   db,
   and,
   eq,
+  inArray,
+  or,
   sql,
   conversations,
   slaEvents,
@@ -292,21 +294,29 @@ export function slaStampGuard(
  *  evaluator and the sweep record with. Takes an executor so the event can
  *  travel in the same transaction as the stamp write it belongs to (see
  *  commitClockEvent). Exported for sla.sweep.ts's reporting pass, whose
- *  claim + insert pair is atomic the same way. */
+ *  claim + insert pair is atomic the same way. A next-response event names
+ *  its cycle by the message that opened it (`meta.cycleAt`), so a cycle's
+ *  outcome can be found and logged once (see logReplacedCycleOutcome). */
 export async function insertClockEvent(
   conversationId: ConversationId,
   policyId: SlaPolicyId,
   kind: string,
   dueAt: string,
   at: Date,
-  executor: StampExecutor = db
+  executor: StampExecutor = db,
+  cycleAt?: string | null
 ): Promise<void> {
   const overdueMs = at.getTime() - new Date(dueAt).getTime()
   await executor.insert(slaEvents).values({
     conversationId,
     policyId,
     kind,
-    meta: { dueAt, at: at.toISOString(), overdueSecs: Math.max(0, Math.round(overdueMs / 1000)) },
+    meta: {
+      dueAt,
+      at: at.toISOString(),
+      overdueSecs: Math.max(0, Math.round(overdueMs / 1000)),
+      ...(cycleAt ? { cycleAt } : {}),
+    },
   })
 }
 
@@ -410,11 +420,12 @@ async function commitClockEvent(
   dueAt: string,
   at: Date,
   guard: { appliedAt: string; pausedAt: string | null },
-  content: StampContentGuard
+  content: StampContentGuard,
+  cycleAt?: string | null
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     if (!(await commitStamp(conversationId, patch, at, guard, content, tx))) return false
-    await insertClockEvent(conversationId, policyId, kind, dueAt, at, tx)
+    await insertClockEvent(conversationId, policyId, kind, dueAt, at, tx, cycleAt)
     return true
   })
 }
@@ -733,7 +744,8 @@ async function commitNextResponseCycle(
     judgedDue.toISOString(),
     reply,
     guard,
-    content
+    content,
+    start.toISOString()
   )
 }
 
@@ -763,7 +775,11 @@ async function legacyScheduleFor(policyId: SlaPolicyId): Promise<EngineSchedule 
  * The reaction that calls this can run late or out of order (see
  * sla.messages.ts), so the cycle it settles comes from the conversation's
  * messages: see cycleAnsweredBy. Without message rows to go by, the armed
- * cycle settles at `at`.
+ * cycle settles at `at`. A reply written at or before the armed cycle's
+ * opener never settles it: a later customer message replaced the cycle the
+ * reply answered, and that cycle's outcome is logged instead
+ * (logReplacedCycleOutcome). A cycle armed before its opener was recorded
+ * settles at the reply, as it always did.
  */
 export async function recordNextResponse(
   conversationId: ConversationId,
@@ -771,8 +787,17 @@ export async function recordNextResponse(
 ): Promise<void> {
   let applied = await loadSlaApplied(conversationId)
   for (let attempt = 0; attempt < 2; attempt++) {
-    if (!applied || !applied.nextResponseDueAt || applied.nextResponseAt) return
+    if (!applied || !applied.nextResponseDueAt) return
     if (predatesApplication(at, applied, { conversation_id: conversationId })) return
+    // A reply written at or before the armed cycle opened cannot answer it: a
+    // later customer message's reaction armed that cycle first. The armed
+    // cycle waits for its own reply; the cycle this reply did answer gets its
+    // outcome logged instead.
+    if (applied.nextResponseCycleAt && !isAfter(at, applied.nextResponseCycleAt)) {
+      await logReplacedCycleOutcome(conversationId, applied, at)
+      return
+    }
+    if (applied.nextResponseAt) return
     const answered = await cycleAnsweredBy(conversationId, applied, at)
     const settleAt = answered?.reply ?? at
     const committed = answered?.rearm
@@ -834,6 +859,80 @@ async function earliestOf(at: Date, other: Promise<Date | null>): Promise<Date> 
   return time && time.getTime() < at.getTime() ? time : at
 }
 
+const NEXT_RESPONSE_OUTCOMES = [
+  'next_response_met',
+  'next_response_breached',
+  'next_response_settled_after_breach',
+]
+
+/**
+ * Log the outcome of the cycle a reply at `at` answered, after a later
+ * customer message's reaction replaced that cycle on the stamp: met or
+ * breached at the first human reply after the cycle's opener, against the
+ * deadline that opener gives. A pause the cycle saw is not known here, so the
+ * deadline is unshifted. Logged once: nothing is written when an outcome for
+ * that cycle is already in the log, whoever wrote it.
+ */
+async function logReplacedCycleOutcome(
+  conversationId: ConversationId,
+  applied: SlaApplied,
+  at: Date
+): Promise<void> {
+  const armedCycleAt = applied.nextResponseCycleAt
+  if (!applied.firstResponseAt || !applied.nextResponseTargetSecs || !armedCycleAt) return
+  const since = Math.max(
+    new Date(applied.firstResponseAt).getTime(),
+    new Date(applied.appliedAt).getTime()
+  )
+  const opener = await latestCycleOpenerBetween(conversationId, new Date(since), at)
+  if (!opener) return
+  const cycleAt = opener.toISOString()
+  if (await cycleOutcomeLogged(conversationId, cycleAt, armedCycleAt)) return
+  const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
+  if (!schedule) return
+  const reply = await earliestOf(at, earliestHumanReplyAfter(conversationId, opener))
+  const dueAt = addOfficeHoursSeconds(schedule, opener, applied.nextResponseTargetSecs)
+  const breached = reply.getTime() > dueAt.getTime()
+  await insertClockEvent(
+    conversationId,
+    applied.policyId,
+    breached ? 'next_response_breached' : 'next_response_met',
+    dueAt.toISOString(),
+    reply,
+    db,
+    cycleAt
+  )
+}
+
+/**
+ * Whether the log already holds an outcome for the cycle opened at `cycleAt`:
+ * an event naming that cycle, or an event from before cycles were named whose
+ * time falls between that cycle's opener and the armed cycle's.
+ */
+async function cycleOutcomeLogged(
+  conversationId: ConversationId,
+  cycleAt: string,
+  armedCycleAt: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: slaEvents.id })
+    .from(slaEvents)
+    .where(
+      and(
+        eq(slaEvents.conversationId, conversationId),
+        inArray(slaEvents.kind, NEXT_RESPONSE_OUTCOMES),
+        or(
+          sql`${slaEvents.meta} ->> 'cycleAt' = ${cycleAt}`,
+          sql`(${slaEvents.meta} ->> 'cycleAt') IS NULL
+            AND ${slaEvents.meta} ->> 'at' >= ${cycleAt}
+            AND ${slaEvents.meta} ->> 'at' < ${armedCycleAt}`
+        )
+      )
+    )
+    .limit(1)
+  return Boolean(row)
+}
+
 /**
  * Settle the armed next-response cycle at `at` and log met/breached (or the
  * settle after a breach the sweep already noted). Pinned to the deadline it
@@ -861,7 +960,8 @@ async function settleNextResponse(
       dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at).toISOString(),
       at,
       guard,
-      { unsetFields: ['nextResponseAt'], pinnedFields }
+      { unsetFields: ['nextResponseAt'], pinnedFields },
+      applied.nextResponseCycleAt
     )
   }
   const dueAt = dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at)
@@ -881,7 +981,8 @@ async function settleNextResponse(
     {
       unsetFields: breached ? ['nextResponseAt', 'nextResponseBreachedAt'] : ['nextResponseAt'],
       pinnedFields,
-    }
+    },
+    applied.nextResponseCycleAt
   )
 }
 

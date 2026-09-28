@@ -26,6 +26,7 @@ import {
   slaEvents,
   user,
   eq,
+  sql,
 } from '@/lib/server/db'
 import type { EventData } from '@/lib/server/events/types'
 
@@ -302,5 +303,57 @@ describe.skipIf(!fixture.available)('response clocks from replies reacted to out
     expect(await firstResponseEvents(thread.conversationId)).toEqual([
       { kind: 'first_response_met', at: iso('10:55') },
     ])
+  })
+
+  it("a reply retried after the next customer message never settles that message's cycle", async () => {
+    const thread = await seedAnsweredThread()
+    await recordSlaFromEvent(await write(thread, 'visitor', '10:40')) // due 12:40
+    const reply = await write(thread, 'agent', '11:00') // its reaction fails, and is retried
+    await recordSlaFromEvent(await write(thread, 'visitor', '11:30')) // re-armed, due 13:30
+
+    await recordSlaFromEvent(reply)
+    await recordSlaFromEvent(reply) // a second retry, or a replay
+
+    // The 11:00 reply answered the 10:40 message, not the 11:30 one: the
+    // 11:30 cycle stays open (and breaches), and the 10:40 cycle's outcome is
+    // logged once.
+    expect(await stampOf(thread.conversationId)).toMatchObject({
+      nextResponseDueAt: iso('13:30'),
+      nextResponseAt: null,
+    })
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_met', dueAt: iso('12:40'), at: iso('11:00') },
+      { kind: 'next_response_breached', dueAt: iso('13:30'), at: iso('23:00') },
+    ])
+  })
+
+  it('a late reply for a cycle the sweep already breached logs no second outcome', async () => {
+    const thread = await seedAnsweredThread()
+    await recordSlaFromEvent(await write(thread, 'visitor', '10:40')) // due 12:40
+    const reply = await write(thread, 'agent', '11:00') // its reaction runs late
+    await sweepOverdueSlaBreaches(at('12:45')) // records the 10:40 cycle's breach
+    // The customer wrote again at 12:30; that reaction runs after the sweep.
+    await recordSlaFromEvent(await write(thread, 'visitor', '12:30')) // due 14:30
+
+    await recordSlaFromEvent(reply)
+
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_breached', dueAt: iso('12:40'), at: iso('12:45') },
+      { kind: 'next_response_breached', dueAt: iso('14:30'), at: iso('23:00') },
+    ])
+  })
+
+  it('a cycle armed before its opener was recorded still settles at the reply', async () => {
+    const thread = await seedAnsweredThread()
+    await recordSlaFromEvent(await write(thread, 'visitor', '10:40')) // due 12:40
+    // A stamp armed by a build that did not record the cycle's opener.
+    await testDb
+      .update(conversations)
+      .set({ slaApplied: sql`${conversations.slaApplied} - 'nextResponseCycleAt'` })
+      .where(eq(conversations.id, thread.conversationId))
+
+    await recordSlaFromEvent(await write(thread, 'agent', '11:00'))
+
+    expect((await stampOf(thread.conversationId)).nextResponseAt).toBe(iso('11:00'))
   })
 })
