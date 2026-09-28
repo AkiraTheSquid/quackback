@@ -66,6 +66,7 @@ import {
   sql,
 } from '@/lib/server/db'
 import { runEventReactions } from '@/lib/server/events/event-reactions-queue'
+import { createSlaPolicy } from '@/lib/server/domains/sla/sla-policy.service'
 import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import { ANONYMOUS_ACTOR, type Actor } from '@/lib/server/policy/types'
 import {
@@ -369,6 +370,12 @@ describe.skipIf(!fixture.available)('requester ticket service (real DB, rolled b
     // Paused 2h ago with 1h of resolve clock left at the pause.
     const pausedAt = new Date(Date.now() - 2 * 3_600_000)
     const dueAt = new Date(Date.now() - 3_600_000)
+    // The resume logs a clock event against the policy, so it must exist.
+    const policy = await createSlaPolicy({
+      name: 'VIP',
+      timeToResolveTargetSecs: 3_600,
+      pauseOnPending: true,
+    })
     await testDb.insert(tickets).values({
       id: ticketId,
       title: 'T',
@@ -376,7 +383,7 @@ describe.skipIf(!fixture.available)('requester ticket service (real DB, rolled b
       type: 'customer',
       requesterPrincipalId: me,
       slaApplied: {
-        policyId: 'sla_policy_x',
+        policyId: policy.id,
         policyName: 'VIP',
         appliedAt: pausedAt.toISOString(),
         timeToResolveDueAt: dueAt.toISOString(),

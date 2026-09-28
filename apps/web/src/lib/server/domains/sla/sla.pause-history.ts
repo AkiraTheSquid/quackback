@@ -27,7 +27,12 @@ interface Transition {
   kind: 'enter' | 'leave'
 }
 
-/** Moves into and out of `pausedStatus`, from the entity's status-change events. */
+/**
+ * Moves into and out of `pausedStatus`, from the entity's status-change
+ * events. Before its first recorded change the entity had that change's
+ * previous status, so a first change out of the paused state (an entity
+ * created paused, say) ends a span that began before its history.
+ */
 async function statusTransitions(
   entityType: 'conversation' | 'ticket',
   entityId: string,
@@ -44,14 +49,22 @@ async function statusTransitions(
       )
     )
     .orderBy(asc(events.occurredAt), asc(events.id))
-  return rows.flatMap<Transition>(({ at, payload }) => {
-    const { previousStatus, newStatus } = payload as { previousStatus?: string; newStatus?: string }
-    if (previousStatus !== pausedStatus && newStatus === pausedStatus)
-      return [{ at, kind: 'enter' }]
-    if (previousStatus === pausedStatus && newStatus !== pausedStatus)
-      return [{ at, kind: 'leave' }]
-    return []
-  })
+  const moves = rows.map(({ at, payload }) => ({
+    at,
+    ...(payload as { previousStatus?: string; newStatus?: string }),
+  }))
+  // The epoch stands for the start of the history; spansFrom clips a span
+  // from it to the SLA's application.
+  const transitions: Transition[] =
+    moves[0]?.previousStatus === pausedStatus ? [{ at: new Date(0), kind: 'enter' }] : []
+  for (const { at, previousStatus, newStatus } of moves) {
+    if (previousStatus !== pausedStatus && newStatus === pausedStatus) {
+      transitions.push({ at, kind: 'enter' })
+    } else if (previousStatus === pausedStatus && newStatus !== pausedStatus) {
+      transitions.push({ at, kind: 'leave' })
+    }
+  }
+  return transitions
 }
 
 /**

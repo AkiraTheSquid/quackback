@@ -484,6 +484,33 @@ describe.skipIf(!fixture.available)('SLA pauses reacted to after the paused stat
   })
 })
 
+describe.skipIf(!fixture.available)('A pause that began before any recorded move', () => {
+  beforeEach(fixture.begin)
+  afterEach(fixture.rollback)
+
+  it('a ticket pending before its SLA was applied resumes at its first recorded move out', async () => {
+    const ticket = await seedTicket()
+    // Pending with no recorded move into it (created pending, say), so the
+    // SLA applied at 10:00 starts paused.
+    await testDb
+      .update(tickets)
+      .set({
+        statusId: ticket.statusFor.pending,
+        slaApplied: sql`${tickets.slaApplied} || ${JSON.stringify({ pausedAt: iso('10:00') })}::jsonb`,
+      })
+      .where(eq(tickets.id, ticket.ticketId))
+
+    await recordSlaFromEvent(await ticketMoves(ticket, 'pending', 'open', '12:30'))
+
+    // Paused 10:00 to 12:30: due 16:30.
+    expect(await ticketClock(ticket.ticketId)).toEqual({
+      dueAt: iso('16:30'),
+      pausedAt: null,
+      breaches: [],
+    })
+  })
+})
+
 describe.skipIf(!fixture.available)('A stamp from before the pause ledger', () => {
   beforeEach(fixture.begin)
   afterEach(fixture.rollback)
