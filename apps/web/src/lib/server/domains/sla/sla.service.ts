@@ -54,11 +54,11 @@ import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.message
  *  - pauseSlaOnSnooze/resumeSlaFromSnooze own `pausedAt` and the pause-shift
  *    of the still-unsettled `*DueAt` deadlines;
  *  - rearmNextResponse owns the next-response cycle fields
- *    (`nextResponseDueAt`, `nextResponseAt`, and the per-cycle markers) — a
- *    fresh customer message replaces the cycle wholesale, and the merge's
- *    explicit nulls clear the old cycle's fields (jsonb-merge sets the key to
- *    null, which `->> field IS NULL` guards and falsy JS readers both treat
- *    as unset). recordNextResponse writes a whole cycle the same way when a
+ *    (`nextResponseCycleAt`, `nextResponseDueAt`, `nextResponseAt`, and the
+ *    per-cycle markers): a fresh customer message replaces the cycle
+ *    wholesale, and the merge's explicit nulls clear the old cycle's fields
+ *    (jsonb-merge sets the key to null, which `->> field IS NULL` guards and
+ *    falsy JS readers both treat as unset). recordNextResponse writes a whole cycle the same way when a
  *    reply's reaction arms the cycle its customer message opened (see
  *    cycleAnsweredBy), pinned to the cycle fields it read;
  *  - the sweeps (sla.sweep.ts) own the `*BreachedAt` / `*WarningFiredAt` /
@@ -89,6 +89,12 @@ export type SlaApplied = {
   firstResponseDueAt: string | null
   nextResponseTargetSecs: number | null
   nextResponseDueAt?: string | null
+  // When the customer message that opened the armed next-response cycle was
+  // written (set with nextResponseDueAt by whoever arms the cycle). The cycle
+  // is identified by it, never by comparing deadlines: a pause shift and
+  // office hours make an older cycle's deadline later than a newer one's.
+  // Absent on cycles armed before this field existed.
+  nextResponseCycleAt?: string | null
   timeToCloseDueAt: string | null
   // Lazy-eval outcomes: when the first teammate reply / the reply to the
   // current next-response cycle / the resolution landed (set by the breach
@@ -594,16 +600,20 @@ export function shiftIso(iso: string, ms: number): string {
  *    restarts the cycle, as it would have in order) and is settled at the
  *    reply in the same write, logged met or breached, so the sweep never sees
  *    an answered cycle as overdue;
- *  - an unanswered cycle already due at or after the one this message would
- *    arm came from a later message, and stands.
+ *  - a cycle already armed from this message or a later one stands. The cycle
+ *    is identified by the message that opened it (`nextResponseCycleAt`),
+ *    never by its deadline: a resume shifts an unanswered deadline by the
+ *    wall-clock pause while a fresh one is computed in office hours, so an
+ *    older cycle can be due later than a newer one. A cycle armed before that
+ *    field existed falls back to comparing deadlines.
  *
  * Guarded and retried on a CAS miss exactly like recordFirstResponse (see its
  * doc comment). Beyond the identity CAS, the re-arm PINS the exact
- * `nextResponseDueAt` and `nextResponseAt` it is replacing (see
- * StampContentGuard): if a concurrent writer moved the cycle between read and
- * write (a resume's due shift, a sibling re-arm, or a settle), this
- * computation is stale, so it misses, reloads and decides again against the
- * fresh stamp. A plain re-arm logs no sla_events row: arming is stamp state,
+ * `nextResponseDueAt`, `nextResponseAt` and `nextResponseCycleAt` it is
+ * replacing (see StampContentGuard): if a concurrent writer moved the cycle
+ * between read and write (a resume's due shift, a sibling re-arm, or a
+ * settle), this computation is stale, so it misses, reloads and decides again
+ * against the fresh stamp. A plain re-arm logs no sla_events row: arming is stamp state,
  * not a reportable clock event.
  */
 export async function rearmNextResponse(
@@ -620,14 +630,19 @@ export async function rearmNextResponse(
     const reply = await earliestHumanReplyAfter(conversationId, at)
     const start = reply ? ((await latestCycleOpenerBetween(conversationId, at, reply)) ?? at) : at
     const dueAt = addOfficeHoursSeconds(schedule, start, applied.nextResponseTargetSecs)
-    if (
+    if (applied.nextResponseCycleAt) {
+      // The armed cycle opened at or after this one would: it is this cycle
+      // (a repeat run, perhaps pause-shifted since) or a later message's.
+      if (!isAfter(start, applied.nextResponseCycleAt)) return
+    } else if (
       applied.nextResponseDueAt &&
       !applied.nextResponseAt &&
       !isAfter(dueAt, applied.nextResponseDueAt)
     ) {
+      // A cycle armed before its start was recorded: compare deadlines.
       return
     }
-    if (await commitNextResponseCycle(conversationId, applied, dueAt, reply, at)) return
+    if (await commitNextResponseCycle(conversationId, applied, start, dueAt, reply, at)) return
     applied = await loadSlaApplied(conversationId)
   }
 }
@@ -647,6 +662,7 @@ function isAfter(date: Date, iso: string): boolean {
 async function commitNextResponseCycle(
   conversationId: ConversationId,
   applied: SlaApplied,
+  start: Date,
   dueAt: Date,
   reply: Date | null,
   at: Date
@@ -656,9 +672,11 @@ async function commitNextResponseCycle(
     pinnedFields: {
       nextResponseDueAt: applied.nextResponseDueAt ?? null,
       nextResponseAt: applied.nextResponseAt ?? null,
+      nextResponseCycleAt: applied.nextResponseCycleAt ?? null,
     },
   }
   const cycle: Partial<SlaApplied> = {
+    nextResponseCycleAt: start.toISOString(),
     nextResponseDueAt: dueAt.toISOString(),
     nextResponseAt: null,
     nextResponseBreachedAt: null,
@@ -722,8 +740,15 @@ export async function recordNextResponse(
     if (!applied || !applied.nextResponseDueAt || applied.nextResponseAt) return
     const answered = await cycleAnsweredBy(conversationId, applied, at)
     const settleAt = answered?.reply ?? at
-    const committed = answered?.rearmDueAt
-      ? await commitNextResponseCycle(conversationId, applied, answered.rearmDueAt, settleAt, at)
+    const committed = answered?.rearm
+      ? await commitNextResponseCycle(
+          conversationId,
+          applied,
+          answered.rearm.start,
+          answered.rearm.dueAt,
+          settleAt,
+          at
+        )
       : await settleNextResponse(conversationId, applied, settleAt)
     if (committed) return
     applied = await loadSlaApplied(conversationId)
@@ -735,8 +760,8 @@ export async function recordNextResponse(
  * messages: the last customer message before the reply (and after the first
  * response) opened it, and the first human reply after that message settles
  * it, so a reply whose reaction runs before an earlier reply's still settles
- * at the earlier one. `rearmDueAt` is set when that message's cycle is due
- * after the armed one, meaning its own reaction has not run yet: the settle
+ * at the earlier one. `rearm` is set when the armed cycle is older than that
+ * message's, meaning its own reaction has not run yet: the settle
  * then arms that cycle in the same write rather than judging the reply
  * against an older deadline. Null when the messages name no such customer
  * message.
@@ -745,7 +770,7 @@ async function cycleAnsweredBy(
   conversationId: ConversationId,
   applied: SlaApplied,
   at: Date
-): Promise<{ reply: Date; rearmDueAt: Date | null } | null> {
+): Promise<{ reply: Date; rearm: { start: Date; dueAt: Date } | null } | null> {
   if (!applied.firstResponseAt || !applied.nextResponseDueAt) return null
   const opener = await latestCycleOpenerBetween(
     conversationId,
@@ -755,9 +780,15 @@ async function cycleAnsweredBy(
   if (!opener) return null
   const reply = await earliestOf(at, earliestHumanReplyAfter(conversationId, opener))
   const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
-  if (!schedule || !applied.nextResponseTargetSecs) return { reply, rearmDueAt: null }
+  if (!schedule || !applied.nextResponseTargetSecs) return { reply, rearm: null }
   const dueAt = addOfficeHoursSeconds(schedule, opener, applied.nextResponseTargetSecs)
-  return { reply, rearmDueAt: isAfter(dueAt, applied.nextResponseDueAt) ? dueAt : null }
+  // The armed cycle is older than the one this reply answers when it opened
+  // before that message (or, on a cycle armed before its start was recorded,
+  // when it is due before that message's cycle would be).
+  const older = applied.nextResponseCycleAt
+    ? isAfter(opener, applied.nextResponseCycleAt)
+    : isAfter(dueAt, applied.nextResponseDueAt)
+  return { reply, rearm: older ? { start: opener, dueAt } : null }
 }
 
 /** The earlier of `at` and the time `other` resolves to, when it resolves to one. */
