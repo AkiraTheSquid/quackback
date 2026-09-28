@@ -45,6 +45,12 @@ import { enforceAiTokenBudget } from '@/lib/server/domains/settings/tier-enforce
 import { generateEmbedding } from '@/lib/server/domains/embeddings/embedding.service'
 import { listTicketMessages } from '@/lib/server/domains/tickets/ticket-message.service'
 import { buildTicketTranscript, GROUNDING_CHAR_BUDGET } from './transcript'
+import {
+  isCurrentClose,
+  upToClose,
+  writeForCurrentClose,
+  type TriggeringClose,
+} from './close-summary'
 import { createId, type TicketId } from '@quackback/ids'
 import { logger } from '@/lib/server/logger'
 
@@ -77,10 +83,14 @@ const TicketSummarySchema = z.object({ summary: z.string() })
  * never throws: every failure path (missing ticket, empty transcript,
  * malformed model output, a DB or provider error) is logged and swallowed,
  * since this runs off the ticket-close event. `signal` (the reaction job's
- * deadline) aborts the provider call.
+ * deadline) aborts the provider calls.
+ *
+ * Bound to `close`, the close that queued it, as its conversation sibling is
+ * (see close-summary.ts).
  */
 export async function summarizeTicketOnClose(
   ticketId: TicketId,
+  close: TriggeringClose,
   opts: { signal?: AbortSignal } = {}
 ): Promise<void> {
   try {
@@ -88,6 +98,7 @@ export async function summarizeTicketOnClose(
 
     const model = getChatModel('summary')
     if (!isAiClientConfigured(config.openaiApiKey, config.openaiBaseUrl) || !model) return
+    if (!(await isCurrentClose('ticket', ticketId, close))) return
 
     const [ticketRow, thread] = await Promise.all([
       db.query.tickets.findFirst({
@@ -101,7 +112,7 @@ export async function summarizeTicketOnClose(
       return
     }
 
-    const transcript = buildTicketTranscript(thread.messages)
+    const transcript = buildTicketTranscript(upToClose(thread.messages, close))
     if (!transcript) return // nothing customer-visible happened; no summary to write
 
     const truncated =
@@ -160,15 +171,22 @@ export async function summarizeTicketOnClose(
         : {}),
     }
 
-    await db
-      .insert(ticketSummaries)
-      .values({ id: createId('ticket_summary'), ...values })
-      .onConflictDoUpdate({
-        target: ticketSummaries.ticketId,
-        set: values,
-      })
-
-    log.info({ ticket_id: ticketId }, 'ticket summary generated')
+    const written = await writeForCurrentClose(
+      'ticket',
+      ticketId,
+      close,
+      opts.signal,
+      async (tx) => {
+        await tx
+          .insert(ticketSummaries)
+          .values({ id: createId('ticket_summary'), ...values })
+          .onConflictDoUpdate({
+            target: ticketSummaries.ticketId,
+            set: values,
+          })
+      }
+    )
+    if (written) log.info({ ticket_id: ticketId }, 'ticket summary generated')
   } catch (err) {
     log.error({ err, ticket_id: ticketId }, 'ticket summary generation failed')
   }

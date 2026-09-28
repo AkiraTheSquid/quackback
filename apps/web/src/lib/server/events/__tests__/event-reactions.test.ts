@@ -44,8 +44,10 @@ const reactions = vi.hoisted(() => ({
   confirmResolutionFromCsat: vi.fn(
     async (_conversationId: unknown, _rating: unknown, _submittedAt: unknown) => {}
   ),
-  summarizeConversationOnClose: vi.fn(async (_conversationId: unknown, _opts?: unknown) => {}),
-  summarizeTicketOnClose: vi.fn(async (_ticketId: unknown, _opts?: unknown) => {}),
+  summarizeConversationOnClose: vi.fn(
+    async (_conversationId: unknown, _close: unknown, _opts?: unknown) => {}
+  ),
+  summarizeTicketOnClose: vi.fn(async (_ticketId: unknown, _close: unknown, _opts?: unknown) => {}),
 }))
 
 vi.mock('@/lib/server/domains/sla/sla.event-hooks', () => ({
@@ -248,8 +250,15 @@ const messageIn = (
 })
 
 const slaSaw = (type: EventData['type']) => () => [expect.objectContaining({ type })]
-/** A summary gets the job's abort signal, so a deadline can cancel its AI call. */
-const summaryOf = (id: string) => [id, { signal: expect.any(AbortSignal) }]
+/**
+ * A summary gets the close that queued it (the job's own event) and the job's
+ * abort signal, so a deadline can cancel its AI calls.
+ */
+const summaryOf = (id: string) => [
+  id,
+  { eventId: expect.any(String), at: expect.any(Date) },
+  { signal: expect.any(AbortSignal) },
+]
 const ticketClosedReactions = {
   recordSlaFromEvent: slaSaw('ticket.status_changed'),
   summarizeTicketOnClose: summaryOf,
@@ -289,6 +298,11 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
 
     await runEventSummaries(summaries)
     expectReacted(ticketClosedReactions, ticketId)
+    // Bound to the close that queued it: the status event's id and time.
+    expect(reactions.summarizeTicketOnClose.mock.calls[0][1]).toEqual({
+      eventId: statusRow.eventId,
+      at: statusRow.occurredAt,
+    })
   })
 
   it('a failing target resolver does not hold the reactions back, and publishing does not spend them', async () => {
@@ -453,7 +467,7 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
         (job) => job.queue === EVENT_SUMMARIES_QUEUE
       )
       let received: AbortSignal | undefined
-      reactions.summarizeConversationOnClose.mockImplementation((_id, opts) => {
+      reactions.summarizeConversationOnClose.mockImplementation((_id, _close, opts) => {
         received = (opts as { signal?: AbortSignal } | undefined)?.signal
         return new Promise(() => {})
       })
