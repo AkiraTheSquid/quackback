@@ -15,19 +15,17 @@
  * One known difference from the event: a reply sent through the REST API with
  * an older API key whose principal is a person is stored exactly like that
  * person's inbox reply, so the rows count it as a human reply, while its own
- * event carries a service actor and settles nothing. A later human reply's
- * reaction can then settle a response clock at that API reply's time. The row
- * records nothing that tells the two apart.
+ * event carries a service actor. Its own reaction settles no first response,
+ * but any later reaction that reads the rows can settle a response clock at
+ * that API reply's time. The row records nothing that tells the two apart.
  */
 import {
   db,
   and,
   asc,
-  desc,
   eq,
   gt,
   gte,
-  lt,
   or,
   sql,
   conversationMessages,
@@ -46,10 +44,9 @@ const cycleOpener = or(
   and(eq(conversationMessages.senderType, 'agent'), eq(principal.type, 'service'))
 )
 
-async function messageTime(
+async function earliestMessageTime(
   conversationId: ConversationId,
-  where: (SQL | undefined)[],
-  order: 'earliest' | 'latest'
+  where: (SQL | undefined)[]
 ): Promise<Date | null> {
   const [row] = await db
     .select({ createdAt: conversationMessages.createdAt })
@@ -62,11 +59,7 @@ async function messageTime(
         ...where
       )
     )
-    .orderBy(
-      order === 'earliest'
-        ? asc(conversationMessages.createdAt)
-        : desc(conversationMessages.createdAt)
-    )
+    .orderBy(asc(conversationMessages.createdAt))
     .limit(1)
   return row?.createdAt ?? null
 }
@@ -76,29 +69,78 @@ export function earliestHumanReplyAfter(
   conversationId: ConversationId,
   after: Date
 ): Promise<Date | null> {
-  return messageTime(
-    conversationId,
-    [humanReply, gt(conversationMessages.createdAt, after)],
-    'earliest'
-  )
+  return earliestMessageTime(conversationId, [
+    humanReply,
+    gt(conversationMessages.createdAt, after),
+  ])
+}
+
+/** A message as the response clocks read it: a human reply, or one that opens a cycle. */
+export interface ResponseMessage {
+  at: Date
+  kind: 'reply' | 'opener'
+}
+
+/** The conversation's human replies and cycle openers written from `since` on, oldest first. */
+export async function responseMessagesSince(
+  conversationId: ConversationId,
+  since: Date
+): Promise<ResponseMessage[]> {
+  const rows = await db
+    .select({ at: conversationMessages.createdAt, reply: sql<boolean>`${humanReply}` })
+    .from(conversationMessages)
+    .leftJoin(principal, eq(principal.id, conversationMessages.principalId))
+    .where(
+      and(
+        eq(conversationMessages.conversationId, conversationId),
+        eq(conversationMessages.isInternal, false),
+        gte(conversationMessages.createdAt, since),
+        or(humanReply, cycleOpener)
+      )
+    )
+    .orderBy(asc(conversationMessages.createdAt))
+  return rows.map((row) => ({ at: row.at, kind: row.reply ? 'reply' : 'opener' }))
+}
+
+/** A next-response cycle: the message that opened it, and the reply that answered it, if any. */
+export interface ResponseCycle {
+  opener: Date
+  reply: Date | null
 }
 
 /**
- * When the last message that opens a next-response cycle was written, from
- * `from` up to but not including `before`, or null when there is none.
+ * The next-response cycles the messages make after the first response: the
+ * one given, else the first human reply after `since`. A cycle opens at the
+ * last opener before the next reply (each customer message restarts the
+ * wait, so the latest wins), and that reply answers it. An opener written at
+ * or before a reply is answered by it. The last cycle is open when no reply
+ * follows it.
  */
-export function latestCycleOpenerBetween(
-  conversationId: ConversationId,
-  from: Date,
-  before: Date
-): Promise<Date | null> {
-  return messageTime(
-    conversationId,
-    [
-      cycleOpener,
-      gte(conversationMessages.createdAt, from),
-      lt(conversationMessages.createdAt, before),
-    ],
-    'latest'
+export function responseCycles(
+  messages: ResponseMessage[],
+  since: Date,
+  firstResponse: Date | null
+): ResponseCycle[] {
+  const ordered = [...messages].sort(
+    (a, b) => a.at.getTime() - b.at.getTime() || (a.kind === 'reply' ? -1 : 1)
   )
+  let lastReply =
+    firstResponse ??
+    ordered.find((message) => message.kind === 'reply' && message.at > since)?.at ??
+    null
+  if (!lastReply) return []
+  const cycles: ResponseCycle[] = []
+  let opener: Date | null = null
+  for (const message of ordered) {
+    if (message.at <= lastReply) continue
+    if (message.kind === 'opener') {
+      opener = message.at
+      continue
+    }
+    if (opener) cycles.push({ opener, reply: message.at })
+    opener = null
+    lastReply = message.at
+  }
+  if (opener) cycles.push({ opener, reply: null })
+  return cycles
 }

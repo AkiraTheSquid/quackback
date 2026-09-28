@@ -9,10 +9,12 @@
  *     customer cycle hasn't armed yet. A VISITOR message does the opposite:
  *     it (re-)arms the next-response clock for the fresh customer-message
  *     cycle. Both are timed by the message's own createdAt, and the
- *     next-response clock reads the conversation's message rows, because the
+ *     response clocks read the conversation's message rows, because the
  *     reactions run from queued jobs that can run late or out of order (see
- *     sla.messages.ts): a visitor message whose reply already exists arms its
- *     cycle and settles it at that reply.
+ *     sla.messages.ts): the first response settles at the first reply, and
+ *     the next-response cycles are rebuilt from the rows on every message
+ *     reaction, so each answered cycle's outcome is logged once whichever
+ *     reaction runs first.
  *   - conversation.status_changed brings the pause state up to date (a
  *     conversation is paused while snoozed) and settles time-to-close on a
  *     close, with NO actor check at all. This is intentional, not an
@@ -45,7 +47,9 @@
  * reactions that run late, out of order, retried or twice leave the stamp as
  * the in-order run does, and each settle judges its clock as it stood at the
  * settle (dueAsOf). A direct paused -> closed move is reconciled before the
- * close settles, so it settles against the pause-shifted deadline.
+ * close settles, so it settles against the pause-shifted deadline. A close
+ * settles at the first close since the SLA was applied, from the status
+ * changes, and a settled clock keeps the deadline it was judged against.
  *
  * recordSlaFromEvent lets its errors propagate. It runs from the
  * event-reactions job (events/event-reactions.ts), which logs a failure and
