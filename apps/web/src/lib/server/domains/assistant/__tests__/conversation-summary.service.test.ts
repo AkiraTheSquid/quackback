@@ -174,6 +174,32 @@ describe('summarizeConversationOnClose', () => {
     expect(mockInsertValues).not.toHaveBeenCalled()
   })
 
+  it(
+    'an aborted signal cancels the in-flight provider call and writes nothing',
+    { timeout: 2_000 },
+    async () => {
+      // The provider honours the controller it is given, as fetch does.
+      let callStarted!: () => void
+      const started = new Promise<void>((resolve) => (callStarted = resolve))
+      mockChat.mockImplementation(({ abortController }: { abortController?: AbortController }) => {
+        callStarted()
+        return new Promise((_, reject) => {
+          const signal = abortController?.signal
+          if (signal?.aborted) reject(signal.reason)
+          signal?.addEventListener('abort', () => reject(signal.reason))
+        })
+      })
+      const deadline = new AbortController()
+
+      const run = summarizeConversationOnClose(CONVERSATION_ID, { signal: deadline.signal })
+      await started
+      deadline.abort(new Error('event reactions passed their deadline'))
+
+      await expect(run).resolves.toBeUndefined()
+      expect(mockInsertValues).not.toHaveBeenCalled()
+    }
+  )
+
   it('never throws when the model call fails', async () => {
     mockChat.mockRejectedValue(new Error('upstream unavailable'))
 
@@ -230,8 +256,7 @@ describe('summarizeConversationOnClose', () => {
 
     expect(mockLoadConversationThread).toHaveBeenCalledWith(CONVERSATION_ID)
     const optsArg = mockLoadConversationThread.mock.calls[0]?.[1] as
-      | { includeInternal?: boolean }
-      | undefined
+      { includeInternal?: boolean } | undefined
     expect(optsArg?.includeInternal).not.toBe(true)
   })
 

@@ -42,8 +42,8 @@ const reactions = vi.hoisted(() => ({
   recordSlaFromEvent: vi.fn(async (_event: unknown) => {}),
   autoReopenPairTicketFromEvent: vi.fn(async (_event: unknown) => {}),
   confirmResolutionFromCsat: vi.fn(async (_conversationId: unknown, _rating: unknown) => {}),
-  summarizeConversationOnClose: vi.fn(async (_conversationId: unknown) => {}),
-  summarizeTicketOnClose: vi.fn(async (_ticketId: unknown) => {}),
+  summarizeConversationOnClose: vi.fn(async (_conversationId: unknown, _opts?: unknown) => {}),
+  summarizeTicketOnClose: vi.fn(async (_ticketId: unknown, _opts?: unknown) => {}),
 }))
 
 vi.mock('@/lib/server/domains/sla/sla.event-hooks', () => ({
@@ -65,7 +65,11 @@ vi.mock('@/lib/server/domains/assistant/ticket-summary.service', () => ({
   summarizeTicketOnClose: reactions.summarizeTicketOnClose,
 }))
 
-import { EVENT_REACTIONS_QUEUE, EVENT_SUMMARIES_QUEUE } from '../event-reactions'
+import {
+  EVENT_REACTIONS_QUEUE,
+  EVENT_SUMMARIES_QUEUE,
+  REACTION_DEADLINE_MS,
+} from '../event-reactions'
 import { runEventReactions } from '../event-reactions-queue'
 import { runEventSummaries } from '../event-summaries-queue'
 import { runEventDispatch } from '../event-dispatch-queue'
@@ -243,9 +247,27 @@ const messageIn = (
 })
 
 const slaSaw = (type: EventData['type']) => () => [expect.objectContaining({ type })]
+/** A summary gets the job's abort signal, so a deadline can cancel its AI call. */
+const summaryOf = (id: string) => [id, { signal: expect.any(AbortSignal) }]
 const ticketClosedReactions = {
   recordSlaFromEvent: slaSaw('ticket.status_changed'),
-  summarizeTicketOnClose: (ticketId: string) => [ticketId],
+  summarizeTicketOnClose: summaryOf,
+}
+
+/** Park other suites' leftover rows (the shared database commits some) so `eventIds` head the FIFO. */
+async function parkOtherReactionJobs(eventIds: string[]) {
+  await testDb.execute(sql`
+    UPDATE job_queue SET run_at = now() + interval '1 day'
+    WHERE id IN (
+      SELECT id FROM job_queue
+      WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
+        AND payload->>'eventId' NOT IN (${sql.join(
+          eventIds.map((id) => sql`${id}`),
+          sql`, `
+        )})
+      FOR UPDATE SKIP LOCKED
+    )
+  `)
 }
 
 describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', () => {
@@ -326,19 +348,9 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
       steps.push(`end ${message.senderType}`)
     })
 
-    // Park other suites' leftover rows (the shared database commits some) so
-    // the FIFO head is this test's first event.
     const ours = (await eventRowsFor(conversation.id)).map((row) => row.eventId)
     expect(ours).toHaveLength(2)
-    await testDb.execute(sql`
-      UPDATE job_queue SET run_at = now() + interval '1 day'
-      WHERE id IN (
-        SELECT id FROM job_queue
-        WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
-          AND payload->>'eventId' NOT IN (${ours[0]}, ${ours[1]})
-        FOR UPDATE SKIP LOCKED
-      )
-    `)
+    await parkOtherReactionJobs(ours)
 
     // The real runner and the shipped definition, as the worker would drain it.
     __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
@@ -352,6 +364,88 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
 
     expect(steps).toEqual(['start visitor', 'end visitor', 'start agent', 'end agent'])
   })
+
+  it(
+    'a reaction that never settles fails its job at the deadline, and the next event runs',
+    { timeout: 10_000 },
+    async () => {
+      const stuck = convRef()
+      const next = convRef()
+      await dispatch.dispatchMessageCreated(actor(), messageIn(stuck, 'visitor'), stuck, true)
+      await dispatch.dispatchMessageCreated(actor(), messageIn(next, 'visitor'), next, true)
+      const [stuckRow] = await eventRowsFor(stuck.id)
+      const [nextRow] = await eventRowsFor(next.id)
+      await parkOtherReactionJobs([stuckRow.eventId, nextRow.eventId])
+
+      // The first event's SLA reaction waits on something that never answers,
+      // such as a row lock nobody releases.
+      reactions.recordSlaFromEvent.mockImplementation((event) => {
+        const { message } = (event as { data: { message?: EventMessageData } }).data
+        return message?.conversationId === stuck.id ? new Promise(() => {}) : Promise.resolve()
+      })
+
+      const deadline = REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE]
+      REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE] = 100
+      __setJobDefinitionsForTests(
+        JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE)
+      )
+      try {
+        // The stuck job fails at its deadline and is requeued for a retry...
+        expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
+          claimed: 1,
+          retrying: 1,
+        })
+        // ...which releases the lane, so the next event's reactions run.
+        expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
+          claimed: 1,
+          succeeded: 1,
+        })
+      } finally {
+        REACTION_DEADLINE_MS[EVENT_REACTIONS_QUEUE] = deadline
+        __setJobDefinitionsForTests(null)
+      }
+
+      expect(eventsSeenBySla().map((event) => event.data)).toEqual([
+        expect.objectContaining({ conversation: expect.objectContaining({ id: stuck.id }) }),
+        expect.objectContaining({ conversation: expect.objectContaining({ id: next.id }) }),
+      ])
+      const [job] = getExecuteRows<{ status: string; attempts: number; last_error: string }>(
+        await testDb.execute(sql`
+          SELECT status, attempts, last_error FROM job_queue
+          WHERE queue = ${EVENT_REACTIONS_QUEUE} AND payload->>'eventId' = ${stuckRow.eventId}
+        `)
+      )
+      expect(job).toMatchObject({ status: 'pending', attempts: 1 })
+      expect(job.last_error).toMatch(/deadline/)
+    }
+  )
+
+  it(
+    'a summary still running at its deadline has its AI call aborted',
+    { timeout: 5_000 },
+    async () => {
+      const conversation = convRef()
+      await dispatch.dispatchConversationStatusChanged(actor(), conversation, 'open', 'closed')
+      const [row] = await eventRowsFor(conversation.id)
+      const summaries = (await reactionJobsFor(row.eventId)).find(
+        (job) => job.queue === EVENT_SUMMARIES_QUEUE
+      )
+      let received: AbortSignal | undefined
+      reactions.summarizeConversationOnClose.mockImplementation((_id, opts) => {
+        received = (opts as { signal?: AbortSignal } | undefined)?.signal
+        return new Promise(() => {})
+      })
+
+      const deadline = REACTION_DEADLINE_MS[EVENT_SUMMARIES_QUEUE]
+      REACTION_DEADLINE_MS[EVENT_SUMMARIES_QUEUE] = 50
+      try {
+        await expect(runEventSummaries(summaries!)).rejects.toThrow(/deadline/)
+      } finally {
+        REACTION_DEADLINE_MS[EVENT_SUMMARIES_QUEUE] = deadline
+      }
+      expect(received?.aborted).toBe(true)
+    }
+  )
 
   it('a failing reaction does not starve the others on its job, and fails the job so it retries', async () => {
     const conversation = convRef()
@@ -433,7 +527,7 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
       queues: [EVENT_REACTIONS_QUEUE, EVENT_SUMMARIES_QUEUE],
       expected: {
         recordSlaFromEvent: slaSaw('conversation.status_changed'),
-        summarizeConversationOnClose: (id) => [id],
+        summarizeConversationOnClose: summaryOf,
       },
     },
     {

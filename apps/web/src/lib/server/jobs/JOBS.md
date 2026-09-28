@@ -534,6 +534,14 @@ and a crash after the event is published cannot lose one. `event-summaries`
 (the close summaries) runs concurrently, so a slow AI call cannot hold up an
 SLA clock.
 
+Each job's reactions share a deadline (`REACTION_DEADLINE_MS` in
+`events/event-reactions.ts`: 30 s for `event-reactions`, 120 s for the
+summaries). Past it the job fails, which frees its lane, and retries or is
+dropped per the queue's `maxAttempts`; the job's abort signal cancels a
+summary's AI call. A database call that cannot be cancelled keeps running in
+the background, and its retry may overlap it, which the reactions tolerate
+because their writes are guarded on the state they read.
+
 `event-reactions` (SLA clocks, pair-ticket reopen, CSAT confirm) runs one job
 at a time per worker process, claimed in enqueue order, so in the common case
 its reactions apply in event order. That is all it guarantees. The order is

@@ -151,6 +151,32 @@ describe('summarizeTicketOnClose', () => {
     expect(values.embeddingUpdatedAt).toBeInstanceOf(Date)
   })
 
+  it(
+    'an aborted signal cancels the in-flight provider call and writes nothing',
+    { timeout: 2_000 },
+    async () => {
+      // The provider honours the controller it is given, as fetch does.
+      let callStarted!: () => void
+      const started = new Promise<void>((resolve) => (callStarted = resolve))
+      mockChat.mockImplementation(({ abortController }: { abortController?: AbortController }) => {
+        callStarted()
+        return new Promise((_, reject) => {
+          const signal = abortController?.signal
+          if (signal?.aborted) reject(signal.reason)
+          signal?.addEventListener('abort', () => reject(signal.reason))
+        })
+      })
+      const deadline = new AbortController()
+
+      const run = summarizeTicketOnClose(TICKET_ID, { signal: deadline.signal })
+      await started
+      deadline.abort(new Error('event reactions passed their deadline'))
+
+      await expect(run).resolves.toBeUndefined()
+      expect(mockInsertValues).not.toHaveBeenCalled()
+    }
+  )
+
   it('swallows a malformed model response (never throws, writes nothing)', async () => {
     // With outputSchema, chat() validates and rejects on a non-conforming
     // response; the outer best-effort catch logs and swallows it.

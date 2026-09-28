@@ -38,6 +38,7 @@ import {
   isAiClientConfigured,
   structuredOutputProviderOptions,
 } from '@/lib/server/domains/ai/config'
+import { abortControllerFor } from '@/lib/server/domains/ai/abort'
 import { createUsageLoggingMiddleware } from '@/lib/server/domains/ai/usage-middleware'
 import { getChatModel, getEmbeddingModel } from '@/lib/server/domains/ai/models'
 import { enforceAiTokenBudget } from '@/lib/server/domains/settings/tier-enforce'
@@ -75,9 +76,13 @@ const TicketSummarySchema = z.object({ summary: z.string() })
  * isn't configured — mirrors `summarizeConversationOnClose`'s guard — and
  * never throws: every failure path (missing ticket, empty transcript,
  * malformed model output, a DB or provider error) is logged and swallowed,
- * since this runs fire-and-forget off the ticket-close event.
+ * since this runs off the ticket-close event. `signal` (the reaction job's
+ * deadline) aborts the provider call.
  */
-export async function summarizeTicketOnClose(ticketId: TicketId): Promise<void> {
+export async function summarizeTicketOnClose(
+  ticketId: TicketId,
+  opts: { signal?: AbortSignal } = {}
+): Promise<void> {
   try {
     await enforceAiTokenBudget()
 
@@ -117,6 +122,7 @@ export async function summarizeTicketOnClose(ticketId: TicketId): Promise<void> 
       messages: [{ role: 'user', content: truncated }],
       outputSchema: TicketSummarySchema,
       stream: false,
+      abortController: abortControllerFor(opts.signal),
       modelOptions: { max_tokens: 400, ...structuredOutputProviderOptions() },
       middleware: [
         createUsageLoggingMiddleware({

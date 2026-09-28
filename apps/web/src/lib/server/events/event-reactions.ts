@@ -62,7 +62,24 @@ export const EVENT_REACTIONS = {
 
 export type ReactionQueue = keyof typeof EVENT_REACTIONS
 export type ReactionName<Q extends ReactionQueue> = keyof (typeof EVENT_REACTIONS)[Q] & string
-export type ReactionRun = (event: EventData) => Promise<void> | undefined
+/**
+ * One reaction. `signal` aborts at the job's deadline; a reaction that can
+ * cancel its work (an AI call) passes it on.
+ */
+export type ReactionRun = (event: EventData, signal: AbortSignal) => Promise<void> | undefined
+
+/**
+ * How long one event's reactions on each queue may run before the job fails.
+ * A reaction blocked on a row lock or a stalled provider would otherwise hold
+ * its job, and on `event-reactions` the one lane, until the process restarts.
+ * At the deadline the job fails, which frees the lane, and retries or is
+ * dropped per the queue's `maxAttempts`. The summaries wait on an AI provider,
+ * so they get longer.
+ */
+export const REACTION_DEADLINE_MS: Record<ReactionQueue, number> = {
+  [EVENT_REACTIONS_QUEUE]: 30_000,
+  [EVENT_SUMMARIES_QUEUE]: 120_000,
+}
 
 const QUEUES = Object.keys(EVENT_REACTIONS) as ReactionQueue[]
 
@@ -83,6 +100,11 @@ export function reactionQueuesFor(type: string): ReactionQueue[] {
  * then fails the job, which retries the event's reactions on that queue: they
  * are idempotent against a repeat of the same event, and most already swallow
  * their own errors.
+ *
+ * The reactions share a deadline (REACTION_DEADLINE_MS). Past it the job fails
+ * and its signal aborts. A reaction that cannot be cancelled (a database call)
+ * keeps running in the background, and a retry can overlap it, which the
+ * reactions tolerate: their writes are guarded on the state they read.
  */
 export async function runReactionJob<Q extends ReactionQueue>(
   queue: Q,
@@ -103,9 +125,40 @@ export async function runReactionJob<Q extends ReactionQueue>(
 
   const event = toLegacyEvent(hydrateEvent(row))
   const matching = reactionsFor(queue, event.type)
-  const results = await Promise.allSettled(
-    matching.map((name) => Promise.resolve().then(() => runs[name](event)))
+  const deadlineMs = REACTION_DEADLINE_MS[queue]
+  const controller = new AbortController()
+  const running = new Set<string>(matching)
+  const settled = Promise.allSettled(
+    matching.map((name) =>
+      Promise.resolve()
+        .then(() => runs[name](event, controller.signal))
+        .finally(() => running.delete(name))
+    )
   )
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<'deadline'>((resolve) => {
+    timer = setTimeout(() => resolve('deadline'), deadlineMs)
+    timer.unref?.()
+  })
+  const results = await Promise.race([settled, deadline]).finally(() => clearTimeout(timer))
+  if (results === 'deadline') {
+    const stuck = [...running]
+    const err = new Error(
+      `event reactions passed their ${deadlineMs}ms deadline: ${stuck.join(', ')}`
+    )
+    controller.abort(err)
+    log.error(
+      {
+        event_type: event.type,
+        event_id: eventId,
+        queue,
+        reactions: stuck,
+        deadline_ms: deadlineMs,
+      },
+      'event reactions passed their deadline, failing the job'
+    )
+    throw err
+  }
 
   const failures = results.flatMap((result, i) =>
     result.status === 'rejected' ? [{ reaction: matching[i], err: result.reason }] : []

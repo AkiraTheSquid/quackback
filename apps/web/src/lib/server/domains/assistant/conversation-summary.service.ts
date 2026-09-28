@@ -33,6 +33,7 @@ import {
   isAiClientConfigured,
   structuredOutputProviderOptions,
 } from '@/lib/server/domains/ai/config'
+import { abortControllerFor } from '@/lib/server/domains/ai/abort'
 import { createUsageLoggingMiddleware } from '@/lib/server/domains/ai/usage-middleware'
 import { getChatModel, getEmbeddingModel } from '@/lib/server/domains/ai/models'
 import { enforceAiTokenBudget } from '@/lib/server/domains/settings/tier-enforce'
@@ -106,10 +107,14 @@ async function loadConversationSummaryInput(conversationId: ConversationId) {
  * `summary` chat model isn't configured — mirrors
  * `generateAndSavePostSummary`'s guard — and never throws: every failure path
  * (missing conversation, empty transcript, malformed model output, a DB or
- * provider error) is logged and swallowed, since this runs fire-and-forget
- * off the conversation-close event.
+ * provider error) is logged and swallowed, since this runs off the
+ * conversation-close event. `signal` (the reaction job's deadline) aborts the
+ * provider call.
  */
-export async function summarizeConversationOnClose(conversationId: ConversationId): Promise<void> {
+export async function summarizeConversationOnClose(
+  conversationId: ConversationId,
+  opts: { signal?: AbortSignal } = {}
+): Promise<void> {
   try {
     const input = await loadConversationSummaryInput(conversationId)
     if (!input) return
@@ -128,6 +133,7 @@ export async function summarizeConversationOnClose(conversationId: ConversationI
       messages: [{ role: 'user', content: transcript }],
       outputSchema: ConversationSummarySchema,
       stream: false,
+      abortController: abortControllerFor(opts.signal),
       modelOptions: { max_tokens: 400, ...structuredOutputProviderOptions() },
       middleware: [
         createUsageLoggingMiddleware({

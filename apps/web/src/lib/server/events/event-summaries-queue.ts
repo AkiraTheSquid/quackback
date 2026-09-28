@@ -11,18 +11,20 @@ import { EVENT_SUMMARIES_QUEUE, runReactionJob } from './event-reactions'
 
 export function runEventSummaries(job: ClaimedJob): Promise<void> {
   return runReactionJob(EVENT_SUMMARIES_QUEUE, job, {
-    'conversation-summary': (event) => {
+    'conversation-summary': (event, signal) => {
       if (event.type !== 'conversation.status_changed' || event.data.newStatus !== 'closed') {
         return undefined
       }
-      return summarizeConversationOnClose(event.data.conversation.id as ConversationId)
+      return summarizeConversationOnClose(event.data.conversation.id as ConversationId, {
+        signal,
+      })
     },
     // Ticket status is a category ('open' | 'pending' | 'closed').
-    'ticket-summary': (event) => {
+    'ticket-summary': (event, signal) => {
       if (event.type !== 'ticket.status_changed' || event.data.newStatus !== 'closed') {
         return undefined
       }
-      return summarizeTicketOnClose(event.data.ticket.id as TicketId)
+      return summarizeTicketOnClose(event.data.ticket.id as TicketId, { signal })
     },
   })
 }
