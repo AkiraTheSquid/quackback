@@ -168,9 +168,11 @@ export async function summarizeConversationOnClose(
     // Best-effort: a failed/unavailable embedding still saves the summary
     // text (retrieval's keyword fallback can still use it), just without the
     // semantic ranking path.
-    const embedding = await generateEmbedding(summaryText, {
-      pipelineStep: 'assistant_summary_embedding',
-    })
+    const embedding = await generateEmbedding(
+      summaryText,
+      { pipelineStep: 'assistant_summary_embedding' },
+      { signal: opts.signal }
+    )
 
     const values = {
       conversationId,

@@ -294,6 +294,30 @@ describe.skipIf(!fixture.available)('a close summary bound to its close', () => 
     expect(await conversationSummary(conversationId)).toBe('The newer close.')
   })
 
+  it('an attempt past its deadline writes nothing, even when a call ignores the abort', async () => {
+    const { conversationId } = await seedConversation()
+    const close = await setConversationStatus(conversationId, 'closed', 'open', '09:20')
+    // The embedding call is handed the deadline, and settles only after it
+    // passes, as a request that ignores the abort would.
+    let embeddingStarted!: () => void
+    const started = new Promise<void>((resolve) => (embeddingStarted = resolve))
+    ai.generateEmbedding.mockImplementation(
+      (_text: string, _context: unknown, opts?: { signal?: AbortSignal }) =>
+        new Promise((resolve) => {
+          embeddingStarted()
+          opts?.signal?.addEventListener('abort', () => resolve(EMBEDDING))
+        })
+    )
+    const deadline = new AbortController()
+
+    const run = summarizeConversationOnClose(conversationId, close, { signal: deadline.signal })
+    await started
+    deadline.abort(new Error('event reactions passed their deadline'))
+    await run
+
+    expect(await conversationSummary(conversationId)).toBeNull()
+  })
+
   it("summarizes a ticket's messages up to its close, not after", async () => {
     const { ticketId, write, setStatus } = await seedTicket()
     const close = await setStatus('closed', 'open', '09:20')
@@ -327,6 +351,28 @@ describe.skipIf(!fixture.available)('a close summary bound to its close', () => 
     await summarizeTicketOnClose(ticketId, first)
 
     expect(ai.chat).not.toHaveBeenCalled()
+    expect(await ticketSummary(ticketId)).toBeNull()
+  })
+
+  it('a ticket summary past its deadline writes nothing', async () => {
+    const { ticketId, setStatus } = await seedTicket()
+    const close = await setStatus('closed', 'open', '09:20')
+    let embeddingStarted!: () => void
+    const started = new Promise<void>((resolve) => (embeddingStarted = resolve))
+    ai.generateEmbedding.mockImplementation(
+      (_text: string, _context: unknown, opts?: { signal?: AbortSignal }) =>
+        new Promise((resolve) => {
+          embeddingStarted()
+          opts?.signal?.addEventListener('abort', () => resolve(null))
+        })
+    )
+    const deadline = new AbortController()
+
+    const run = summarizeTicketOnClose(ticketId, close, { signal: deadline.signal })
+    await started
+    deadline.abort(new Error('event reactions passed their deadline'))
+    await run
+
     expect(await ticketSummary(ticketId)).toBeNull()
   })
 })

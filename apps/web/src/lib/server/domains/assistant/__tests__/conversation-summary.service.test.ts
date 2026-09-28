@@ -159,7 +159,8 @@ describe('summarizeConversationOnClose', () => {
 
     expect(mockGenerateEmbedding).toHaveBeenCalledWith(
       'Customer was double-charged for their March invoice; refunded the duplicate.',
-      expect.objectContaining({ pipelineStep: expect.any(String) })
+      expect.objectContaining({ pipelineStep: expect.any(String) }),
+      { signal: undefined }
     )
 
     expect(mockInsertValues).toHaveBeenCalledWith(
