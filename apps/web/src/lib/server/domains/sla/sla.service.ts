@@ -36,6 +36,7 @@ import { getOfficeHoursSchedule } from '../settings/settings.office-hours'
 import { logger } from '@/lib/server/logger'
 import {
   earliestHumanReplyAfter,
+  latestOpenersBetween,
   responseCycles,
   responseMessagesSince,
   type ResponseCycle,
@@ -677,7 +678,8 @@ export function shiftIso(iso: string, ms: number): string {
  *
  * The rows are read from the armed cycle's opener on once the stamp records
  * the first response (see cycleReadFrom), so a reaction reads the messages of
- * the current cycle, not the conversation's whole history.
+ * the current cycle, not the conversation's whole history. A cycle an earlier
+ * build armed without recording its opener is adopted first (adoptArmedCycle).
  */
 export async function rearmNextResponse(
   conversationId: ConversationId,
@@ -702,6 +704,14 @@ async function syncNextResponse(
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.nextResponseTargetSecs || !applied.firstResponseDueAt) return
     if (predatesApplication(own.at, applied, { conversation_id: conversationId })) return
+    if (applied.nextResponseDueAt && !applied.nextResponseCycleAt) {
+      const adopted = await adoptArmedCycle(conversationId, applied, own.at)
+      if (adopted === 'missed') {
+        applied = await loadSlaApplied(conversationId)
+        continue
+      }
+      if (adopted) applied = adopted
+    }
     const cycles = responseCycles(
       await knownResponseMessages(conversationId, applied, own),
       new Date(applied.appliedAt),
@@ -766,6 +776,68 @@ function cycleReadFrom(applied: SlaApplied): Date {
     .filter((at): at is string => Boolean(at))
     .map((at) => new Date(at).getTime())
   return new Date(Math.max(...bounds))
+}
+
+/** How many openers the adoption of an earlier build's cycle looks back through. */
+const ADOPTION_CANDIDATES = 20
+
+/**
+ * A stamp an earlier build armed records its cycle's deadline, and its reply
+ * once answered, but not the message that opened it. Adopt that cycle once, so
+ * the stamp then behaves as one this build armed: a reply to it settles it
+ * (after a sweep breach, as a settle after the breach), and the rows are read
+ * from it on. The opener is the latest cycle opener after the first response,
+ * written before the message this reaction is for and before the cycle's
+ * reply (or at or before its deadline), whose own office-hours deadline is no
+ * later than the stamp's. The earlier build reacted to every message before
+ * the first one this build reacts to, and armed the cycle from its opener's
+ * time; a pause only ever moved that deadline later. The reacting message is
+ * left out because, with office hours, it can give the same deadline.
+ *
+ * Written alone, pinned to the cycle fields read. Returns the adopted stamp,
+ * null when there is nothing to adopt, or 'missed' when a concurrent write
+ * moved the cycle first.
+ */
+async function adoptArmedCycle(
+  conversationId: ConversationId,
+  applied: SlaApplied,
+  reactingAt: Date
+): Promise<SlaApplied | null | 'missed'> {
+  const due = applied.nextResponseDueAt
+  if (!due || !applied.firstResponseAt || !applied.nextResponseTargetSecs) return null
+  const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
+  if (!schedule) return null
+  const before = Math.min(
+    reactingAt.getTime(),
+    applied.nextResponseAt ? Date.parse(applied.nextResponseAt) : Date.parse(due) + 1
+  )
+  const candidates = await latestOpenersBetween(
+    conversationId,
+    new Date(Math.max(Date.parse(applied.firstResponseAt), Date.parse(applied.appliedAt))),
+    new Date(before),
+    ADOPTION_CANDIDATES
+  )
+  const target = applied.nextResponseTargetSecs
+  const opener = candidates.find(
+    (candidate) =>
+      addOfficeHoursSeconds(schedule, candidate, target).getTime() <= new Date(due).getTime()
+  )
+  if (!opener) return null
+  const patch = { nextResponseCycleAt: opener.toISOString() }
+  const landed = await commitStamp(
+    conversationId,
+    patch,
+    reactingAt,
+    { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null },
+    {
+      pinnedFields: {
+        nextResponseCycleAt: null,
+        nextResponseDueAt: due,
+        nextResponseAt: applied.nextResponseAt ?? null,
+      },
+    }
+  )
+  return landed ? { ...applied, ...patch } : 'missed'
 }
 
 /** When the armed next-response cycle opened, when the stamp records it. */

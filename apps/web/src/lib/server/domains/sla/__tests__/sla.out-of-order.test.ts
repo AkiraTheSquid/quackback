@@ -48,6 +48,7 @@ import {
 } from '../sla.service'
 import { sweepOverdueSlaBreaches } from '../sla.sweep'
 import { recordSlaFromEvent } from '../sla.event-hooks'
+import { recordStatusChange } from './status-history'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -355,5 +356,120 @@ describe.skipIf(!fixture.available)('response clocks from replies reacted to out
     await recordSlaFromEvent(await write(thread, 'agent', '11:00'))
 
     expect((await stampOf(thread.conversationId)).nextResponseAt).toBe(iso('11:00'))
+  })
+})
+
+/**
+ * Leave the stamp as an earlier build writes it: the cycle's deadline (and its
+ * reply, once answered), with no record of the message that opened the cycle
+ * and no pause ledger.
+ */
+async function armedByEarlierBuild(
+  conversationId: ConversationId,
+  cycle: { nextResponseDueAt: string; nextResponseAt?: string } & Record<string, unknown>
+) {
+  await testDb
+    .update(conversations)
+    .set({
+      slaApplied: sql`(${conversations.slaApplied} - 'nextResponseCycleAt' - 'pausedSpans' - 'pauseRevision') || ${JSON.stringify(
+        { nextResponseAt: null, ...cycle }
+      )}::jsonb`,
+    })
+    .where(eq(conversations.id, conversationId))
+}
+
+describe.skipIf(!fixture.available)('a cycle an earlier build armed', () => {
+  beforeEach(fixture.begin)
+  afterEach(fixture.rollback)
+
+  it('a reply after a sweep breach settles it after the breach, as the earlier build did', async () => {
+    const thread = await seedAnsweredThread()
+    await write(thread, 'visitor', '11:00')
+    await armedByEarlierBuild(thread.conversationId, { nextResponseDueAt: iso('13:00') })
+    // After the upgrade the sweep notes the breach, then the reply is written.
+    await sweepOverdueSlaBreaches(at('13:05'))
+
+    await recordSlaFromEvent(await write(thread, 'agent', '13:10'))
+
+    expect(await stampOf(thread.conversationId)).toMatchObject({
+      nextResponseCycleAt: iso('11:00'),
+      nextResponseAt: iso('13:10'),
+      nextResponseBreachedAt: iso('13:05'),
+    })
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_breached', dueAt: iso('13:00'), at: iso('13:05') },
+      { kind: 'next_response_settled_after_breach', dueAt: iso('13:00'), at: iso('13:10') },
+    ])
+  })
+
+  it('a customer message after the upgrade restarts the wait from itself', async () => {
+    const thread = await seedAnsweredThread()
+    await write(thread, 'visitor', '11:00')
+    await armedByEarlierBuild(thread.conversationId, { nextResponseDueAt: iso('13:00') })
+
+    await recordSlaFromEvent(await write(thread, 'visitor', '11:30'))
+
+    // The earlier build armed 11:00; this message is the latest, so the wait
+    // runs from it, as it would have on the earlier build.
+    expect(await stampOf(thread.conversationId)).toMatchObject({
+      nextResponseCycleAt: iso('11:30'),
+      nextResponseDueAt: iso('13:30'),
+      nextResponseAt: null,
+    })
+  })
+
+  it('under office hours, a message after the upgrade that gives the same deadline still restarts the wait', async () => {
+    const thread = await seedAnsweredThread()
+    await write(thread, 'visitor', '18:00')
+    // The earlier build armed 18:00 on weekday hours (due Tuesday 11:00) and
+    // paused at a snooze at 18:30.
+    await recordStatusChange('conversation', thread.conversationId, 'open', 'snoozed', at('18:30'))
+    await armedByEarlierBuild(thread.conversationId, {
+      nextResponseDueAt: '2026-01-06T11:00:00.000Z',
+      pausedAt: iso('18:30'),
+      scheduleSnapshot: {
+        timezone: 'UTC',
+        intervals: [1, 2, 3, 4, 5].map((day) => ({ day, start: '09:00', end: '17:00' })),
+        holidays: [],
+      },
+    })
+
+    // The customer writes at 19:00, which wakes the snooze. This message gives
+    // the same deadline as the 18:00 one, and the earlier build would have
+    // restarted the wait from it: due Tuesday 11:00, not the 18:00 cycle's
+    // deadline pushed out by the half-hour snooze.
+    await recordSlaFromEvent(await write(thread, 'visitor', '19:00'))
+
+    expect(await stampOf(thread.conversationId)).toMatchObject({
+      nextResponseCycleAt: iso('19:00'),
+      nextResponseDueAt: '2026-01-06T11:00:00.000Z',
+      pausedAt: null,
+    })
+  })
+
+  it('the outcome the earlier build logged for an answered cycle is not logged again', async () => {
+    const thread = await seedAnsweredThread()
+    await write(thread, 'visitor', '11:00')
+    await write(thread, 'agent', '11:30')
+    await armedByEarlierBuild(thread.conversationId, {
+      nextResponseDueAt: iso('13:00'),
+      nextResponseAt: iso('11:30'),
+    })
+    // The outcome the earlier build logged, without naming its cycle.
+    await testDb.insert(slaEvents).values({
+      conversationId: thread.conversationId,
+      policyId: (await stampOf(thread.conversationId)).policyId,
+      kind: 'next_response_met',
+      meta: { dueAt: iso('13:00'), at: iso('11:30'), overdueSecs: 0 },
+    })
+
+    await recordSlaFromEvent(await write(thread, 'visitor', '12:00'))
+
+    expect((await stampOf(thread.conversationId)).nextResponseCycleAt).toBe(iso('12:00'))
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_met', dueAt: iso('13:00'), at: iso('11:30') },
+      // The 12:00 cycle, unanswered, breaches at the 23:00 sweep.
+      { kind: 'next_response_breached', dueAt: iso('14:00'), at: iso('23:00') },
+    ])
   })
 })

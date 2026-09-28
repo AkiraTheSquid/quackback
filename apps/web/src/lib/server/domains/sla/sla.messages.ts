@@ -23,9 +23,11 @@ import {
   db,
   and,
   asc,
+  desc,
   eq,
   gt,
   gte,
+  lt,
   or,
   sql,
   conversationMessages,
@@ -103,6 +105,34 @@ export async function responseMessagesSince(
     )
     .orderBy(asc(conversationMessages.createdAt))
   return rows.map((row) => ({ at: row.at, kind: row.reply ? 'reply' : 'opener' }))
+}
+
+/**
+ * The cycle openers written after `after` and before `before`, latest first,
+ * at most `limit` of them: a bounded backward read of the conversation's
+ * index.
+ */
+export async function latestOpenersBetween(
+  conversationId: ConversationId,
+  after: Date,
+  before: Date,
+  limit: number
+): Promise<Date[]> {
+  const rows = await db
+    .select({ at: conversationMessages.createdAt })
+    .from(conversationMessages)
+    .where(
+      and(
+        eq(conversationMessages.conversationId, conversationId),
+        eq(conversationMessages.isInternal, false),
+        gt(conversationMessages.createdAt, after),
+        lt(conversationMessages.createdAt, before),
+        cycleOpener
+      )
+    )
+    .orderBy(desc(conversationMessages.createdAt))
+    .limit(limit)
+  return rows.map((row) => row.at)
 }
 
 /** A next-response cycle: the message that opened it, and the reply that answered it, if any. */

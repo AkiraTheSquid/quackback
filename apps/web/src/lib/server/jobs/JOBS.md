@@ -605,9 +605,14 @@ remove it. The known remaining effects:
   the next wake.
 - **Stamps from before this build.** A stamp without `pausedSpans` takes the
   completed spans in its history as already excluded, which holds when its
-  resumes ran. A cycle without `nextResponseCycleAt` is rebuilt from the
-  messages at the next message reaction, its deadline recomputed from its
-  opener plus the spans the stamp has excluded.
+  resumes ran. A cycle armed without `nextResponseCycleAt` is adopted at the
+  next message reaction: its opener is the latest customer message (before its
+  reply, or at or before its deadline) whose own deadline is no later than the
+  stamp's, read from at most 20 of them. The adopted cycle keeps its deadline
+  and breach marker, so a reply after a sweep breach logs a settle after the
+  breach, as the earlier build did. When none of those messages fits, the
+  cycle is rebuilt from the messages instead, its deadline recomputed from
+  its opener plus the spans the stamp has excluded.
 - **An older build's resume does not record its span.** During a rollout
   overlap, a resume run by an older build shifts the deadlines without adding
   the span to `pausedSpans`, so the next reconcile excludes that span a second
