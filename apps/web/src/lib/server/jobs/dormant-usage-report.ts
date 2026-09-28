@@ -43,7 +43,7 @@ interface Checked {
   month: string
   /** Set after a failure: when to try again. Absent once the month is settled. */
   retryAt?: number
-  /** The report was queued but the wake failed; the retry must wake. */
+  /** A report was queued but the wake failed; the retry must wake, in any month. */
   wakePending?: boolean
 }
 
@@ -71,7 +71,9 @@ export async function catchUpDormantUsageReports(
     if (prior?.month === month && (prior.retryAt === undefined || now.getTime() < prior.retryAt))
       continue
     asked += 1
-    let wakePending = prior?.month === month && prior.wakePending === true
+    // A pending wake outlives a month boundary: the report it was for is still
+    // queued, and the new month's report may already exist and insert nothing.
+    let wakePending = prior?.wakePending === true
     try {
       const { inserted } = await d.enqueueIn(key, month)
       if (inserted) {

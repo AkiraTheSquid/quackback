@@ -89,6 +89,28 @@ describe('catchUpDormantUsageReports', () => {
     expect(d.wake).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps a pending wake when its retry falls in a new month whose report is already queued', async () => {
+    let calls = 0
+    const d = deps({
+      dormant: () => ['ws_a'],
+      // August's report is queued by this worker; September's by another.
+      enqueueIn: vi.fn(async () => ({ inserted: calls++ === 0 })),
+      wake: vi
+        .fn<DormantUsageReportDeps['wake']>()
+        .mockRejectedValueOnce(new Error('lookup failed'))
+        .mockResolvedValue(undefined),
+    })
+    d.setNow(new Date('2026-09-30T23:30:00Z'))
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(1)
+
+    // The retry runs in October, so it asks for September, which is already queued.
+    d.setNow(new Date(Date.parse('2026-09-30T23:30:00Z') + DORMANT_REPORT_RETRY_MS + 1))
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(2)
+    expect(d.wake).toHaveBeenLastCalledWith('ws_a')
+  })
+
   it('does not wake on a retry after a failed queue that finds the month already reported', async () => {
     const d = deps({
       dormant: () => ['ws_b'],
