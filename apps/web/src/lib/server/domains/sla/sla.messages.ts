@@ -11,6 +11,13 @@
  * API keys and workflow blocks never satisfy a response clock), and every
  * other public message opens a next-response cycle: a visitor's, or a service
  * principal's. Internal notes and system notices are neither.
+ *
+ * One known difference from the event: a reply sent through the REST API with
+ * an older API key whose principal is a person is stored exactly like that
+ * person's inbox reply, so the rows count it as a human reply, while its own
+ * event carries a service actor and settles nothing. A later human reply's
+ * reaction can then settle a response clock at that API reply's time. The row
+ * records nothing that tells the two apart.
  */
 import {
   db,

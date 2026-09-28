@@ -555,12 +555,46 @@ not global:
 - a queue drained after a rollback runs old jobs late.
 
 So the reactions that would go wrong out of order read the database instead of
-relying on it. The next-response clock reads the conversation's message rows
-(`domains/sla/sla.messages.ts`): a customer message whose reply already exists
-arms its cycle and settles it at that reply, and a message never re-arms over
-a cycle the clock has already moved past. The pair-ticket reopen leaves
-standing a close made after the message, and writes only on the status it
-read.
+relying on it:
+
+- The response clocks read the conversation's message rows
+  (`domains/sla/sla.messages.ts`). A customer message whose reply already
+  exists arms its cycle and settles it at that reply. A message never re-arms
+  a cycle opened by the same or a later message: the stamp records which
+  message opened the cycle. A reply settles at the first human reply after the
+  customer message it answers.
+- A pause or resume checks the conversation's (or ticket's) status when it
+  runs: a resume is skipped while it is snoozed or pending again, and a pause
+  once it no longer is.
+- The pair-ticket reopen leaves the ticket alone when its status moved after
+  the message (a close, read from the row, or any move its activity log
+  records), and writes only on the status it read.
+
+That narrows what a late, retried or replayed reaction can do; it does not
+remove it. The known remaining effects:
+
+- **A late reply can settle the next message's cycle.** When a reply's reaction
+  runs after the reaction for the customer's next message, it settles that
+  newer cycle at the reply's earlier time. The result is a false "met" that
+  hides the newer message's breach, and the older cycle's own outcome is never
+  logged.
+- **A pause that runs late can be dropped.** A pause whose reaction runs only
+  after the conversation left snoozed (or the ticket left pending) is skipped,
+  so that span is not excluded and the sweep can record a breach an in-order
+  run would not. A stale pause that lands while a later snooze is current
+  pauses from the earlier time, which excludes more than the snooze lasted.
+- **A customer message right after a snooze may not resume the clock.** The
+  pause is stamped with the status event's time, written just after the status
+  commits, so a customer message written within milliseconds of a snooze can
+  read as earlier than the pause. The clock then stays paused while the
+  conversation is open, until the next resume.
+- **A measurement can be lost.** A cycle that a later customer message
+  superseded out of order is never measured.
+- **A late reopen can still run.** The activity log is written best-effort, so
+  a status move whose record failed to land does not stop a late reopen.
+- **A late CSAT confirm confirms the current involvement.** It acts on
+  whichever assistant involvement is active when it runs, which can be a later
+  one.
 
 **Rolling back to a build that predates the reaction queues.** A worker built
 before `event-reactions` and `event-summaries` has no definition for either,
@@ -595,14 +629,14 @@ DELETE FROM job_queue
 WHERE queue IN ('event-reactions', 'event-summaries') AND status = 'pending';
 ```
 
-Dropping those few reactions is better than running them days later. If some
-are left and run late after a later roll-forward, that replay is harmless to
-what customers and agents see: the next-response clock reads the
-conversation's messages, so a stale message cannot re-arm a clock or record a
-false breach, and a stale pair-ticket reopen leaves standing a close made
-after the message. One effect remains: a replayed snooze or pending status
-change can pause a clock again, which holds back breach recording for that
-conversation or ticket until its next resume.
+Dropping those few reactions is better than running them days later. Any
+left behind and run after a later roll-forward are subject to the remaining
+effects listed above, with days of later activity to collide with instead of
+seconds.
+
+An install that runs web and worker as one process cannot roll them back
+separately: its in-flight reaction rows are left behind at the rollback, so
+run step 4's purge once the older build is up.
 
 ## 11. Running the evidence
 

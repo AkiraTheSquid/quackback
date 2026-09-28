@@ -18,10 +18,12 @@
  *   not a global order: a retry runs behind later jobs, two worker processes
  *   each run one, a crashed job re-runs once its lease lapses, and a queue
  *   drained after a rollback runs old jobs late. So these reactions read the
- *   database rather than rely on the order: the next-response clock reads the
- *   conversation's messages (`domains/sla/sla.messages.ts`) and the pair-ticket
- *   reopen leaves a later close standing. Its handler is
- *   `event-reactions-queue.ts`.
+ *   database rather than rely on the order: the response clocks read the
+ *   conversation's messages (`domains/sla/sla.messages.ts`), a pause or resume
+ *   checks the entity's current status, and the pair-ticket reopen leaves a
+ *   later status move standing. That narrows what a late or retried reaction
+ *   can do without removing it; JOBS.md §10 lists what can still differ from
+ *   an in-order run. Its handler is `event-reactions-queue.ts`.
  * - `event-summaries` holds the close summaries: slow AI calls that do not
  *   depend on order, kept off the serial queue so a slow provider cannot hold
  *   up an SLA clock. Its handler is `event-summaries-queue.ts`.
