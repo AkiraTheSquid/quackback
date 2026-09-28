@@ -8,7 +8,16 @@
  * system-initiated action).
  */
 
-import { db, ticketActivity, eq, desc, principal as principalTable } from '@/lib/server/db'
+import {
+  db,
+  ticketActivity,
+  and,
+  eq,
+  gt,
+  inArray,
+  desc,
+  principal as principalTable,
+} from '@/lib/server/db'
 import type { TicketId, PrincipalId } from '@quackback/ids'
 import { logger } from '@/lib/server/logger'
 
@@ -72,6 +81,30 @@ export function recordTicketActivity(opts: RecordTicketActivityOpts): void {
 // ============================================
 // Query
 // ============================================
+
+/** The activity types that record a move of the ticket's status. */
+const STATUS_MOVES: TicketActivityType[] = ['status.changed', 'ticket.reopened']
+
+/**
+ * Whether the ticket's status moved after `since`, as its activity log records
+ * it: one read on `ticket_activity_ticket_id_created_idx`. The log is written
+ * best-effort (see recordTicketActivity), so a move whose record failed to
+ * land reads as no move.
+ */
+export async function statusMovedSince(ticketId: TicketId, since: Date): Promise<boolean> {
+  const [row] = await db
+    .select({ id: ticketActivity.id })
+    .from(ticketActivity)
+    .where(
+      and(
+        eq(ticketActivity.ticketId, ticketId),
+        gt(ticketActivity.createdAt, since),
+        inArray(ticketActivity.type, STATUS_MOVES)
+      )
+    )
+    .limit(1)
+  return Boolean(row)
+}
 
 /**
  * Get activity for a ticket, newest first. Resolves actor names from the

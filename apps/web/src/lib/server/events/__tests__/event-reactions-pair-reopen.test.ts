@@ -2,9 +2,11 @@
  * The pair-ticket reopen runs from the `event-reactions` job, so it can run
  * well after the requester's message: sub-second normally, minutes behind a
  * backlog or a worker outage, and days late when a queue is drained after a
- * rollback. A close the agent made after reading that message has already
- * answered it, so a late reopen must leave it standing. A ticket closed before
- * the message is still reopened, however late the job runs.
+ * rollback. It also runs again when the job is retried because another
+ * reaction in it failed. Any status the agent set after reading that message
+ * (a close, or "awaiting requester" again) has already answered it, so a late
+ * or repeated reopen must leave it standing. A ticket moved before the message
+ * is still reopened, however late the job runs.
  *
  * Real DB (rolled back), real legacy dispatch, real outbox, the real reaction
  * handler and the real reopen. Only realtime and the ticket event bridge are
@@ -37,6 +39,22 @@ vi.mock('@/lib/server/realtime/conversation-channels', () => ({
   publishConversationUpdate: vi.fn(),
   publishTyping: vi.fn(),
 }))
+// A transient fault in the SLA reaction on its next run only, which fails
+// the job and makes the runner retry every reaction in it.
+const slaFault = vi.hoisted(() => ({ failNext: false }))
+vi.mock('@/lib/server/domains/sla/sla.event-hooks', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/server/domains/sla/sla.event-hooks')>()
+  return {
+    ...real,
+    recordSlaFromEvent: async (...args: Parameters<typeof real.recordSlaFromEvent>) => {
+      if (slaFault.failNext) {
+        slaFault.failNext = false
+        throw new Error('connection terminated unexpectedly (simulated)')
+      }
+      return real.recordSlaFromEvent(...args)
+    },
+  }
+})
 vi.mock('@/lib/server/domains/tickets/ticket.webhooks', () => ({
   emitTicketCreated: vi.fn().mockResolvedValue(undefined),
   emitTicketStatusChanged: vi.fn().mockResolvedValue(undefined),
@@ -67,7 +85,7 @@ import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import * as dispatch from '../dispatch'
 import { runEventReactions } from '../event-reactions-queue'
 import { EVENT_REACTIONS_QUEUE } from '../event-reactions'
-import { setTicketStatus } from '@/lib/server/domains/tickets/ticket.service'
+import { assignTicket, setTicketStatus } from '@/lib/server/domains/tickets/ticket.service'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -155,6 +173,13 @@ async function seedPairedTicket() {
   return { statuses, requester, agent, ticketId, conversationId }
 }
 
+/**
+ * A message time before the test's transaction began. The activity log is
+ * stamped with the database's now(), which the rolled-back transaction holds
+ * at its start, so a message the activity must come after is written earlier.
+ */
+const aMinuteAgo = () => new Date(Date.now() - 60_000)
+
 async function ticketState(ticketId: TicketId) {
   const [row] = await testDb
     .select({ category: ticketStatuses.category, reopenedCount: tickets.reopenedCount })
@@ -233,12 +258,16 @@ function agentActor(principalId: PrincipalId): Actor {
     permissions: new Set<PermissionKey>([
       PERMISSIONS.TICKET_VIEW_ALL,
       PERMISSIONS.TICKET_SET_STATUS,
+      PERMISSIONS.TICKET_ASSIGN,
     ]),
   }
 }
 
 describe.skipIf(!fixture.available)('pair-ticket reopen from a late reaction job', () => {
-  beforeEach(fixture.begin)
+  beforeEach(() => {
+    slaFault.failNext = false
+    return fixture.begin()
+  })
   afterEach(fixture.rollback)
 
   it("does not undo a close the agent made after the requester's message", async () => {
@@ -282,5 +311,51 @@ describe.skipIf(!fixture.available)('pair-ticket reopen from a late reaction job
     await Promise.all([runEventReactions(job), runEventReactions(job)])
 
     expect(await ticketState(ticketId)).toEqual({ category: 'open', reopenedCount: 1 })
+  })
+
+  it("a retry after another reaction failed does not undo an 'awaiting requester' set after the message", async () => {
+    const { statuses, requester, agent, ticketId, conversationId } = await seedPairedTicket()
+
+    // The requester answers. The job's first run reopens the ticket, but the
+    // SLA reaction in the same job fails, so the job fails and will retry.
+    await requesterWrites(conversationId, requester, aMinuteAgo())
+    const job = await reactionJobFor(conversationId)
+    slaFault.failNext = true
+    await expect(runEventReactions(job)).rejects.toThrow(/simulated/)
+    expect((await ticketState(ticketId)).category).toBe('open')
+
+    // The agent reads the answer, replies, and sets the ticket back to awaiting the requester.
+    await setTicketStatus(ticketId, statuses.awaiting, agentActor(agent))
+
+    // The retry runs every reaction in the job again, the reopen included.
+    await runEventReactions({ ...job, attempts: 2 })
+
+    expect((await ticketState(ticketId)).category).toBe('pending')
+  })
+
+  it("a late run leaves standing an 'awaiting requester' set after the message", async () => {
+    const { statuses, requester, agent, ticketId, conversationId } = await seedPairedTicket()
+    await setTicketStatus(ticketId, statuses.received, agentActor(agent))
+
+    // The requester writes; before the job runs, the agent asks a follow-up
+    // question and sets the ticket to awaiting the requester again.
+    await requesterWrites(conversationId, requester, aMinuteAgo())
+    await setTicketStatus(ticketId, statuses.awaiting, agentActor(agent))
+
+    await runReactionJobFor(conversationId)
+
+    expect((await ticketState(ticketId)).category).toBe('pending')
+  })
+
+  it('still reopens when only something other than the status changed after the message', async () => {
+    const { requester, agent, ticketId, conversationId } = await seedPairedTicket()
+
+    // The requester writes, and the ticket is assigned before the job runs.
+    await requesterWrites(conversationId, requester, aMinuteAgo())
+    await assignTicket(ticketId, { assigneePrincipalId: agent }, agentActor(agent))
+
+    await runReactionJobFor(conversationId)
+
+    expect((await ticketState(ticketId)).category).toBe('open')
   })
 })

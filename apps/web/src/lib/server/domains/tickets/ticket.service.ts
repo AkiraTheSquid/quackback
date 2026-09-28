@@ -56,7 +56,7 @@ import { PRIORITY_RANK } from '@/lib/shared/conversation/priority-meta'
 import { getStageLabels } from '../settings/settings.tickets'
 import { emitTicketStatusChanged, emitTicketAssigned } from './ticket.webhooks'
 import { buildTicketContext, ticketToDTO, ticketRowToDTO } from './ticket.dto'
-import { recordTicketActivity } from './ticket-activity.service'
+import { recordTicketActivity, statusMovedSince } from './ticket-activity.service'
 import { safeSubscribeToTicket } from './ticket-subscription.service'
 import { ticketFtsMatch } from './ticket-search.service'
 import { statusTransition, firstResponseStamp, resolveStage } from './ticket.lifecycle'
@@ -641,8 +641,11 @@ async function postTicketStatusEvent(ticketId: TicketId, stageLabel: string | nu
  *
  * `messageAt` is when the requester's message was written. The event reaction
  * passes it because it runs from a queued job, possibly long after the
- * message: a close made after the message has already answered it, so the
- * reopen leaves that close standing. The status write only lands on the
+ * message, and again when the job is retried: any status move after the
+ * message (a close, "awaiting requester" again, or this reopen's own earlier
+ * run) has already answered it, so the reopen leaves the ticket where it is.
+ * A close is read off `resolvedAt` on the row itself; other moves off the
+ * ticket's activity log (statusMovedSince). The status write only lands on the
  * status this call read, so a concurrent status change is never overwritten.
  */
 export async function autoReopenOnRequesterReply(
@@ -671,6 +674,7 @@ export async function autoReopenOnRequesterReply(
   ) {
     return false
   }
+  if (messageAt && (await statusMovedSince(id, messageAt))) return false
 
   const [firstOpen] = await db
     .select({
