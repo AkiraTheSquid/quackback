@@ -32,7 +32,32 @@ import {
   type EngineSchedule,
 } from '../office-hours/office-hours.service'
 import { getOfficeHoursSchedule } from '../settings/settings.office-hours'
+import { logger } from '@/lib/server/logger'
 import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.messages'
+
+const log = logger.child({ component: 'sla' })
+
+/**
+ * Whether an event at `at` predates the SLA application `applied`. The SLA
+ * reactions run from queued jobs that can run late or be retried after the
+ * SLA was applied again (a policy change, a reopen), and an event from before
+ * that belongs to the previous application: it must not settle, arm, pause or
+ * close the new one. Every recorder checks this inside its CAS loop, so it
+ * holds for the very stamp it then writes. A stamp without `appliedAt`
+ * accepts every event. Exported for the ticket-side recorders.
+ */
+export function predatesApplication(
+  at: Date,
+  applied: { appliedAt?: string | null },
+  subject: Record<string, string>
+): boolean {
+  if (!applied.appliedAt || at.getTime() >= new Date(applied.appliedAt).getTime()) return false
+  log.debug(
+    { ...subject, event_at: at.toISOString(), applied_at: applied.appliedAt },
+    'SLA event predates the applied SLA, skipped'
+  )
+  return true
+}
 
 /**
  * The `conversations.sla_applied` shape: the one active SLA on a conversation.
@@ -443,11 +468,15 @@ export async function recordFirstResponse(
   at: Date = new Date()
 ): Promise<void> {
   let applied = await loadSlaApplied(conversationId)
-  if (applied?.firstResponseDueAt && !applied.firstResponseAt) {
-    at = await earliestOf(at, earliestHumanReplyAfter(conversationId, new Date(applied.appliedAt)))
-  }
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.firstResponseDueAt || applied.firstResponseAt) return
+    if (predatesApplication(at, applied, { conversation_id: conversationId })) return
+    // The first human reply since this SLA was applied, when it is earlier
+    // than `at`: a later reply's reaction can run first.
+    const settleAt = await earliestOf(
+      at,
+      earliestHumanReplyAfter(conversationId, new Date(applied.appliedAt))
+    )
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
     let committed: boolean
     if (applied.firstResponseBreachedAt) {
@@ -458,25 +487,28 @@ export async function recordFirstResponse(
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
-        { firstResponseAt: at.toISOString() },
+        { firstResponseAt: settleAt.toISOString() },
         'first_response_settled_after_breach',
-        dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, at).toISOString(),
-        at,
+        dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, settleAt).toISOString(),
+        settleAt,
         guard,
         { unsetFields: ['firstResponseAt'] }
       )
     } else {
-      const dueAt = dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, at)
-      const breached = at.getTime() > dueAt.getTime()
+      const dueAt = dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, settleAt)
+      const breached = settleAt.getTime() > dueAt.getTime()
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
         breached
-          ? { firstResponseAt: at.toISOString(), firstResponseBreachedAt: at.toISOString() }
-          : { firstResponseAt: at.toISOString() },
+          ? {
+              firstResponseAt: settleAt.toISOString(),
+              firstResponseBreachedAt: settleAt.toISOString(),
+            }
+          : { firstResponseAt: settleAt.toISOString() },
         breached ? 'first_response_breached' : 'first_response_met',
         dueAt.toISOString(),
-        at,
+        settleAt,
         guard,
         // When this settle logs the breach itself, the breach-noted marker is
         // part of the content CAS too: a sweep claim that landed first owns
@@ -522,6 +554,7 @@ export async function recordResolution(
   let applied = preloaded ?? (await loadSlaApplied(conversationId))
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.timeToCloseDueAt || applied.resolvedAt) return
+    if (predatesApplication(at, applied, { conversation_id: conversationId })) return
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
     let committed: boolean
     if (applied.resolutionBreachedAt) {
@@ -623,6 +656,7 @@ export async function rearmNextResponse(
   let applied = await loadSlaApplied(conversationId)
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.nextResponseTargetSecs || !applied.firstResponseAt) return
+    if (predatesApplication(at, applied, { conversation_id: conversationId })) return
     if (!isAfter(at, applied.firstResponseAt)) return
     if (applied.nextResponseAt && !isAfter(at, applied.nextResponseAt)) return
     const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
@@ -738,6 +772,7 @@ export async function recordNextResponse(
   let applied = await loadSlaApplied(conversationId)
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.nextResponseDueAt || applied.nextResponseAt) return
+    if (predatesApplication(at, applied, { conversation_id: conversationId })) return
     const answered = await cycleAnsweredBy(conversationId, applied, at)
     const settleAt = answered?.reply ?? at
     const committed = answered?.rearm
@@ -772,11 +807,13 @@ async function cycleAnsweredBy(
   at: Date
 ): Promise<{ reply: Date; rearm: { start: Date; dueAt: Date } | null } | null> {
   if (!applied.firstResponseAt || !applied.nextResponseDueAt) return null
-  const opener = await latestCycleOpenerBetween(
-    conversationId,
-    new Date(applied.firstResponseAt),
-    at
+  // Only messages written since this SLA was applied, and after its first
+  // response, can open the cycle this reply answers.
+  const since = Math.max(
+    new Date(applied.firstResponseAt).getTime(),
+    new Date(applied.appliedAt).getTime()
   )
+  const opener = await latestCycleOpenerBetween(conversationId, new Date(since), at)
   if (!opener) return null
   const reply = await earliestOf(at, earliestHumanReplyAfter(conversationId, opener))
   const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
@@ -867,6 +904,7 @@ export async function pauseSlaOnSnooze(
 ): Promise<void> {
   const applied = await loadSlaApplied(conversationId)
   if (!applied || applied.pauseOnSnooze === false || applied.pausedAt) return
+  if (predatesApplication(at, applied, { conversation_id: conversationId })) return
 
   const landed = await commitStamp(conversationId, { pausedAt: at.toISOString() }, at, {
     appliedAt: applied.appliedAt,

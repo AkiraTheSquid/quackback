@@ -40,7 +40,13 @@ import { db, and, eq, isNull, sql, tickets, ticketStatuses, slaEvents } from '@/
 import type { SlaPolicyId, TicketId } from '@quackback/ids'
 import { NotFoundError, ValidationError } from '@/lib/shared/errors'
 import { getSlaPolicy } from './sla-policy.service'
-import { resolveScheduleFor, dueAtForSettle, shiftIso, type StampExecutor } from './sla.service'
+import {
+  resolveScheduleFor,
+  dueAtForSettle,
+  shiftIso,
+  predatesApplication,
+  type StampExecutor,
+} from './sla.service'
 import { addOfficeHoursSeconds, type EngineSchedule } from '../office-hours/office-hours.service'
 
 /**
@@ -368,6 +374,7 @@ export async function recordTicketResolution(
   let applied = preloaded ?? (await loadTicketSlaApplied(ticketId))
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || applied.resolvedAt) return
+    if (predatesApplication(at, applied, { ticket_id: ticketId })) return
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
     let committed: boolean
     if (applied.resolutionBreachedAt) {
@@ -432,6 +439,7 @@ export async function pauseTicketSlaOnPending(
 ): Promise<void> {
   const applied = await loadTicketSlaApplied(ticketId)
   if (!applied || applied.pauseOnPending === false || applied.pausedAt) return
+  if (predatesApplication(at, applied, { ticket_id: ticketId })) return
 
   const landed = await commitTicketStamp(ticketId, { pausedAt: at.toISOString() }, at, {
     appliedAt: applied.appliedAt,

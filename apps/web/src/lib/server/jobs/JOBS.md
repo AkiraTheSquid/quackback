@@ -569,6 +569,10 @@ relying on it:
 - The pair-ticket reopen leaves the ticket alone when its status moved after
   the message (a close, read from the row, or any move its activity log
   records), and writes only on the status it read.
+- An SLA recorder ignores an event, and the clocks ignore any message, from
+  before the stamp's current application (`appliedAt`), so a reaction that
+  runs after the SLA was applied again cannot settle, arm, pause or close the
+  new clocks.
 
 That narrows what a late, retried or replayed reaction can do; it does not
 remove it. The known remaining effects:
