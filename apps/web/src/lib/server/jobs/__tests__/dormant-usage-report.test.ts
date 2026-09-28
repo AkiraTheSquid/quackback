@@ -60,6 +60,49 @@ describe('catchUpDormantUsageReports', () => {
     expect((await catchUpDormantUsageReports(d)).checked).toBe(1)
   })
 
+  it('wakes again on the retry when the report was queued but the wake failed', async () => {
+    let queuedAlready = false
+    const d = deps({
+      dormant: () => ['ws_a'],
+      enqueueIn: vi.fn(async () => {
+        const inserted = !queuedAlready
+        queuedAlready = true
+        return { inserted }
+      }),
+      wake: vi
+        .fn<DormantUsageReportDeps['wake']>()
+        .mockRejectedValueOnce(new Error('lookup failed'))
+        .mockResolvedValue(undefined),
+    })
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(1)
+    expect(d.warn).toHaveBeenCalledTimes(1)
+
+    expect((await catchUpDormantUsageReports(d)).checked).toBe(0)
+    d.setNow(new Date(SEP.getTime() + DORMANT_REPORT_RETRY_MS + 1))
+    expect(await catchUpDormantUsageReports(d)).toEqual({ queued: 0, checked: 1 })
+    expect(d.wake).toHaveBeenCalledTimes(2)
+    expect(d.wake).toHaveBeenLastCalledWith('ws_a')
+
+    d.setNow(new Date(SEP.getTime() + 3 * DORMANT_REPORT_RETRY_MS))
+    expect((await catchUpDormantUsageReports(d)).checked).toBe(0)
+    expect(d.wake).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not wake on a retry after a failed queue that finds the month already reported', async () => {
+    const d = deps({
+      dormant: () => ['ws_b'],
+      enqueueIn: vi
+        .fn<DormantUsageReportDeps['enqueueIn']>()
+        .mockRejectedValueOnce(new Error('scope refused'))
+        .mockResolvedValue({ inserted: false }),
+    })
+    await catchUpDormantUsageReports(d)
+    d.setNow(new Date(SEP.getTime() + DORMANT_REPORT_RETRY_MS + 1))
+    expect((await catchUpDormantUsageReports(d)).checked).toBe(1)
+    expect(d.wake).not.toHaveBeenCalled()
+  })
+
   it('starts over for a workspace that woke and was parked again', async () => {
     const parked = { list: ['ws_a'] }
     const d = deps({ dormant: () => parked.list })

@@ -18,6 +18,8 @@
  *
  * Cost: one workspace scope per parked workspace per month per worker
  * process. A workspace whose scope cannot be opened is retried at most hourly.
+ * So is one whose report was queued but whose wake failed; that retry wakes it
+ * even though the report is by then already queued.
  */
 
 import { previousUtcMonth } from '@/lib/server/domains/billing/usage-report'
@@ -41,6 +43,8 @@ interface Checked {
   month: string
   /** Set after a failure: when to try again. Absent once the month is settled. */
   retryAt?: number
+  /** The report was queued but the wake failed; the retry must wake. */
+  wakePending?: boolean
 }
 
 const checked = new Map<string, Checked>()
@@ -67,18 +71,25 @@ export async function catchUpDormantUsageReports(
     if (prior?.month === month && (prior.retryAt === undefined || now.getTime() < prior.retryAt))
       continue
     asked += 1
+    let wakePending = prior?.month === month && prior.wakePending === true
     try {
       const { inserted } = await d.enqueueIn(key, month)
-      checked.set(key, { month })
       if (inserted) {
         queued += 1
-        await d.wake(key)
+        wakePending = true
       }
+      if (wakePending) {
+        await d.wake(key)
+        wakePending = false
+      }
+      checked.set(key, { month })
     } catch (err) {
-      checked.set(key, { month, retryAt: now.getTime() + DORMANT_REPORT_RETRY_MS })
+      checked.set(key, { month, retryAt: now.getTime() + DORMANT_REPORT_RETRY_MS, wakePending })
       d.warn(
-        { err, workspace_key: key, month },
-        'could not queue the monthly usage report for a dormant workspace; retrying later'
+        { err, workspace_key: key, month, wake_pending: wakePending },
+        wakePending
+          ? 'queued the monthly usage report for a dormant workspace but could not wake it; retrying later'
+          : 'could not queue the monthly usage report for a dormant workspace; retrying later'
       )
     }
   }
