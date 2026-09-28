@@ -23,7 +23,13 @@ export type CustomDomainInstruction = {
   isPrimary: boolean
   updatedAt: string
   cnameTarget: string
+  /** The hosting provider's own validation record. Never shown to admins. */
   ownershipTxt: { name: string; value: string } | null
+  /**
+   * The TXT record that proves this workspace controls the hostname, present
+   * until the proof is seen. A domain goes live only after it is published.
+   */
+  ownershipProof?: { name: string; value: string } | null
 }
 
 export async function requestWorkspaceIdentityMutation(input: {

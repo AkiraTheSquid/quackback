@@ -58,6 +58,13 @@ export function QuackbackUrlCard(props: {
   )
 }
 
+/** A well-formed TXT record the operator returned; anything else renders nothing. */
+function isTxtRecord(value: unknown): value is { name: string; value: string } {
+  if (!value || typeof value !== 'object') return false
+  const record = value as { name?: unknown; value?: unknown }
+  return typeof record.name === 'string' && typeof record.value === 'string'
+}
+
 const READINESS_LABEL = {
   pending: 'Waiting for DNS',
   ready: 'Ready',
@@ -77,10 +84,7 @@ export function DomainsCard(props: {
   onRemove: (hostname: string) => void
 }) {
   return (
-    <SettingsCard
-      title="Custom domain"
-      description="Point a hostname you own at this workspace. Traffic goes through Quackback Cloud."
-    >
+    <SettingsCard title="Custom domain" description="Point a hostname you own at this workspace.">
       {!props.entitled ? (
         <UpgradeNotice entitlement="customDomain" />
       ) : (
@@ -177,6 +181,15 @@ export function DomainsCard(props: {
                     Add a CNAME from <span className="font-mono">{domain.hostname}</span> to{' '}
                     <span className="font-mono">{domain.cnameTarget}</span>.
                   </p>
+                  {isTxtRecord(domain.ownershipProof) && (
+                    <p className="mt-1 text-muted-foreground">
+                      Then add a TXT record at{' '}
+                      <span className="font-mono break-all">{domain.ownershipProof.name}</span> with
+                      the value{' '}
+                      <span className="font-mono break-all">{domain.ownershipProof.value}</span> to
+                      prove you own the domain.
+                    </p>
+                  )}
                 </div>
               )}
             </li>
