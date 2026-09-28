@@ -25,6 +25,7 @@ import {
   asc,
   desc,
   tickets,
+  ticketActivity,
   ticketStatuses,
   conversationMessages,
   ticketConversations,
@@ -456,24 +457,29 @@ export async function setTicketStatus(
   const stamp = firstResponseStamp(existing.firstResponseAt, isTeamMember(actor.role), now)
   if (stamp) patch.firstResponseAt = stamp
 
-  const [updated] = await db.update(tickets).set(patch).where(eq(tickets.id, id)).returning()
-
-  // Durable timeline record (fire-and-forget): EVERY real status move is
-  // recorded, including internal churn the customer-facing stage event below
-  // stays silent on. A same-status no-op set records nothing.
-  if (existing.statusId !== statusId) {
-    recordTicketActivity({
-      ticketId: id,
-      principalId: actor.principalId,
-      type: 'status.changed',
-      metadata: {
-        fromId: existing.statusId,
-        fromName: current?.name ?? null,
-        toId: statusId,
-        toName: target.name,
-      },
-    })
-  }
+  // The status move and its timeline record are one write. EVERY real status
+  // move is recorded, including internal churn the customer-facing stage
+  // event below stays silent on; a same-status no-op set records nothing. In
+  // the same transaction, so the record is there whenever the move is: the
+  // pair-ticket reopen reads it to leave a status set after the requester's
+  // message standing (autoReopenOnRequesterReply).
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx.update(tickets).set(patch).where(eq(tickets.id, id)).returning()
+    if (existing.statusId !== statusId) {
+      await tx.insert(ticketActivity).values({
+        ticketId: id,
+        principalId: actor.principalId,
+        type: 'status.changed',
+        metadata: {
+          fromId: existing.statusId,
+          fromName: current?.name ?? null,
+          toId: statusId,
+          toName: target.name,
+        },
+      })
+    }
+    return row
+  })
 
   // Realtime signal (unified inbox §3.2, M3), unconditional like the webhook
   // below — mirrors conversation.service's publish-right-after-the-UPDATE

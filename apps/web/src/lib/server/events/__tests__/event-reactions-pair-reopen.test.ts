@@ -358,4 +358,15 @@ describe.skipIf(!fixture.available)('pair-ticket reopen from a late reaction job
 
     expect((await ticketState(ticketId)).category).toBe('open')
   })
+
+  it('a status move never lands without the activity record the reopen reads', async () => {
+    const { statuses, ticketId } = await seedPairedTicket()
+    // An actor whose record cannot be written: its principal does not exist.
+    const unrecordable = agentActor(createId('principal') as PrincipalId)
+
+    await expect(setTicketStatus(ticketId, statuses.closed, unrecordable)).rejects.toThrow()
+
+    // The move and its record are one write: neither landed.
+    expect((await ticketState(ticketId)).category).toBe('pending')
+  })
 })
