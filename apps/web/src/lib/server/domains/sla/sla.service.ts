@@ -425,12 +425,19 @@ export function dueAtForSettle(dueAt: string, pausedAt: string | null | undefine
  * pausedAt the resume already cleared. If the retry also misses (or the
  * reload shows the clock already settled), this leaves it rather than
  * clobber a newer write, the same trade-off pauseSlaOnSnooze documents.
+ *
+ * The reaction that calls this can run after a later reply's (see
+ * sla.messages.ts), so the clock settles at the first human reply written
+ * since the SLA was applied, when that is earlier than `at`.
  */
 export async function recordFirstResponse(
   conversationId: ConversationId,
   at: Date = new Date()
 ): Promise<void> {
   let applied = await loadSlaApplied(conversationId)
+  if (applied?.firstResponseDueAt && !applied.firstResponseAt) {
+    at = await earliestOf(at, earliestHumanReplyAfter(conversationId, new Date(applied.appliedAt)))
+  }
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.firstResponseDueAt || applied.firstResponseAt) return
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
@@ -698,6 +705,11 @@ async function legacyScheduleFor(policyId: SlaPolicyId): Promise<EngineSchedule 
  * (lag from the pause-adjusted due date to the settle), feeding time-after-miss
  * reporting. Guarded and retried on a CAS miss exactly like
  * recordFirstResponse — see that doc comment.
+ *
+ * The reaction that calls this can run late or out of order (see
+ * sla.messages.ts), so the cycle it settles comes from the conversation's
+ * messages: see cycleAnsweredBy. Without message rows to go by, the armed
+ * cycle settles at `at`.
  */
 export async function recordNextResponse(
   conversationId: ConversationId,
@@ -706,46 +718,101 @@ export async function recordNextResponse(
   let applied = await loadSlaApplied(conversationId)
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.nextResponseDueAt || applied.nextResponseAt) return
-    const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
-    let committed: boolean
-    if (applied.nextResponseBreachedAt) {
-      // Settle-only (the breach event stays exactly-once), but log the late
-      // settle itself for time-after-miss reporting. The content CAS re-checks
-      // the outcome field itself: a concurrent settle that landed first owns
-      // it, and this write must miss rather than double-log the settle.
-      committed = await commitClockEvent(
-        conversationId,
-        applied.policyId,
-        { nextResponseAt: at.toISOString() },
-        'next_response_settled_after_breach',
-        dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at).toISOString(),
-        at,
-        guard,
-        { unsetFields: ['nextResponseAt'] }
-      )
-    } else {
-      const dueAt = dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at)
-      const breached = at.getTime() > dueAt.getTime()
-      committed = await commitClockEvent(
-        conversationId,
-        applied.policyId,
-        breached
-          ? { nextResponseAt: at.toISOString(), nextResponseBreachedAt: at.toISOString() }
-          : { nextResponseAt: at.toISOString() },
-        breached ? 'next_response_breached' : 'next_response_met',
-        dueAt.toISOString(),
-        at,
-        guard,
-        // See recordFirstResponse for why the breach-noted marker joins the
-        // content CAS when this settle logs the breach itself.
-        {
-          unsetFields: breached ? ['nextResponseAt', 'nextResponseBreachedAt'] : ['nextResponseAt'],
-        }
-      )
-    }
+    const answered = await cycleAnsweredBy(conversationId, applied, at)
+    const settleAt = answered?.reply ?? at
+    const committed = answered?.rearmDueAt
+      ? await commitNextResponseCycle(conversationId, applied, answered.rearmDueAt, settleAt, at)
+      : await settleNextResponse(conversationId, applied, settleAt)
     if (committed) return
     applied = await loadSlaApplied(conversationId)
   }
+}
+
+/**
+ * The cycle a reply written at `at` answers, read from the conversation's
+ * messages: the last customer message before the reply (and after the first
+ * response) opened it, and the first human reply after that message settles
+ * it, so a reply whose reaction runs before an earlier reply's still settles
+ * at the earlier one. `rearmDueAt` is set when that message's cycle is due
+ * after the armed one, meaning its own reaction has not run yet: the settle
+ * then arms that cycle in the same write rather than judging the reply
+ * against an older deadline. Null when the messages name no such customer
+ * message.
+ */
+async function cycleAnsweredBy(
+  conversationId: ConversationId,
+  applied: SlaApplied,
+  at: Date
+): Promise<{ reply: Date; rearmDueAt: Date | null } | null> {
+  if (!applied.firstResponseAt || !applied.nextResponseDueAt) return null
+  const opener = await latestCycleOpenerBetween(
+    conversationId,
+    new Date(applied.firstResponseAt),
+    at
+  )
+  if (!opener) return null
+  const reply = await earliestOf(at, earliestHumanReplyAfter(conversationId, opener))
+  const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
+  if (!schedule || !applied.nextResponseTargetSecs) return { reply, rearmDueAt: null }
+  const dueAt = addOfficeHoursSeconds(schedule, opener, applied.nextResponseTargetSecs)
+  return { reply, rearmDueAt: isAfter(dueAt, applied.nextResponseDueAt) ? dueAt : null }
+}
+
+/** The earlier of `at` and the time `other` resolves to, when it resolves to one. */
+async function earliestOf(at: Date, other: Promise<Date | null>): Promise<Date> {
+  const time = await other
+  return time && time.getTime() < at.getTime() ? time : at
+}
+
+/**
+ * Settle the armed next-response cycle at `at` and log met/breached (or the
+ * settle after a breach the sweep already noted). Pinned to the deadline it
+ * judged against, so a re-arm landing in between makes it miss rather than
+ * settle the newer cycle with this reply.
+ */
+async function settleNextResponse(
+  conversationId: ConversationId,
+  applied: SlaApplied,
+  at: Date
+): Promise<boolean> {
+  if (!applied.nextResponseDueAt) return false
+  const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
+  const pinnedFields = { nextResponseDueAt: applied.nextResponseDueAt }
+  if (applied.nextResponseBreachedAt) {
+    // Settle-only (the breach event stays exactly-once), but log the late
+    // settle itself for time-after-miss reporting. The content CAS re-checks
+    // the outcome field itself: a concurrent settle that landed first owns
+    // it, and this write must miss rather than double-log the settle.
+    return commitClockEvent(
+      conversationId,
+      applied.policyId,
+      { nextResponseAt: at.toISOString() },
+      'next_response_settled_after_breach',
+      dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at).toISOString(),
+      at,
+      guard,
+      { unsetFields: ['nextResponseAt'], pinnedFields }
+    )
+  }
+  const dueAt = dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at)
+  const breached = at.getTime() > dueAt.getTime()
+  return commitClockEvent(
+    conversationId,
+    applied.policyId,
+    breached
+      ? { nextResponseAt: at.toISOString(), nextResponseBreachedAt: at.toISOString() }
+      : { nextResponseAt: at.toISOString() },
+    breached ? 'next_response_breached' : 'next_response_met',
+    dueAt.toISOString(),
+    at,
+    guard,
+    // See recordFirstResponse for why the breach-noted marker joins the
+    // content CAS when this settle logs the breach itself.
+    {
+      unsetFields: breached ? ['nextResponseAt', 'nextResponseBreachedAt'] : ['nextResponseAt'],
+      pinnedFields,
+    }
+  )
 }
 
 /**

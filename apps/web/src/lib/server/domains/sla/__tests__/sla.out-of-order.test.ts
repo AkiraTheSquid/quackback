@@ -251,3 +251,56 @@ describe.skipIf(!fixture.available)('next-response clock from reactions run out 
     expect((await stampOf(thread.conversationId)).pausedAt).toBe(iso('11:00'))
   })
 })
+
+describe.skipIf(!fixture.available)('response clocks from replies reacted to out of order', () => {
+  beforeEach(fixture.begin)
+  afterEach(fixture.rollback)
+
+  const firstResponseEvents = async (conversationId: ConversationId) =>
+    (await testDb.select().from(slaEvents).where(eq(slaEvents.conversationId, conversationId)))
+      .filter((event) => event.kind.startsWith('first_response'))
+      .map((event) => ({ kind: event.kind, at: event.meta.at }))
+
+  it('two replies reacted to in reverse settle the cycle at the first of them', async () => {
+    const thread = await seedAnsweredThread()
+    await recordSlaFromEvent(await write(thread, 'visitor', '10:40')) // due 12:40
+    const first = await write(thread, 'agent', '11:00')
+    const second = await write(thread, 'agent', '13:00')
+
+    await recordSlaFromEvent(second)
+    await recordSlaFromEvent(first)
+
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_met', dueAt: iso('12:40'), at: iso('11:00') },
+    ])
+  })
+
+  it("a reply reacted to before the customer message it answers settles that message's cycle", async () => {
+    const thread = await seedAnsweredThread()
+    await recordSlaFromEvent(await write(thread, 'visitor', '10:40')) // due 12:40
+    const followUp = await write(thread, 'visitor', '12:00') // due 14:00
+    const reply = await write(thread, 'agent', '13:00')
+
+    await recordSlaFromEvent(reply)
+    await recordSlaFromEvent(followUp)
+
+    // In order, the 12:00 follow-up re-armed the clock to 14:00 before the
+    // reply, so the reply met it. It is not judged against 12:40.
+    expect(await nextResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'next_response_met', dueAt: iso('14:00'), at: iso('13:00') },
+    ])
+  })
+
+  it('two first replies reacted to in reverse settle the first response at the first of them', async () => {
+    const thread = await seedThread() // first response due 11:00
+    const first = await write(thread, 'agent', '10:55')
+    const second = await write(thread, 'agent', '11:05')
+
+    await recordSlaFromEvent(second)
+    await recordSlaFromEvent(first)
+
+    expect(await firstResponseEvents(thread.conversationId)).toEqual([
+      { kind: 'first_response_met', at: iso('10:55') },
+    ])
+  })
+})
