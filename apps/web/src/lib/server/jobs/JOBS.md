@@ -562,13 +562,20 @@ relying on it:
   exists arms its cycle and settles it at that reply. A message never re-arms
   a cycle opened by the same or a later message: the stamp records which
   message opened the cycle. A reply settles at the first human reply after the
-  customer message it answers.
+  customer message it answers, and never settles a cycle opened after it was
+  written: the cycle it did answer gets its outcome logged instead, once
+  (next-response events name their cycle in `meta.cycleAt`).
 - A pause or resume checks the conversation's (or ticket's) status when it
-  runs: a resume is skipped while it is snoozed or pending again, and a pause
-  once it no longer is.
+  runs: a resume is skipped while it is snoozed or pending again. A pause that
+  runs after its paused state already ended excludes the span up to the
+  recorded wake instead, once: the stamp lists the pause starts already
+  excluded (`excludedPauses`), which a resume appends to as well.
 - The pair-ticket reopen leaves the ticket alone when its status moved after
   the message (a close, read from the row, or any move its activity log
-  records), and writes only on the status it read.
+  records; a status move and its record are written in one transaction), and
+  writes only on the status it read.
+- The CSAT confirm acts only on the involvement the rating was given about,
+  the one open when it was submitted.
 - An SLA recorder ignores an event, and the clocks ignore any message, from
   before the stamp's current application (`appliedAt`), so a reaction that
   runs after the SLA was applied again cannot settle, arm, pause or close the
@@ -577,28 +584,17 @@ relying on it:
 That narrows what a late, retried or replayed reaction can do; it does not
 remove it. The known remaining effects:
 
-- **A late reply can settle the next message's cycle.** When a reply's reaction
-  runs after the reaction for the customer's next message, it settles that
-  newer cycle at the reply's earlier time. The result is a false "met" that
-  hides the newer message's breach, and the older cycle's own outcome is never
-  logged.
-- **A pause that runs late can be dropped.** A pause whose reaction runs only
-  after the conversation left snoozed (or the ticket left pending) is skipped,
-  so that span is not excluded and the sweep can record a breach an in-order
-  run would not. A stale pause that lands while a later snooze is current
-  pauses from the earlier time, which excludes more than the snooze lasted.
+- **A replaced cycle is judged without its pauses.** The outcome a late reply
+  logs for a cycle a later message already replaced is judged against the
+  deadline its opener gives, without any pause that cycle saw.
+- **A late pause cannot reach a clock that already settled.** The span it
+  excludes shifts only the clocks still unsettled when it runs; a clock settled
+  in the meantime was judged without the span.
 - **A customer message right after a snooze may not resume the clock.** The
   pause is stamped with the status event's time, written just after the status
   commits, so a customer message written within milliseconds of a snooze can
   read as earlier than the pause. The clock then stays paused while the
   conversation is open, until the next resume.
-- **A measurement can be lost.** A cycle that a later customer message
-  superseded out of order is never measured.
-- **A late reopen can still run.** The activity log is written best-effort, so
-  a status move whose record failed to land does not stop a late reopen.
-- **A late CSAT confirm confirms the current involvement.** It acts on
-  whichever assistant involvement is active when it runs, which can be a later
-  one.
 - **Stamps armed before this build have no cycle marker.** They fall back to
   comparing deadlines, so a conversation's first cycle after the upgrade can
   still miss a re-arm once when office hours and pause-on-snooze are both on.
@@ -607,7 +603,10 @@ remove it. The known remaining effects:
   stamp and, after a later roll-forward, can make a newer cycle look older than
   its opener (a false breach). Step 5 of the runbook below strips it. A
   conversation re-armed by an older web process during a forward rollout can
-  carry the same stale marker for that one cycle.
+  carry the same stale marker for that one cycle. Likewise an older build's
+  resume does not add to `excludedPauses`, so a pause replayed after a
+  rollback and roll-forward can exclude that span a second time; the runbook's
+  purge is what prevents the replay.
 - **Timestamps within the same instant.** A status move recorded in the same
   instant as the message can let a late reopen through or stop a legitimate
   one.
