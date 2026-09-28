@@ -430,7 +430,7 @@ export const JOB_DEFINITIONS: readonly JobDefinition[] = [
   },
   {
     // Was `{workflow-dispatch}`. `concurrency: 1` is deliberate, not a
-    // throughput default — two events on one conversation (a reply then a
+    // throughput default: two events on one conversation (a reply then a
     // close) are two jobs, and only a serial queue keeps their dispatch in
     // enqueue order. That order holds per worker process (see
     // workflow-dispatch-queue.ts for its limits).

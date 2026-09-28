@@ -86,9 +86,9 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
       const at = messageTime(event.data.message.createdAt, event.timestamp)
       if (event.data.message.senderType === 'agent' && event.actor?.type !== 'service') {
         // Service actors (Quinn, workflow blocks) never satisfy human-response
-        // semantics — the same vocabulary the wait-interrupt path uses.
+        // semantics, the same vocabulary the wait-interrupt path uses.
         // Ordered: the first-response clock settles first, then the armed
-        // next-response cycle (if any) — a first reply never double-settles
+        // next-response cycle (if any): a first reply never double-settles
         // a cycle that only a LATER customer message could have armed.
         await recordFirstResponse(conversationId, at)
         await recordNextResponse(conversationId, at)
@@ -96,7 +96,7 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
         // Resume BEFORE re-arming: a visitor message on a snoozed
         // conversation flips it back to open inside the message transaction
         // (applyVisitorReopenStatus) WITHOUT emitting
-        // conversation.status_changed — the only other resume trigger — so
+        // conversation.status_changed (the only other resume trigger), so
         // without this the stamp would keep pausedAt forever: the sweep
         // skips paused stamps and every later settle would exclude the
         // whole post-reopen span. No-op when the stamp isn't paused, or
@@ -138,7 +138,7 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
       // axis: resolve the pause transition first so a direct pending ->
       // closed move settles against the already-shifted deadline, and
       // thread the resume's fresh stamp into recordTicketResolution to
-      // save the second SELECT. Categories, not raw status names — a
+      // save the second SELECT. Categories, not raw status names: a
       // pending -> pending move between two statuses hits neither branch.
       let resumed: TicketSlaApplied | null = null
       if (previousStatus === 'pending' && newStatus !== 'pending') {
