@@ -1,6 +1,8 @@
 /**
  * An entity's paused spans, rebuilt from its history: a conversation is paused
- * while snoozed, a ticket while its status is in the pending category.
+ * while snoozed, a ticket while its status is in the pending category. Also
+ * when it was first closed, which settles its time-to-close or time-to-resolve
+ * clock.
  *
  * The SLA pause and resume reactions run from queued jobs that can run late,
  * out of order or twice, so they never trust the order their events arrive in.
@@ -11,7 +13,7 @@
  * snooze extended, is neither), and, for a conversation, its customer
  * messages, each of which wakes a snooze without a status event.
  */
-import { db, and, asc, eq, events, conversationMessages } from '@/lib/server/db'
+import { db, and, asc, eq, gte, sql, events, conversationMessages } from '@/lib/server/db'
 import type { ConversationId, TicketId } from '@quackback/ids'
 
 /** A paused span; `until` is null while the entity is still paused. */
@@ -50,6 +52,34 @@ async function statusTransitions(
       return [{ at, kind: 'leave' }]
     return []
   })
+}
+
+/**
+ * When the entity first entered `status` from `since` on, per its
+ * status-change events, or null when it has not. A close reaction can run
+ * after a later close's, and the clock settles at the first.
+ */
+export async function firstStatusSince(
+  entityType: 'conversation' | 'ticket',
+  entityId: string,
+  status: 'closed',
+  since: Date
+): Promise<Date | null> {
+  const [row] = await db
+    .select({ at: events.occurredAt })
+    .from(events)
+    .where(
+      and(
+        eq(events.entityType, entityType),
+        eq(events.entityId, entityId),
+        eq(events.type, `${entityType}.status_changed`),
+        gte(events.occurredAt, since),
+        sql`${events.payload} ->> 'newStatus' = ${status}`
+      )
+    )
+    .orderBy(asc(events.occurredAt))
+    .limit(1)
+  return row?.at ?? null
 }
 
 /** Each customer message wakes a snoozed conversation. */

@@ -47,7 +47,7 @@ import {
   type StampExecutor,
 } from './sla.service'
 import { addOfficeHoursSeconds, type EngineSchedule } from '../office-hours/office-hours.service'
-import { dueAsOf, type ExcludedSpan } from './sla.pause-history'
+import { dueAsOf, firstStatusSince, type ExcludedSpan } from './sla.pause-history'
 
 /**
  * The `tickets.sla_applied` shape: the one active SLA on a ticket, carrying
@@ -372,6 +372,11 @@ export async function applySlaToTicket(
  * thread resumeTicketSlaFromPending's return (the post-resume stamp it just
  * wrote) instead of paying for a second SELECT of the same row; pass `null`
  * (resume was a no-op) or omit it and the `??` fallback loads as usual.
+ *
+ * A close reaction can run after a later close's, so the clock settles at the
+ * first close since the SLA was applied, from the ticket's status changes,
+ * when that is earlier than `at`. The settled clock stores the deadline it was
+ * judged against, so a pending span excluded before this ran leaves no trace.
  */
 export async function recordTicketResolution(
   ticketId: TicketId,
@@ -382,7 +387,22 @@ export async function recordTicketResolution(
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || applied.resolvedAt) return
     if (predatesApplication(at, applied, { ticket_id: ticketId })) return
+    // The first close since this SLA was applied, when it is earlier than
+    // `at`: a later close's reaction can run first.
+    const firstClose = await firstStatusSince(
+      'ticket',
+      ticketId,
+      'closed',
+      new Date(applied.appliedAt)
+    )
+    const settleAt = firstClose && firstClose.getTime() < at.getTime() ? firstClose : at
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
+    const dueAt = dueAsOf(
+      applied.timeToResolveDueAt,
+      applied,
+      new Date(applied.appliedAt),
+      settleAt
+    ).toISOString()
     let committed: boolean
     if (applied.resolutionBreachedAt) {
       // Settle-only (the breach event stays exactly-once), but log the late
@@ -392,25 +412,28 @@ export async function recordTicketResolution(
       committed = await commitTicketClockEvent(
         ticketId,
         applied.policyId,
-        { resolvedAt: at.toISOString() },
+        { resolvedAt: settleAt.toISOString(), timeToResolveDueAt: dueAt },
         'time_to_resolve_settled_after_breach',
-        dueAsOf(applied.timeToResolveDueAt, applied, new Date(applied.appliedAt), at).toISOString(),
-        at,
+        dueAt,
+        settleAt,
         guard,
         { unsetFields: ['resolvedAt'] }
       )
     } else {
-      const dueAt = dueAsOf(applied.timeToResolveDueAt, applied, new Date(applied.appliedAt), at)
-      const breached = at.getTime() > dueAt.getTime()
+      const breached = settleAt.getTime() > new Date(dueAt).getTime()
       committed = await commitTicketClockEvent(
         ticketId,
         applied.policyId,
         breached
-          ? { resolvedAt: at.toISOString(), resolutionBreachedAt: at.toISOString() }
-          : { resolvedAt: at.toISOString() },
+          ? {
+              resolvedAt: settleAt.toISOString(),
+              resolutionBreachedAt: settleAt.toISOString(),
+              timeToResolveDueAt: dueAt,
+            }
+          : { resolvedAt: settleAt.toISOString(), timeToResolveDueAt: dueAt },
         breached ? 'time_to_resolve_breached' : 'time_to_resolve_met',
-        dueAt.toISOString(),
-        at,
+        dueAt,
+        settleAt,
         guard,
         // When this settle logs the breach itself, the breach-noted marker is
         // part of the content CAS too: a sweep claim that landed first owns

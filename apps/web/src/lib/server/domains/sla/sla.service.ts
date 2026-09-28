@@ -36,7 +36,13 @@ import {
 import { getOfficeHoursSchedule } from '../settings/settings.office-hours'
 import { logger } from '@/lib/server/logger'
 import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.messages'
-import { dueAsOf, overlapMs, withExcludedSpans, type ExcludedSpan } from './sla.pause-history'
+import {
+  dueAsOf,
+  firstStatusSince,
+  overlapMs,
+  withExcludedSpans,
+  type ExcludedSpan,
+} from './sla.pause-history'
 
 const log = logger.child({ component: 'sla' })
 
@@ -77,10 +83,12 @@ export function predatesApplication(
  * clobbering). Ownership:
  *
  *  - settle recorders (recordFirstResponse/recordNextResponse/
- *    recordResolution) own their clock's `*At` outcome and, when the settle
- *    itself notes the breach, that clock's `*BreachedAt`;
- *  - pauseSlaOnSnooze/resumeSlaFromSnooze own `pausedAt` and the pause-shift
- *    of the still-unsettled `*DueAt` deadlines;
+ *    recordResolution) own their clock's `*At` outcome, the settled clock's
+ *    `*DueAt` (set to the deadline the settle judged against) and, when the
+ *    settle itself notes the breach, that clock's `*BreachedAt`;
+ *  - the pause reconcile (sla.pause-reconcile.ts), and pauseSlaOnSnooze/
+ *    resumeSlaFromSnooze, own `pausedAt`, `pausedSpans`, `pauseRevision` and
+ *    the pause-shift of the still-unsettled `*DueAt` deadlines;
  *  - rearmNextResponse owns the next-response cycle fields
  *    (`nextResponseCycleAt`, `nextResponseDueAt`, `nextResponseAt`, and the
  *    per-cycle markers): a fresh customer message replaces the cycle
@@ -464,7 +472,10 @@ async function commitClockEvent(
  *
  * The reaction that calls this can run after a later reply's (see
  * sla.messages.ts), so the clock settles at the first human reply written
- * since the SLA was applied, when that is earlier than `at`.
+ * since the SLA was applied, when that is earlier than `at`. It can also run
+ * after a later snooze was excluded from the deadline, so the settle judges
+ * the deadline as of the reply (dueAsOf) and stores that one: a settled
+ * clock keeps the deadline it was judged against, whatever ran first.
  */
 export async function recordFirstResponse(
   conversationId: ConversationId,
@@ -481,6 +492,12 @@ export async function recordFirstResponse(
       earliestHumanReplyAfter(conversationId, new Date(applied.appliedAt))
     )
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
+    const dueAt = dueAsOf(
+      applied.firstResponseDueAt,
+      applied,
+      new Date(applied.appliedAt),
+      settleAt
+    ).toISOString()
     let committed: boolean
     if (applied.firstResponseBreachedAt) {
       // Settle-only (the breach event stays exactly-once), but log the late
@@ -490,26 +507,15 @@ export async function recordFirstResponse(
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
-        { firstResponseAt: settleAt.toISOString() },
+        { firstResponseAt: settleAt.toISOString(), firstResponseDueAt: dueAt },
         'first_response_settled_after_breach',
-        dueAsOf(
-          applied.firstResponseDueAt,
-          applied,
-          new Date(applied.appliedAt),
-          settleAt
-        ).toISOString(),
+        dueAt,
         settleAt,
         guard,
         { unsetFields: ['firstResponseAt'] }
       )
     } else {
-      const dueAt = dueAsOf(
-        applied.firstResponseDueAt,
-        applied,
-        new Date(applied.appliedAt),
-        settleAt
-      )
-      const breached = settleAt.getTime() > dueAt.getTime()
+      const breached = settleAt.getTime() > new Date(dueAt).getTime()
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
@@ -517,10 +523,11 @@ export async function recordFirstResponse(
           ? {
               firstResponseAt: settleAt.toISOString(),
               firstResponseBreachedAt: settleAt.toISOString(),
+              firstResponseDueAt: dueAt,
             }
-          : { firstResponseAt: settleAt.toISOString() },
+          : { firstResponseAt: settleAt.toISOString(), firstResponseDueAt: dueAt },
         breached ? 'first_response_breached' : 'first_response_met',
-        dueAt.toISOString(),
+        dueAt,
         settleAt,
         guard,
         // When this settle logs the breach itself, the breach-noted marker is
@@ -558,6 +565,11 @@ export async function recordFirstResponse(
  * fresh read: the same guarded-write-then-reload handles both uniformly,
  * degrading a stale preloaded stamp to a reload rather than clobbering
  * whatever is actually on the row.
+ *
+ * A close reaction can run after a later close's, so the clock settles at the
+ * first close since the SLA was applied, from the conversation's status
+ * changes, when that is earlier than `at`; and, as recordFirstResponse does,
+ * stores the deadline it judged against.
  */
 export async function recordResolution(
   conversationId: ConversationId,
@@ -568,7 +580,19 @@ export async function recordResolution(
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.timeToCloseDueAt || applied.resolvedAt) return
     if (predatesApplication(at, applied, { conversation_id: conversationId })) return
+    // The first close since this SLA was applied, when it is earlier than
+    // `at`: a later close's reaction can run first.
+    const settleAt = await earliestOf(
+      at,
+      firstStatusSince('conversation', conversationId, 'closed', new Date(applied.appliedAt))
+    )
     const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
+    const dueAt = dueAsOf(
+      applied.timeToCloseDueAt,
+      applied,
+      new Date(applied.appliedAt),
+      settleAt
+    ).toISOString()
     let committed: boolean
     if (applied.resolutionBreachedAt) {
       // Settle-only (the breach event stays exactly-once), but log the late
@@ -578,25 +602,28 @@ export async function recordResolution(
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
-        { resolvedAt: at.toISOString() },
+        { resolvedAt: settleAt.toISOString(), timeToCloseDueAt: dueAt },
         'resolution_settled_after_breach',
-        dueAsOf(applied.timeToCloseDueAt, applied, new Date(applied.appliedAt), at).toISOString(),
-        at,
+        dueAt,
+        settleAt,
         guard,
         { unsetFields: ['resolvedAt'] }
       )
     } else {
-      const dueAt = dueAsOf(applied.timeToCloseDueAt, applied, new Date(applied.appliedAt), at)
-      const breached = at.getTime() > dueAt.getTime()
+      const breached = settleAt.getTime() > new Date(dueAt).getTime()
       committed = await commitClockEvent(
         conversationId,
         applied.policyId,
         breached
-          ? { resolvedAt: at.toISOString(), resolutionBreachedAt: at.toISOString() }
-          : { resolvedAt: at.toISOString() },
+          ? {
+              resolvedAt: settleAt.toISOString(),
+              resolutionBreachedAt: settleAt.toISOString(),
+              timeToCloseDueAt: dueAt,
+            }
+          : { resolvedAt: settleAt.toISOString(), timeToCloseDueAt: dueAt },
         breached ? 'resolution_breached' : 'resolution_met',
-        dueAt.toISOString(),
-        at,
+        dueAt,
+        settleAt,
         guard,
         // See recordFirstResponse for why the breach-noted marker joins the
         // content CAS when this settle logs the breach itself.
