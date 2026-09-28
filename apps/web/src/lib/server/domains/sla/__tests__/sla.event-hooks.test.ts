@@ -55,6 +55,14 @@ vi.mock('../ticket-sla.service', () => ({
   resumeTicketSlaFromPending,
 }))
 
+// The entity's current status gates pause/resume against real rows in
+// sla.status-reactions.test.ts. Here it is unknown (null), which leaves each
+// event to decide, as it does for an entity that is gone.
+vi.mock('../sla.current-status', () => ({
+  currentConversationStatus: vi.fn().mockResolvedValue(null),
+  currentTicketStatusCategory: vi.fn().mockResolvedValue(null),
+}))
+
 import { recordSlaFromEvent } from '../sla.event-hooks'
 
 const at = '2026-01-05T10:00:00Z'

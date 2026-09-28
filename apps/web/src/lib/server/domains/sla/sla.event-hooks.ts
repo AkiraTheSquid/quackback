@@ -44,6 +44,16 @@
  * closed for tickets), so the close settles against the pause-shifted deadline
  * rather than the stale pre-pause one.
  *
+ * A pause or resume also checks the entity's status as it stands when the
+ * reaction runs (sla.current-status.ts): the reaction can run late, or be
+ * retried after later status changes. A resume is skipped while the
+ * conversation is snoozed (or the ticket pending) again, and a pause is
+ * skipped once it no longer is. Otherwise a retried un-snooze would leave the
+ * clock running through a later snooze, and the sweep would record a breach
+ * on a conversation nobody could act on. The cost is on the other side: a
+ * pause whose reaction runs only after the entity has already left the paused
+ * state is dropped, so that span is not excluded.
+ *
  * recordSlaFromEvent lets its errors propagate. It runs from the
  * event-reactions job (events/event-reactions.ts), which logs a failure and
  * retries the job, so a transient fault in a recorder is retried rather than
@@ -69,6 +79,7 @@ import {
   resumeTicketSlaFromPending,
   type TicketSlaApplied,
 } from './ticket-sla.service'
+import { currentConversationStatus, currentTicketStatusCategory } from './sla.current-status'
 
 /** When the message was written, falling back to the event's time when the payload lacks it. */
 function messageTime(createdAt: string | undefined, eventTimestamp: string): Date {
@@ -99,9 +110,12 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
         // conversation.status_changed (the only other resume trigger), so
         // without this the stamp would keep pausedAt forever: the sweep
         // skips paused stamps and every later settle would exclude the
-        // whole post-reopen span. No-op when the stamp isn't paused, or
-        // when the pause began after this message.
-        await resumeSlaFromSnooze(conversationId, at)
+        // whole post-reopen span. No-op when the stamp isn't paused, when
+        // the pause began after this message, or while the conversation is
+        // snoozed again.
+        if ((await currentConversationStatus(conversationId)) !== 'snoozed') {
+          await resumeSlaFromSnooze(conversationId, at)
+        }
         // A visitor message (re-)arms the next-response clock for the fresh
         // customer-message cycle. When the reply to it already exists (the
         // reaction ran late), the re-arm settles the cycle at that reply.
@@ -121,9 +135,12 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
       // loadSlaApplied SELECTs of the same row.
       let resumed: SlaApplied | null = null
       if (previousStatus === 'snoozed' && newStatus !== 'snoozed') {
-        resumed = await resumeSlaFromSnooze(conversationId, at)
+        if ((await currentConversationStatus(conversationId)) !== 'snoozed') {
+          resumed = await resumeSlaFromSnooze(conversationId, at)
+        }
       } else if (newStatus === 'snoozed' && previousStatus !== 'snoozed') {
-        await pauseSlaOnSnooze(conversationId, at)
+        const current = await currentConversationStatus(conversationId)
+        if (current === null || current === 'snoozed') await pauseSlaOnSnooze(conversationId, at)
       }
       if (newStatus === 'closed') {
         await recordResolution(conversationId, at, resumed)
@@ -142,9 +159,12 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
       // pending -> pending move between two statuses hits neither branch.
       let resumed: TicketSlaApplied | null = null
       if (previousStatus === 'pending' && newStatus !== 'pending') {
-        resumed = await resumeTicketSlaFromPending(ticketId, at)
+        if ((await currentTicketStatusCategory(ticketId)) !== 'pending') {
+          resumed = await resumeTicketSlaFromPending(ticketId, at)
+        }
       } else if (newStatus === 'pending' && previousStatus !== 'pending') {
-        await pauseTicketSlaOnPending(ticketId, at)
+        const current = await currentTicketStatusCategory(ticketId)
+        if (current === null || current === 'pending') await pauseTicketSlaOnPending(ticketId, at)
       }
       if (newStatus === 'closed') {
         await recordTicketResolution(ticketId, at, resumed)
