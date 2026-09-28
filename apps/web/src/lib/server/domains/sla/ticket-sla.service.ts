@@ -112,10 +112,15 @@ export type TicketSlaApplied = {
   // resumeTicketSlaFromPending once the still-unsettled deadline has been
   // shifted forward by the paused span.
   pausedAt?: string | null
+  // The pause starts (ISO) whose paused span has already been excluded from
+  // the deadlines: appended by a resume, and by a pause whose reaction ran
+  // only after the paused state had ended (sla.pause-span.ts). A retried or
+  // replayed pause whose start is listed excludes nothing more.
+  excludedPauses?: string[]
 }
 
 /** The active SLA stamped on a ticket, or null when none is applied. */
-async function loadTicketSlaApplied(ticketId: TicketId): Promise<TicketSlaApplied | null> {
+export async function loadTicketSlaApplied(ticketId: TicketId): Promise<TicketSlaApplied | null> {
   const [row] = await db
     .select({ slaApplied: tickets.slaApplied })
     .from(tickets)
@@ -483,7 +488,10 @@ export async function resumeTicketSlaFromPending(
   // plus the deadline shift when the clock is still unsettled (a settled
   // clock's due is left out of the patch entirely — it settled against
   // whatever was live at the time).
-  const patch: Partial<TicketSlaApplied> = { pausedAt: null }
+  const patch: Partial<TicketSlaApplied> = {
+    pausedAt: null,
+    excludedPauses: [...(applied.excludedPauses ?? []), pausedAt],
+  }
   if (!applied.resolvedAt) {
     patch.timeToResolveDueAt = shiftIso(applied.timeToResolveDueAt, shiftMs)
   }

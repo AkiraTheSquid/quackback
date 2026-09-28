@@ -164,6 +164,11 @@ export type SlaApplied = {
   // Set by pauseSlaOnSnooze, cleared by resumeSlaFromSnooze once the
   // still-unsettled deadlines have been shifted forward by the paused span.
   pausedAt?: string | null
+  // The pause starts (ISO) whose paused span has already been excluded from
+  // the deadlines: appended by a resume, and by a pause whose reaction ran
+  // only after the paused state had ended (sla.pause-span.ts). A retried or
+  // replayed pause whose start is listed excludes nothing more.
+  excludedPauses?: string[]
 }
 
 /**
@@ -1055,7 +1060,10 @@ export async function resumeSlaFromSnooze(
   // plus the shift of each still-unsettled deadline (a settled clock's due is
   // left out of the patch entirely — it settled against whatever was live at
   // the time, and merging nothing leaves the field byte-identical).
-  const patch: Partial<SlaApplied> = { pausedAt: null }
+  const patch: Partial<SlaApplied> = {
+    pausedAt: null,
+    excludedPauses: [...(applied.excludedPauses ?? []), pausedAt],
+  }
   if (applied.firstResponseDueAt && !applied.firstResponseAt) {
     patch.firstResponseDueAt = shiftIso(applied.firstResponseDueAt, shiftMs)
   }

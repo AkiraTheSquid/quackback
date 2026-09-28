@@ -50,9 +50,9 @@
  * conversation is snoozed (or the ticket pending) again, and a pause is
  * skipped once it no longer is. Otherwise a retried un-snooze would leave the
  * clock running through a later snooze, and the sweep would record a breach
- * on a conversation nobody could act on. The cost is on the other side: a
- * pause whose reaction runs only after the entity has already left the paused
- * state is dropped, so that span is not excluded.
+ * on a conversation nobody could act on. A pause whose reaction runs only
+ * after its paused state already ended is not dropped: it excludes the span
+ * up to the recorded wake, once (sla.pause-span.ts).
  *
  * recordSlaFromEvent lets its errors propagate. It runs from the
  * event-reactions job (events/event-reactions.ts), which logs a failure and
@@ -80,6 +80,12 @@ import {
   type TicketSlaApplied,
 } from './ticket-sla.service'
 import { currentConversationStatus, currentTicketStatusCategory } from './sla.current-status'
+import {
+  excludePendingSpan,
+  excludeSnoozedSpan,
+  pendingEndedAt,
+  snoozeEndedAt,
+} from './sla.pause-span'
 
 /** When the message was written, falling back to the event's time when the payload lacks it. */
 function messageTime(createdAt: string | undefined, eventTimestamp: string): Date {
@@ -139,8 +145,15 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
           resumed = await resumeSlaFromSnooze(conversationId, at)
         }
       } else if (newStatus === 'snoozed' && previousStatus !== 'snoozed') {
-        const current = await currentConversationStatus(conversationId)
-        if (current === null || current === 'snoozed') await pauseSlaOnSnooze(conversationId, at)
+        // A pause reacted to after its snooze already ended excludes the span
+        // up to the recorded wake instead (sla.pause-span.ts).
+        const woke = await snoozeEndedAt(conversationId, at)
+        if (woke) {
+          await excludeSnoozedSpan(conversationId, at, woke)
+        } else {
+          const current = await currentConversationStatus(conversationId)
+          if (current === null || current === 'snoozed') await pauseSlaOnSnooze(conversationId, at)
+        }
       }
       if (newStatus === 'closed') {
         await recordResolution(conversationId, at, resumed)
@@ -163,8 +176,13 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
           resumed = await resumeTicketSlaFromPending(ticketId, at)
         }
       } else if (newStatus === 'pending' && previousStatus !== 'pending') {
-        const current = await currentTicketStatusCategory(ticketId)
-        if (current === null || current === 'pending') await pauseTicketSlaOnPending(ticketId, at)
+        const woke = await pendingEndedAt(ticketId, at)
+        if (woke) {
+          await excludePendingSpan(ticketId, at, woke)
+        } else {
+          const current = await currentTicketStatusCategory(ticketId)
+          if (current === null || current === 'pending') await pauseTicketSlaOnPending(ticketId, at)
+        }
       }
       if (newStatus === 'closed') {
         await recordTicketResolution(ticketId, at, resumed)

@@ -62,6 +62,14 @@ vi.mock('../sla.current-status', () => ({
   currentConversationStatus: vi.fn().mockResolvedValue(null),
   currentTicketStatusCategory: vi.fn().mockResolvedValue(null),
 }))
+// No recorded wake after a pause, so each pause event pauses. The late-pause
+// span is tested against real rows in sla.pause-span.test.ts.
+vi.mock('../sla.pause-span', () => ({
+  snoozeEndedAt: vi.fn().mockResolvedValue(null),
+  pendingEndedAt: vi.fn().mockResolvedValue(null),
+  excludeSnoozedSpan: vi.fn(),
+  excludePendingSpan: vi.fn(),
+}))
 
 import { recordSlaFromEvent } from '../sla.event-hooks'
 
