@@ -674,6 +674,10 @@ export function shiftIso(iso: string, ms: number): string {
  * before the snapshot existed fall back to resolving the live policy's
  * schedule. Every write pins the cycle fields and the pause ledger it read,
  * so a concurrent writer makes it miss, reload and decide again.
+ *
+ * The rows are read from the armed cycle's opener on once the stamp records
+ * the first response (see cycleReadFrom), so a reaction reads the messages of
+ * the current cycle, not the conversation's whole history.
  */
 export async function rearmNextResponse(
   conversationId: ConversationId,
@@ -733,7 +737,7 @@ async function knownResponseMessages(
   applied: SlaApplied,
   own: ResponseMessage
 ): Promise<ResponseMessage[]> {
-  const rows = await responseMessagesSince(conversationId, new Date(applied.appliedAt))
+  const rows = await responseMessagesSince(conversationId, cycleReadFrom(applied))
   const recorded: ResponseMessage[] = [own]
   if (applied.nextResponseCycleAt) {
     recorded.push({ at: new Date(applied.nextResponseCycleAt), kind: 'opener' })
@@ -743,6 +747,25 @@ async function knownResponseMessages(
   }
   const written = new Set(rows.map((row) => row.at.getTime()))
   return [...rows, ...recorded.filter((message) => !written.has(message.at.getTime()))]
+}
+
+/**
+ * Where the message rows the cycles need begin. Until the stamp records the
+ * first response, the cycles start after the first reply in the rows, so the
+ * rows are read from the application. Once it does, from the armed cycle's
+ * opener, else the first response: outcomes are logged only from the armed
+ * cycle on, the stamp never moves back to an earlier cycle, and no row at or
+ * before the first response opens one, so every cycle the reconcile acts on is
+ * built from the same rows a read from the application returns. A caller's own
+ * message from before this point is still counted (knownResponseMessages), and
+ * a later opener supersedes it.
+ */
+function cycleReadFrom(applied: SlaApplied): Date {
+  if (!applied.firstResponseAt) return new Date(applied.appliedAt)
+  const bounds = [applied.appliedAt, applied.firstResponseAt, applied.nextResponseCycleAt]
+    .filter((at): at is string => Boolean(at))
+    .map((at) => new Date(at).getTime())
+  return new Date(Math.max(...bounds))
 }
 
 /** When the armed next-response cycle opened, when the stamp records it. */
@@ -778,17 +801,30 @@ async function advanceNextResponse(
     return { dueAt, breached: cycle.reply.getTime() > dueAt.getTime() }
   }
   const armed = cycleStart(applied)?.getTime() ?? Number.NEGATIVE_INFINITY
-  const logged = await loggedCycleOutcomes(conversationId)
+  const logged = await loggedCycleOutcomes(conversationId, armed)
+  const named = new Set(logged.flatMap((event) => (event.cycleAt === null ? [] : [event.cycleAt])))
+  // Outcomes logged before cycles were named, matched to a cycle by their time.
+  const unnamed = logged
+    .flatMap((event) => (event.cycleAt === null ? [event.at] : []))
+    .sort((a, b) => a - b)
+  const unnamedWithin = (from: number, until: number) => {
+    let low = 0
+    let high = unnamed.length
+    while (low < high) {
+      const mid = (low + high) >> 1
+      if (unnamed[mid] < from) low = mid + 1
+      else high = mid
+    }
+    return low < unnamed.length && unnamed[low] < until
+  }
   const outcomes = cycles.filter(
     (cycle, index) =>
       cycle.reply !== null &&
       cycle.opener.getTime() >= armed &&
-      !logged.some((event) =>
-        event.cycleAt
-          ? event.cycleAt === cycle.opener.getTime()
-          : // An outcome logged before cycles were named: by its time.
-            event.at >= cycle.opener.getTime() &&
-            event.at < (cycles[index + 1]?.opener.getTime() ?? Number.POSITIVE_INFINITY)
+      !named.has(cycle.opener.getTime()) &&
+      !unnamedWithin(
+        cycle.opener.getTime(),
+        cycles[index + 1]?.opener.getTime() ?? Number.POSITIVE_INFINITY
       )
   )
   const latest = cycles[cycles.length - 1]
@@ -855,15 +891,25 @@ const NEXT_RESPONSE_OUTCOMES = [
  * names (by its opener), or, for one logged before cycles were named, its time.
  */
 async function loggedCycleOutcomes(
-  conversationId: ConversationId
+  conversationId: ConversationId,
+  from: number
 ): Promise<{ cycleAt: number | null; at: number }[]> {
+  // Only outcomes that can match a cycle from `from` on: one naming such a
+  // cycle, or an untagged one logged within one (its time is at or after the
+  // cycle's opener). ISO instants compare in time order as text.
+  const since = Number.isFinite(from)
+    ? [
+        sql`coalesce(${slaEvents.meta} ->> 'cycleAt', ${slaEvents.meta} ->> 'at') >= ${new Date(from).toISOString()}`,
+      ]
+    : []
   const rows = await db
     .select({ meta: slaEvents.meta })
     .from(slaEvents)
     .where(
       and(
         eq(slaEvents.conversationId, conversationId),
-        inArray(slaEvents.kind, NEXT_RESPONSE_OUTCOMES)
+        inArray(slaEvents.kind, NEXT_RESPONSE_OUTCOMES),
+        ...since
       )
     )
   return rows.map(({ meta }) => {

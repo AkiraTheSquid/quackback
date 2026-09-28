@@ -34,14 +34,19 @@ import {
 import type { SQL } from 'drizzle-orm'
 import type { ConversationId } from '@quackback/ids'
 
-const humanReply = and(
-  eq(conversationMessages.senderType, 'agent'),
-  sql`${principal.type} IS DISTINCT FROM 'service'`
-)
+/**
+ * Whether the message's author is a service principal. A membership test
+ * against the (few) service principals rather than a join: a join lets the
+ * planner hash the whole principal table for a long conversation, whatever
+ * the time bound. A message without a principal is not a service's.
+ */
+const byService = sql`coalesce(${conversationMessages.principalId} in (select ${principal.id} from ${principal} where ${principal.type} = 'service'), false)`
+
+const humanReply = and(eq(conversationMessages.senderType, 'agent'), sql`not ${byService}`)
 
 const cycleOpener = or(
   eq(conversationMessages.senderType, 'visitor'),
-  and(eq(conversationMessages.senderType, 'agent'), eq(principal.type, 'service'))
+  and(eq(conversationMessages.senderType, 'agent'), byService)
 )
 
 async function earliestMessageTime(
@@ -51,7 +56,6 @@ async function earliestMessageTime(
   const [row] = await db
     .select({ createdAt: conversationMessages.createdAt })
     .from(conversationMessages)
-    .leftJoin(principal, eq(principal.id, conversationMessages.principalId))
     .where(
       and(
         eq(conversationMessages.conversationId, conversationId),
@@ -89,7 +93,6 @@ export async function responseMessagesSince(
   const rows = await db
     .select({ at: conversationMessages.createdAt, reply: sql<boolean>`${humanReply}` })
     .from(conversationMessages)
-    .leftJoin(principal, eq(principal.id, conversationMessages.principalId))
     .where(
       and(
         eq(conversationMessages.conversationId, conversationId),

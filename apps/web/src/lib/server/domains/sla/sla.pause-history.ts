@@ -15,6 +15,7 @@
  */
 import { db, and, asc, eq, gte, sql, events, conversationMessages } from '@/lib/server/db'
 import type { ConversationId, TicketId } from '@quackback/ids'
+import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 
 /** A paused span; `until` is null while the entity is still paused. */
 export interface PausedSpan {
@@ -95,19 +96,41 @@ export async function firstStatusSince(
   return row?.at ?? null
 }
 
-/** Each customer message wakes a snoozed conversation. */
-async function customerMessageWakes(conversationId: ConversationId): Promise<Transition[]> {
-  const rows = await db
-    .select({ at: conversationMessages.createdAt })
-    .from(conversationMessages)
-    .where(
-      and(
-        eq(conversationMessages.conversationId, conversationId),
-        eq(conversationMessages.senderType, 'visitor'),
-        eq(conversationMessages.isInternal, false)
-      )
-    )
-  return rows.map(({ at }) => ({ at, kind: 'leave' }))
+/**
+ * The customer messages that can wake a snooze: for each entry into it, the
+ * first customer message after the entry. Every customer message wakes a
+ * snoozed conversation, but only the first one after an entry can end a span
+ * (a later one finds it awake already), so the spans rebuilt from these are
+ * the ones all customer messages give, at one indexed row per entry. A
+ * message in the entry's own millisecond is not after it (spansFrom takes a
+ * wake before an entry at the same instant), so the lookup starts one
+ * millisecond on.
+ */
+async function customerMessageWakes(
+  conversationId: ConversationId,
+  enters: Date[]
+): Promise<Transition[]> {
+  if (enters.length === 0) return []
+  // The entries travel as one JSON parameter: a JS array would be flattened
+  // into one parameter per element.
+  const entries = JSON.stringify(enters.map((at) => at.toISOString()))
+  const rows = getExecuteRows<{ ms: string | number | null }>(
+    await db.execute(sql`
+      select floor(extract(epoch from (
+        select ${conversationMessages.createdAt} from ${conversationMessages}
+        where ${and(
+          eq(conversationMessages.conversationId, conversationId),
+          eq(conversationMessages.senderType, 'visitor'),
+          eq(conversationMessages.isInternal, false)
+        )} and ${conversationMessages.createdAt} >= e.at + interval '1 millisecond'
+        order by ${conversationMessages.createdAt} limit 1
+      )) * 1000)::bigint as ms
+      from (select value::timestamptz as at from jsonb_array_elements_text(${entries}::jsonb)) as e
+    `)
+  )
+  return rows
+    .filter((row) => row.ms !== null)
+    .map((row) => ({ at: new Date(Number(row.ms)), kind: 'leave' as const }))
 }
 
 /**
@@ -141,10 +164,9 @@ export async function snoozedSpans(
   conversationId: ConversationId,
   since: Date
 ): Promise<PausedSpan[]> {
-  const [status, wakes] = await Promise.all([
-    statusTransitions('conversation', conversationId, 'snoozed'),
-    customerMessageWakes(conversationId),
-  ])
+  const status = await statusTransitions('conversation', conversationId, 'snoozed')
+  const enters = status.filter((move) => move.kind === 'enter').map((move) => move.at)
+  const wakes = await customerMessageWakes(conversationId, enters)
   return spansFrom([...status, ...wakes], since)
 }
 
