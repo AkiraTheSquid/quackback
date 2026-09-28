@@ -622,7 +622,9 @@ remove it. The known remaining effects:
   runbook below strips them.
 - **A reply through an older API key reads as a person's.** Its row is stored
   like the person's inbox reply, so the response clocks count it as a human
-  reply although its own event does not (see `sla.messages.ts`).
+  reply although its own event does not (see `sla.messages.ts`). Its own
+  reaction settles an armed next-response cycle at its time, and a later human
+  reply's reaction settles the first response at it.
 - **Timestamps within the same instant.** A status move recorded in the same
   instant as the message can let a late reopen through or stop a legitimate
   one.

@@ -16,8 +16,10 @@
  * an older API key whose principal is a person is stored exactly like that
  * person's inbox reply, so the rows count it as a human reply, while its own
  * event carries a service actor. Its own reaction settles no first response,
- * but any later reaction that reads the rows can settle a response clock at
- * that API reply's time. The row records nothing that tells the two apart.
+ * but it does settle an armed next-response cycle at its own time, since the
+ * cycles are rebuilt from the rows. A later human reply's reaction then settles
+ * the first response at that API reply's time too. The row records nothing
+ * that tells the two apart.
  */
 import {
   db,
