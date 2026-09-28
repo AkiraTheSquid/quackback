@@ -562,6 +562,48 @@ a cycle the clock has already moved past. The pair-ticket reopen leaves
 standing a close made after the message, and writes only on the status it
 read.
 
+**Rolling back to a build that predates the reaction queues.** A worker built
+before `event-reactions` and `event-summaries` has no definition for either,
+so it never claims their rows: it only claims queues it has definitions for,
+and the prune only deletes finished rows. Rows left behind stay `pending`,
+count as standing work, so the workspace's job loop never goes idle, and run
+late, against current state, once a newer worker is back. A web process of
+that older build runs these reactions in-process and queues none, so there is
+no gap or double once web and worker are on the same build. The window to
+manage is web newer than the worker: the newer web queues reactions the older
+worker never runs. An operator rolling back to a build that predates these
+queues therefore reverses the rollout order:
+
+1. Roll web back first. The older web reacts in-process and stops queueing;
+   the newer worker drains what the newer web queued.
+2. Wait until this reports 0 in every workspace (`running` covers a job the
+   newer worker still holds, which the reaper would otherwise return to
+   `pending` after the rollback):
+
+```sql
+SELECT count(*) FROM job_queue
+WHERE queue IN ('event-reactions', 'event-summaries') AND status IN ('pending', 'running');
+```
+
+3. Roll the worker back.
+4. Once the older worker is live and any lease it inherited has lapsed, delete
+   whatever is still pending on the two queues, for example a retry scheduled
+   after step 2:
+
+```sql
+DELETE FROM job_queue
+WHERE queue IN ('event-reactions', 'event-summaries') AND status = 'pending';
+```
+
+Dropping those few reactions is better than running them days later. If some
+are left and run late after a later roll-forward, that replay is harmless to
+what customers and agents see: the next-response clock reads the
+conversation's messages, so a stale message cannot re-arm a clock or record a
+false breach, and a stale pair-ticket reopen leaves standing a close made
+after the message. One effect remains: a replayed snooze or pending status
+change can pause a clock again, which holds back breach recording for that
+conversation or ticket until its next resume.
+
 ## 11. Running the evidence
 
 ```bash
