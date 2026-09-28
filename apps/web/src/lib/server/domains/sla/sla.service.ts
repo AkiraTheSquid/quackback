@@ -58,7 +58,9 @@ import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.message
  *    fresh customer message replaces the cycle wholesale, and the merge's
  *    explicit nulls clear the old cycle's fields (jsonb-merge sets the key to
  *    null, which `->> field IS NULL` guards and falsy JS readers both treat
- *    as unset);
+ *    as unset). recordNextResponse writes a whole cycle the same way when a
+ *    reply's reaction arms the cycle its customer message opened (see
+ *    cycleAnsweredBy), pinned to the cycle fields it read;
  *  - the sweeps (sla.sweep.ts) own the `*BreachedAt` / `*WarningFiredAt` /
  *    `*BreachTriggerFiredAt` markers.
  */
