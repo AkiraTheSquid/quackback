@@ -44,6 +44,7 @@ import { createSlaPolicy } from '../sla-policy.service'
 import { applySlaToConversation, type SlaApplied } from '../sla.service'
 import { sweepOverdueSlaBreaches } from '../sla.sweep'
 import { recordSlaFromEvent } from '../sla.event-hooks'
+import { recordStatusChange } from './status-history'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -159,6 +160,7 @@ async function changeStatus(
   when: Date
 ): Promise<EventData> {
   await setStatus(conversationId, newStatus)
+  await recordStatusChange('conversation', conversationId, previousStatus, newStatus, when)
   return {
     type: 'conversation.status_changed',
     id: createId('event'),

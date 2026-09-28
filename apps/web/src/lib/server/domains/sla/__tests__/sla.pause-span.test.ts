@@ -423,4 +423,63 @@ describe.skipIf(!fixture.available)('SLA pauses reacted to after the paused stat
 
     expect(await ticketClock(ticket.ticketId)).toEqual(SPAN_EXCLUDED)
   })
+
+  it('a lateral move inside a snooze is not its wake', async () => {
+    const { conversationId } = await seedConversation()
+    const snooze = await conversationMoves(conversationId, 'open', 'snoozed', '10:30')
+    const lateral = await conversationMoves(conversationId, 'snoozed', 'snoozed', '11:00') // snooze extended
+    const wake = await conversationMoves(conversationId, 'snoozed', 'open', '12:30')
+
+    // The snooze's reaction runs after the lateral move, while still snoozed.
+    await recordSlaFromEvent(lateral)
+    await recordSlaFromEvent(snooze)
+    await recordSlaFromEvent(wake)
+
+    expect(await conversationClock(conversationId)).toEqual(SPAN_EXCLUDED)
+  })
+
+  it('a lateral move between pending statuses is not the end of the pending span', async () => {
+    const ticket = await seedTicket()
+    const pending = await ticketMoves(ticket, 'open', 'pending', '10:30')
+    const lateral = await ticketMoves(ticket, 'pending', 'pending', '11:00')
+    const leave = await ticketMoves(ticket, 'pending', 'open', '12:30')
+
+    await recordSlaFromEvent(lateral)
+    await recordSlaFromEvent(pending)
+    await recordSlaFromEvent(leave)
+
+    expect(await ticketClock(ticket.ticketId)).toEqual(SPAN_EXCLUDED)
+  })
+
+  it('a wake reacted to after the next snooze began closes the first snooze at its own time', async () => {
+    const { conversationId } = await seedConversation()
+    await recordSlaFromEvent(await conversationMoves(conversationId, 'open', 'snoozed', '10:30'))
+    const firstWake = await conversationMoves(conversationId, 'snoozed', 'open', '11:00') // runs late
+    await recordSlaFromEvent(await conversationMoves(conversationId, 'open', 'snoozed', '11:30'))
+    await recordSlaFromEvent(firstWake)
+    await recordSlaFromEvent(await conversationMoves(conversationId, 'snoozed', 'open', '12:30'))
+
+    // Snoozed 10:30-11:00 and 11:30-12:30: 90 minutes excluded, not the
+    // active half hour between them.
+    expect(await conversationClock(conversationId)).toEqual({
+      dueAt: iso('15:30'),
+      pausedAt: null,
+      breaches: [],
+    })
+  })
+
+  it('a leave-pending reacted to after the next pending began closes the first span at its own time', async () => {
+    const ticket = await seedTicket()
+    await recordSlaFromEvent(await ticketMoves(ticket, 'open', 'pending', '10:30'))
+    const firstLeave = await ticketMoves(ticket, 'pending', 'open', '11:00') // runs late
+    await recordSlaFromEvent(await ticketMoves(ticket, 'open', 'pending', '11:30'))
+    await recordSlaFromEvent(firstLeave)
+    await recordSlaFromEvent(await ticketMoves(ticket, 'pending', 'open', '12:30'))
+
+    expect(await ticketClock(ticket.ticketId)).toEqual({
+      dueAt: iso('15:30'),
+      pausedAt: null,
+      breaches: [],
+    })
+  })
 })

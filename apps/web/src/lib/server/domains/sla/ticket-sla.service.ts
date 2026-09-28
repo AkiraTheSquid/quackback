@@ -42,12 +42,12 @@ import { NotFoundError, ValidationError } from '@/lib/shared/errors'
 import { getSlaPolicy } from './sla-policy.service'
 import {
   resolveScheduleFor,
-  dueAtForSettle,
   shiftIso,
   predatesApplication,
   type StampExecutor,
 } from './sla.service'
 import { addOfficeHoursSeconds, type EngineSchedule } from '../office-hours/office-hours.service'
+import { dueAsOf, type ExcludedSpan } from './sla.pause-history'
 
 /**
  * The `tickets.sla_applied` shape: the one active SLA on a ticket, carrying
@@ -108,15 +108,15 @@ export type TicketSlaApplied = {
   pauseOnPending?: boolean
   // ISO instant the clock was paused at (the ticket entered a
   // 'pending'-category status under a pauseOnPending policy). Absent/null
-  // while the clock is running. Set by pauseTicketSlaOnPending, cleared by
-  // resumeTicketSlaFromPending once the still-unsettled deadline has been
-  // shifted forward by the paused span.
+  // while the clock is running. Opened and closed by the pause reconcile
+  // (sla.pause-reconcile.ts), or by pauseTicketSlaOnPending /
+  // resumeTicketSlaFromPending.
   pausedAt?: string | null
-  // The pause starts (ISO) whose paused span has already been excluded from
-  // the deadlines: appended by a resume, and by a pause whose reaction ran
-  // only after the paused state had ended (sla.pause-span.ts). A retried or
-  // replayed pause whose start is listed excludes nothing more.
-  excludedPauses?: string[]
+  // The pending spans already excluded from the unsettled deadline, and the
+  // revision every writer of the ledger bumps: see SlaApplied's fields of the
+  // same names.
+  pausedSpans?: ExcludedSpan[]
+  pauseRevision?: number
 }
 
 /** The active SLA stamped on a ticket, or null when none is applied. */
@@ -323,6 +323,8 @@ export async function applySlaToTicket(
     pauseOnPending: policy.pauseOnPending,
     pausedAt:
       ticket.statusCategory === 'pending' && policy.pauseOnPending ? at.toISOString() : null,
+    pausedSpans: [],
+    pauseRevision: 0,
   }
 
   await db
@@ -353,7 +355,7 @@ export async function applySlaToTicket(
  * tracker fans onto its linked tickets evaluate each linked ticket's own
  * stamp, independently).
  *
- * Settling judges against dueAtForSettle (pause-adjusted): a ticket closed
+ * Settling judges against dueAsOf (pause-adjusted): a ticket closed
  * straight out of 'pending' settles against the deadline shifted by the
  * elapsed pause up to `at`, exactly like the conversation's settle-mid-snooze.
  * When the sweep already noted the breach (resolutionBreachedAt is set), the
@@ -392,13 +394,13 @@ export async function recordTicketResolution(
         applied.policyId,
         { resolvedAt: at.toISOString() },
         'time_to_resolve_settled_after_breach',
-        dueAtForSettle(applied.timeToResolveDueAt, applied.pausedAt, at).toISOString(),
+        dueAsOf(applied.timeToResolveDueAt, applied, new Date(applied.appliedAt), at).toISOString(),
         at,
         guard,
         { unsetFields: ['resolvedAt'] }
       )
     } else {
-      const dueAt = dueAtForSettle(applied.timeToResolveDueAt, applied.pausedAt, at)
+      const dueAt = dueAsOf(applied.timeToResolveDueAt, applied, new Date(applied.appliedAt), at)
       const breached = at.getTime() > dueAt.getTime()
       committed = await commitTicketClockEvent(
         ticketId,
@@ -446,10 +448,13 @@ export async function pauseTicketSlaOnPending(
   if (!applied || applied.pauseOnPending === false || applied.pausedAt) return
   if (predatesApplication(at, applied, { ticket_id: ticketId })) return
 
-  const landed = await commitTicketStamp(ticketId, { pausedAt: at.toISOString() }, at, {
-    appliedAt: applied.appliedAt,
-    pausedAt: null,
-  })
+  const landed = await commitTicketStamp(
+    ticketId,
+    { pausedAt: at.toISOString(), pauseRevision: (applied.pauseRevision ?? 0) + 1 },
+    at,
+    { appliedAt: applied.appliedAt, pausedAt: null },
+    { pinnedFields: { pauseRevision: ticketRevisionPin(applied) } }
+  )
   if (!landed) return
 
   await db.insert(slaEvents).values({
@@ -475,6 +480,11 @@ export async function pauseTicketSlaOnPending(
  * otherwise returns the post-resume stamp it wrote, so the event hook's
  * direct pending -> closed path can settle against it without reloading.
  */
+/** The pause-ledger revision a writer pins (see SlaApplied.pauseRevision). */
+function ticketRevisionPin(applied: { pauseRevision?: number }): string | null {
+  return applied.pauseRevision === undefined ? null : String(applied.pauseRevision)
+}
+
 export async function resumeTicketSlaFromPending(
   ticketId: TicketId,
   at: Date = new Date()
@@ -490,16 +500,20 @@ export async function resumeTicketSlaFromPending(
   // whatever was live at the time).
   const patch: Partial<TicketSlaApplied> = {
     pausedAt: null,
-    excludedPauses: [...(applied.excludedPauses ?? []), pausedAt],
+    pausedSpans: [...(applied.pausedSpans ?? []), { from: pausedAt, until: at.toISOString() }],
+    pauseRevision: (applied.pauseRevision ?? 0) + 1,
   }
   if (!applied.resolvedAt) {
     patch.timeToResolveDueAt = shiftIso(applied.timeToResolveDueAt, shiftMs)
   }
 
-  const landed = await commitTicketStamp(ticketId, patch, at, {
-    appliedAt: applied.appliedAt,
-    pausedAt,
-  })
+  const landed = await commitTicketStamp(
+    ticketId,
+    patch,
+    at,
+    { appliedAt: applied.appliedAt, pausedAt },
+    { pinnedFields: { pauseRevision: ticketRevisionPin(applied) } }
+  )
   if (!landed) return null
 
   await db.insert(slaEvents).values({

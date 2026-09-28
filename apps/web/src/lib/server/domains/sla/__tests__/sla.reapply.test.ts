@@ -45,6 +45,7 @@ import { createSlaPolicy } from '../sla-policy.service'
 import { applySlaToConversation, type SlaApplied } from '../sla.service'
 import { applySlaToTicket, type TicketSlaApplied } from '../ticket-sla.service'
 import { recordSlaFromEvent } from '../sla.event-hooks'
+import { recordStatusChange } from './status-history'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -156,6 +157,7 @@ async function conversationMoves(
     .update(conversations)
     .set({ status: newStatus })
     .where(eq(conversations.id, conversationId))
+  await recordStatusChange('conversation', conversationId, previousStatus, newStatus, at(hhmm))
   return {
     type: 'conversation.status_changed',
     id: createId('event'),
@@ -228,6 +230,7 @@ async function ticketMoves(
     .update(tickets)
     .set({ statusId: ticket.statusFor[newStatus] })
     .where(eq(tickets.id, ticket.ticketId))
+  await recordStatusChange('ticket', ticket.ticketId, previousStatus, newStatus, at(hhmm))
   return {
     type: 'ticket.status_changed',
     id: createId('event'),

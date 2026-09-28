@@ -1,15 +1,15 @@
 /**
  * The SLA pause and resume reactions run from queued jobs, which a failure
  * retries a second or more later, after status changes that came after the
- * event. So a pause or resume goes by the entity's status when the reaction
- * runs, not by the event alone: a resume is skipped while the conversation is
- * snoozed (or the ticket pending) again, and a pause is skipped once it no
- * longer is. Otherwise a retried resume leaves the clock running through a
- * later snooze, and the sweep records a breach on a conversation nobody could
- * act on.
+ * event. So a pause or resume goes by the entity's status history, not by the
+ * event alone (sla.pause-reconcile.ts): a retried wake closes its own pause at
+ * its own time even after the next pause began, which stays held; a pause
+ * reacted to after it ended leaves nothing held. The clock never runs through
+ * a later snooze, and no active time between two pauses is excluded.
  *
  * Real DB (rolled back) and the real reaction (`recordSlaFromEvent`). Each
- * status event is preceded by the status change it reports, as in production.
+ * status event is preceded by the status change it reports and its row in the
+ * events log, as in production.
  */
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest'
 import {
@@ -48,6 +48,7 @@ import { applySlaToTicket, type TicketSlaApplied } from '../ticket-sla.service'
 import { sweepOverdueSlaBreaches } from '../sla.sweep'
 import { sweepOverdueTicketSlaBreaches } from '../ticket-sla.sweep'
 import { recordSlaFromEvent } from '../sla.event-hooks'
+import { recordStatusChange } from './status-history'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -98,6 +99,7 @@ async function conversationMoves(
   hhmm: string
 ): Promise<EventData> {
   await setConversationStatus(conversationId, newStatus)
+  await recordStatusChange('conversation', conversationId, previousStatus, newStatus, at(hhmm))
   return {
     type: 'conversation.status_changed',
     id: createId('event'),
@@ -173,7 +175,8 @@ async function conversationClock(conversationId: ConversationId) {
   )
     .filter((event) => event.kind.endsWith('_breached'))
     .map((event) => event.kind)
-  return { pausedAt: (row.slaApplied as SlaApplied).pausedAt ?? null, breaches }
+  const stamp = row.slaApplied as SlaApplied
+  return { dueAt: stamp.timeToCloseDueAt, pausedAt: stamp.pausedAt ?? null, breaches }
 }
 
 // --- tickets -----------------------------------------------------------------
@@ -215,6 +218,7 @@ async function ticketMoves(
     .update(tickets)
     .set({ statusId: ticket.statusFor[newStatus] })
     .where(eq(tickets.id, ticket.ticketId))
+  await recordStatusChange('ticket', ticket.ticketId, previousStatus, newStatus, at(hhmm))
   return {
     type: 'ticket.status_changed',
     id: createId('event'),
@@ -233,7 +237,8 @@ async function ticketClock(ticketId: TicketId) {
   const breaches = (await testDb.select().from(slaEvents).where(eq(slaEvents.ticketId, ticketId)))
     .filter((event) => event.kind.endsWith('_breached'))
     .map((event) => event.kind)
-  return { pausedAt: (row.slaApplied as TicketSlaApplied).pausedAt ?? null, breaches }
+  const stamp = row.slaApplied as TicketSlaApplied
+  return { dueAt: stamp.timeToResolveDueAt, pausedAt: stamp.pausedAt ?? null, breaches }
 }
 
 describe.skipIf(!fixture.available)('SLA status reactions run late or retried', () => {
@@ -249,8 +254,10 @@ describe.skipIf(!fixture.available)('SLA status reactions run late or retried', 
     await recordSlaFromEvent(await conversationMoves(conversationId, 'open', 'snoozed', '11:05'))
     await recordSlaFromEvent(unsnooze)
 
+    // Snoozed 10:30-11:00 (excluded: due 14:30) and again from 11:05 (held).
     expect(await conversationClock(conversationId)).toEqual({
-      pausedAt: at('10:30').toISOString(),
+      dueAt: at('14:30').toISOString(),
+      pausedAt: at('11:05').toISOString(),
       breaches: [],
     })
   })
@@ -274,8 +281,10 @@ describe.skipIf(!fixture.available)('SLA status reactions run late or retried', 
     await recordSlaFromEvent(await conversationMoves(conversationId, 'open', 'snoozed', '11:05'))
     await recordSlaFromEvent(message)
 
+    // Snoozed 10:30-11:00 (excluded: due 14:30) and again from 11:05 (held).
     expect(await conversationClock(conversationId)).toEqual({
-      pausedAt: at('10:30').toISOString(),
+      dueAt: at('14:30').toISOString(),
+      pausedAt: at('11:05').toISOString(),
       breaches: [],
     })
   })
@@ -288,7 +297,8 @@ describe.skipIf(!fixture.available)('SLA status reactions run late or retried', 
     await recordSlaFromEvent(leave)
 
     expect(await ticketClock(ticket.ticketId)).toEqual({
-      pausedAt: at('10:30').toISOString(),
+      dueAt: at('14:30').toISOString(),
+      pausedAt: at('11:05').toISOString(),
       breaches: [],
     })
   })

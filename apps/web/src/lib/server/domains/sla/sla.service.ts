@@ -36,6 +36,7 @@ import {
 import { getOfficeHoursSchedule } from '../settings/settings.office-hours'
 import { logger } from '@/lib/server/logger'
 import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.messages'
+import { dueAsOf, overlapMs, withExcludedSpans, type ExcludedSpan } from './sla.pause-history'
 
 const log = logger.child({ component: 'sla' })
 
@@ -161,14 +162,17 @@ export type SlaApplied = {
   pauseOnSnooze?: boolean
   // ISO instant the clock was paused at (the conversation entered 'snoozed'
   // under a pauseOnSnooze policy). Absent/null while the clock is running.
-  // Set by pauseSlaOnSnooze, cleared by resumeSlaFromSnooze once the
-  // still-unsettled deadlines have been shifted forward by the paused span.
+  // Opened and closed by the pause reconcile (sla.pause-reconcile.ts), or by
+  // pauseSlaOnSnooze / resumeSlaFromSnooze.
   pausedAt?: string | null
-  // The pause starts (ISO) whose paused span has already been excluded from
-  // the deadlines: appended by a resume, and by a pause whose reaction ran
-  // only after the paused state had ended (sla.pause-span.ts). A retried or
-  // replayed pause whose start is listed excludes nothing more.
-  excludedPauses?: string[]
+  // The snoozed spans already excluded from the unsettled deadlines: the
+  // pause ledger the reconcile compares with the conversation's history, so a
+  // span is excluded once however its reactions arrive. Absent on stamps
+  // written before the ledger existed.
+  pausedSpans?: ExcludedSpan[]
+  // Bumped by every write to pausedAt or pausedSpans, and pinned by the
+  // reconcile, so two writers of the ledger cannot both land on one read.
+  pauseRevision?: number
 }
 
 /**
@@ -235,6 +239,8 @@ export async function applySlaToConversation(
     firstResponseAt: null,
     pauseOnSnooze: policy.pauseOnSnooze,
     pausedAt: convo?.status === 'snoozed' && policy.pauseOnSnooze ? at.toISOString() : null,
+    pausedSpans: [],
+    pauseRevision: 0,
   }
 
   await db
@@ -436,30 +442,11 @@ async function commitClockEvent(
 }
 
 /**
- * The deadline to judge a settle against: the stamped due date, shifted by any
- * pause still active at `at`. Settling mid-snooze (e.g. a teammate replies to a
- * still-snoozed conversation) doesn't itself resume the clock, since resume
- * only happens when the conversation leaves 'snoozed', so this treats the
- * elapsed pause up to the settle moment as excluded time, the same as an
- * instantaneous resume-then-settle would. Once the conversation does resume,
- * this reduces to the stamped due date (pausedAt is cleared by then). Exported
- * for ticket-sla.service.ts, whose TTR settle judges against the identical
- * pause-adjusted deadline (its pause signal is the ticket's 'pending'
- * category instead of the conversation's 'snoozed').
- */
-export function dueAtForSettle(dueAt: string, pausedAt: string | null | undefined, at: Date): Date {
-  const due = new Date(dueAt)
-  if (!pausedAt) return due
-  const elapsedPauseMs = Math.max(0, at.getTime() - new Date(pausedAt).getTime())
-  return new Date(due.getTime() + elapsedPauseMs)
-}
-
-/**
  * Record the first teammate reply against the first-response clock and log
  * met/breached. Idempotent (only the first reply counts) and a no-op when no SLA
  * is applied or the policy doesn't track first response. If the clock is
  * currently paused (snoozed under pauseOnSnooze), the elapsed pause up to `at`
- * is excluded, see dueAtForSettle. When the sweep already noted the breach
+ * is excluded, see dueAsOf. When the sweep already noted the breach
  * (firstResponseBreachedAt is set), the reply only settles the clock — no
  * second BREACH event — but a `first_response_settled_after_breach` event IS
  * logged (meta.overdueSecs carries the lag from the pause-adjusted due date to
@@ -505,13 +492,23 @@ export async function recordFirstResponse(
         applied.policyId,
         { firstResponseAt: settleAt.toISOString() },
         'first_response_settled_after_breach',
-        dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, settleAt).toISOString(),
+        dueAsOf(
+          applied.firstResponseDueAt,
+          applied,
+          new Date(applied.appliedAt),
+          settleAt
+        ).toISOString(),
         settleAt,
         guard,
         { unsetFields: ['firstResponseAt'] }
       )
     } else {
-      const dueAt = dueAtForSettle(applied.firstResponseDueAt, applied.pausedAt, settleAt)
+      const dueAt = dueAsOf(
+        applied.firstResponseDueAt,
+        applied,
+        new Date(applied.appliedAt),
+        settleAt
+      )
       const breached = settleAt.getTime() > dueAt.getTime()
       committed = await commitClockEvent(
         conversationId,
@@ -546,7 +543,7 @@ export async function recordFirstResponse(
  * Record the conversation's resolution against the time-to-close clock and log
  * met/breached. Idempotent and a no-op when no SLA is applied or the policy
  * doesn't track time-to-close. If the clock is currently paused, the elapsed
- * pause up to `at` is excluded, see dueAtForSettle. When the sweep already
+ * pause up to `at` is excluded, see dueAsOf. When the sweep already
  * noted the breach (resolutionBreachedAt is set), the close only settles the
  * clock — no second BREACH event — but a `resolution_settled_after_breach`
  * event IS logged (meta.overdueSecs carries the lag from the pause-adjusted
@@ -583,13 +580,13 @@ export async function recordResolution(
         applied.policyId,
         { resolvedAt: at.toISOString() },
         'resolution_settled_after_breach',
-        dueAtForSettle(applied.timeToCloseDueAt, applied.pausedAt, at).toISOString(),
+        dueAsOf(applied.timeToCloseDueAt, applied, new Date(applied.appliedAt), at).toISOString(),
         at,
         guard,
         { unsetFields: ['resolvedAt'] }
       )
     } else {
-      const dueAt = dueAtForSettle(applied.timeToCloseDueAt, applied.pausedAt, at)
+      const dueAt = dueAsOf(applied.timeToCloseDueAt, applied, new Date(applied.appliedAt), at)
       const breached = at.getTime() > dueAt.getTime()
       committed = await commitClockEvent(
         conversationId,
@@ -702,18 +699,26 @@ function isAfter(date: Date, iso: string): boolean {
   return date.getTime() > new Date(iso).getTime()
 }
 
+/** When the armed next-response cycle opened, when the stamp records it. */
+function cycleStart(applied: SlaApplied): Date | null {
+  return applied.nextResponseCycleAt ? new Date(applied.nextResponseCycleAt) : null
+}
+
 /**
- * Replace the next-response cycle with a fresh one due at `dueAt`, clearing
- * the old cycle's settle outcome and per-cycle markers. With a `reply`, the
- * fresh cycle is settled at it in the same transaction, and the met or
- * breached event is logged with it. Pinned to the cycle fields the caller
- * read, so a concurrent re-arm or settle makes it miss.
+ * Replace the next-response cycle with a fresh one opened at `start`, whose
+ * unshifted deadline is `baseDueAt`, clearing the old cycle's settle outcome
+ * and per-cycle markers. The stored deadline adds every snoozed span the stamp
+ * has already excluded since `start`. With a `reply`, the fresh cycle is
+ * settled at it in the same transaction, judged as of the reply, and the met
+ * or breached event is logged with it. Pinned to the cycle fields and the
+ * pause ledger the caller read, so a concurrent re-arm, settle or reconcile
+ * makes it miss.
  */
 async function commitNextResponseCycle(
   conversationId: ConversationId,
   applied: SlaApplied,
   start: Date,
-  dueAt: Date,
+  baseDueAt: Date,
   reply: Date | null,
   at: Date
 ): Promise<boolean> {
@@ -723,8 +728,10 @@ async function commitNextResponseCycle(
       nextResponseDueAt: applied.nextResponseDueAt ?? null,
       nextResponseAt: applied.nextResponseAt ?? null,
       nextResponseCycleAt: applied.nextResponseCycleAt ?? null,
+      pauseRevision: applied.pauseRevision === undefined ? null : String(applied.pauseRevision),
     },
   }
+  const dueAt = withExcludedSpans(baseDueAt, applied, start)
   const cycle: Partial<SlaApplied> = {
     nextResponseCycleAt: start.toISOString(),
     nextResponseDueAt: dueAt.toISOString(),
@@ -735,7 +742,7 @@ async function commitNextResponseCycle(
   }
   if (!reply) return commitStamp(conversationId, cycle, at, guard, content)
 
-  const judgedDue = dueAtForSettle(dueAt.toISOString(), applied.pausedAt, reply)
+  const judgedDue = dueAsOf(dueAt.toISOString(), applied, start, reply)
   const breached = reply.getTime() > judgedDue.getTime()
   return commitClockEvent(
     conversationId,
@@ -769,7 +776,7 @@ async function legacyScheduleFor(policyId: SlaPolicyId): Promise<EngineSchedule 
  * met/breached. Idempotent within a cycle (only the first reply after the
  * customer's message counts) and a no-op when no next-response cycle is armed
  * (nextResponseDueAt unset) or none is tracked. Settling judges against
- * dueAtForSettle (pause-adjusted), exactly like recordFirstResponse. When the
+ * dueAsOf (pause-adjusted), exactly like recordFirstResponse. When the
  * sweep already noted this cycle's breach (nextResponseBreachedAt is set), the
  * reply only settles the clock — no second BREACH event — but a
  * `next_response_settled_after_breach` event IS logged with meta.overdueSecs
@@ -896,7 +903,9 @@ async function logReplacedCycleOutcome(
   const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
   if (!schedule) return
   const reply = await earliestOf(at, earliestHumanReplyAfter(conversationId, opener))
-  const dueAt = addOfficeHoursSeconds(schedule, opener, applied.nextResponseTargetSecs)
+  const base = addOfficeHoursSeconds(schedule, opener, applied.nextResponseTargetSecs)
+  const stored = withExcludedSpans(base, applied, opener)
+  const dueAt = dueAsOf(stored.toISOString(), applied, opener, reply)
   const breached = reply.getTime() > dueAt.getTime()
   await insertClockEvent(
     conversationId,
@@ -962,14 +971,14 @@ async function settleNextResponse(
       applied.policyId,
       { nextResponseAt: at.toISOString() },
       'next_response_settled_after_breach',
-      dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at).toISOString(),
+      dueAsOf(applied.nextResponseDueAt, applied, cycleStart(applied), at).toISOString(),
       at,
       guard,
       { unsetFields: ['nextResponseAt'], pinnedFields },
       applied.nextResponseCycleAt
     )
   }
-  const dueAt = dueAtForSettle(applied.nextResponseDueAt, applied.pausedAt, at)
+  const dueAt = dueAsOf(applied.nextResponseDueAt, applied, cycleStart(applied), at)
   const breached = at.getTime() > dueAt.getTime()
   return commitClockEvent(
     conversationId,
@@ -1012,10 +1021,13 @@ export async function pauseSlaOnSnooze(
   if (!applied || applied.pauseOnSnooze === false || applied.pausedAt) return
   if (predatesApplication(at, applied, { conversation_id: conversationId })) return
 
-  const landed = await commitStamp(conversationId, { pausedAt: at.toISOString() }, at, {
-    appliedAt: applied.appliedAt,
-    pausedAt: null,
-  })
+  const landed = await commitStamp(
+    conversationId,
+    { pausedAt: at.toISOString(), pauseRevision: (applied.pauseRevision ?? 0) + 1 },
+    at,
+    { appliedAt: applied.appliedAt, pausedAt: null },
+    { pinnedFields: { pauseRevision: revisionPin(applied) } }
+  )
   if (!landed) return
 
   await db.insert(slaEvents).values({
@@ -1024,6 +1036,11 @@ export async function pauseSlaOnSnooze(
     kind: 'paused',
     meta: { at: at.toISOString() },
   })
+}
+
+/** The pause-ledger revision a writer pins (see SlaApplied.pauseRevision). */
+function revisionPin(applied: { pauseRevision?: number }): string | null {
+  return applied.pauseRevision === undefined ? null : String(applied.pauseRevision)
 }
 
 /**
@@ -1056,28 +1073,38 @@ export async function resumeSlaFromSnooze(
 
   const pausedAt = applied.pausedAt
   const shiftMs = Math.max(0, at.getTime() - new Date(pausedAt).getTime())
-  // The merge patch carries ONLY the fields resume owns: the cleared pause
-  // plus the shift of each still-unsettled deadline (a settled clock's due is
-  // left out of the patch entirely — it settled against whatever was live at
-  // the time, and merging nothing leaves the field byte-identical).
+  // The merge patch carries ONLY the fields resume owns: the cleared pause,
+  // the span added to the ledger, plus the shift of each still-unsettled
+  // deadline (a settled clock's due is left out of the patch entirely — it
+  // settled against whatever was live at the time, and merging nothing leaves
+  // the field byte-identical). An armed next-response cycle shifts only by the
+  // part of the pause after it opened.
   const patch: Partial<SlaApplied> = {
     pausedAt: null,
-    excludedPauses: [...(applied.excludedPauses ?? []), pausedAt],
+    pausedSpans: [...(applied.pausedSpans ?? []), { from: pausedAt, until: at.toISOString() }],
+    pauseRevision: (applied.pauseRevision ?? 0) + 1,
   }
   if (applied.firstResponseDueAt && !applied.firstResponseAt) {
     patch.firstResponseDueAt = shiftIso(applied.firstResponseDueAt, shiftMs)
   }
   if (applied.nextResponseDueAt && !applied.nextResponseAt) {
-    patch.nextResponseDueAt = shiftIso(applied.nextResponseDueAt, shiftMs)
+    const cycleFrom = cycleStart(applied)?.getTime() ?? Number.NEGATIVE_INFINITY
+    patch.nextResponseDueAt = shiftIso(
+      applied.nextResponseDueAt,
+      overlapMs(new Date(pausedAt).getTime(), at.getTime(), cycleFrom, at.getTime())
+    )
   }
   if (applied.timeToCloseDueAt && !applied.resolvedAt) {
     patch.timeToCloseDueAt = shiftIso(applied.timeToCloseDueAt, shiftMs)
   }
 
-  const landed = await commitStamp(conversationId, patch, at, {
-    appliedAt: applied.appliedAt,
-    pausedAt,
-  })
+  const landed = await commitStamp(
+    conversationId,
+    patch,
+    at,
+    { appliedAt: applied.appliedAt, pausedAt },
+    { pinnedFields: { pauseRevision: revisionPin(applied) } }
+  )
   if (!landed) return null
 
   await db.insert(slaEvents).values({
