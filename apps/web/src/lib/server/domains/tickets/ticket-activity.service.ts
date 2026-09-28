@@ -89,9 +89,8 @@ const STATUS_MOVES: TicketActivityType[] = ['status.changed', 'ticket.reopened']
  * Whether the ticket's status moved after `since`, as its activity log records
  * it: one read on `ticket_activity_ticket_id_created_idx`. A status move writes
  * its record in the same transaction as the move (setTicketStatus, the
- * integration status sync), so a committed move is always found. The reopen's
- * own `ticket.reopened` record is written best-effort, like the rest of the
- * log (see recordTicketActivity).
+ * integration status sync, and the requester-reply reopen), so a committed move
+ * is always found.
  */
 export async function statusMovedSince(ticketId: TicketId, since: Date): Promise<boolean> {
   const [row] = await db

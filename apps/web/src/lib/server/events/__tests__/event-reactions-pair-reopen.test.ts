@@ -85,7 +85,11 @@ import { getExecuteRows } from '@/lib/server/utils/execute-rows'
 import * as dispatch from '../dispatch'
 import { runEventReactions } from '../event-reactions-queue'
 import { EVENT_REACTIONS_QUEUE } from '../event-reactions'
-import { assignTicket, setTicketStatus } from '@/lib/server/domains/tickets/ticket.service'
+import {
+  assignTicket,
+  autoReopenOnRequesterReply,
+  setTicketStatus,
+} from '@/lib/server/domains/tickets/ticket.service'
 
 const fixture = await createDbTestFixture({
   probe: async (db) => {
@@ -367,6 +371,19 @@ describe.skipIf(!fixture.available)('pair-ticket reopen from a late reaction job
     await expect(setTicketStatus(ticketId, statuses.closed, unrecordable)).rejects.toThrow()
 
     // The move and its record are one write: neither landed.
+    expect((await ticketState(ticketId)).category).toBe('pending')
+  })
+
+  it('a reopen never lands without the record a later reopen reads', async () => {
+    const { ticketId } = await seedPairedTicket()
+    // A requester whose record cannot be written: its principal does not exist.
+    const unrecordable = createId('principal') as PrincipalId
+
+    await expect(autoReopenOnRequesterReply(ticketId, unrecordable, new Date())).rejects.toThrow()
+
+    // The reopen and its record are one write: neither landed. A record written
+    // later, on its own, would carry a time after the reopen and could read as a
+    // status move after a newer message.
     expect((await ticketState(ticketId)).category).toBe('pending')
   })
 })

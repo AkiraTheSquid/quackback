@@ -702,29 +702,35 @@ export async function autoReopenOnRequesterReply(
     patch.reopenedCount = sql`${tickets.reopenedCount} + 1` as unknown as number
   }
   // Guarded on the status read above: a status change that lands in between
-  // wins, and of two overlapping runs for one message only one reopens.
-  const [updated] = await db
-    .update(tickets)
-    .set(patch)
-    .where(and(eq(tickets.id, id), eq(tickets.statusId, existing.statusId)))
-    .returning()
-  if (!updated) return false
-
-  // Durable timeline record (fire-and-forget): a distinct 'ticket.reopened'
-  // type — not 'status.changed' — so the timeline reads honestly ("reopened by
-  // the requester's reply") rather than as an anonymous status flip.
-  recordTicketActivity({
-    ticketId: id,
-    principalId: byPrincipalId,
-    type: 'ticket.reopened',
-    metadata: {
-      fromId: existing.statusId,
-      fromName: current.name,
-      toId: firstOpen.id,
-      toName: firstOpen.name,
-      trigger: 'requester_reply',
-    },
+  // wins, and of two overlapping runs for one message only one reopens. The
+  // timeline record is a distinct 'ticket.reopened' type, not
+  // 'status.changed', so the history reads "reopened by the requester's reply"
+  // rather than an anonymous status flip. It is written in the same
+  // transaction as the move: statusMovedSince reads it, and a record written
+  // later on its own would carry a time after the reopen, so it could read as
+  // a status move after a newer message.
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(tickets)
+      .set(patch)
+      .where(and(eq(tickets.id, id), eq(tickets.statusId, existing.statusId)))
+      .returning()
+    if (!row) return null
+    await tx.insert(ticketActivity).values({
+      ticketId: id,
+      principalId: byPrincipalId,
+      type: 'ticket.reopened',
+      metadata: {
+        fromId: existing.statusId,
+        fromName: current.name,
+        toId: firstOpen.id,
+        toName: firstOpen.name,
+        trigger: 'requester_reply',
+      },
+    })
+    return row
   })
+  if (!updated) return false
 
   // Realtime signal, mirroring setTicketStatus (unified inbox §3.2, M3): an
   // inbox row re-render on the reopen. The returned DTO is unused here (this
