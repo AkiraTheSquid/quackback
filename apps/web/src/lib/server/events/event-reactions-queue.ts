@@ -14,11 +14,14 @@ export function runEventReactions(job: ClaimedJob): Promise<void> {
   return runReactionJob(EVENT_REACTIONS_QUEUE, job, {
     sla: (event) => recordSlaFromEvent(event),
     'pair-ticket-reopen': (event) => autoReopenPairTicketFromEvent(event),
+    // Bound to the involvement the rating was given about, by its time.
     'assistant-csat-confirm': (event) => {
       if (event.type !== 'conversation.csat_submitted') return undefined
+      const submittedAt = new Date(event.data.submittedAt)
       return confirmResolutionFromCsat(
         event.data.conversation.id as ConversationId,
-        event.data.rating
+        event.data.rating,
+        Number.isNaN(submittedAt.getTime()) ? new Date(event.timestamp) : submittedAt
       )
     },
   })

@@ -41,7 +41,9 @@ vi.mock('@/lib/server/db', async (importOriginal) => ({
 const reactions = vi.hoisted(() => ({
   recordSlaFromEvent: vi.fn(async (_event: unknown) => {}),
   autoReopenPairTicketFromEvent: vi.fn(async (_event: unknown) => {}),
-  confirmResolutionFromCsat: vi.fn(async (_conversationId: unknown, _rating: unknown) => {}),
+  confirmResolutionFromCsat: vi.fn(
+    async (_conversationId: unknown, _rating: unknown, _submittedAt: unknown) => {}
+  ),
   summarizeConversationOnClose: vi.fn(async (_conversationId: unknown, _opts?: unknown) => {}),
   summarizeTicketOnClose: vi.fn(async (_ticketId: unknown, _opts?: unknown) => {}),
 }))
@@ -548,7 +550,7 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
         return conversation.id
       },
       queues: [EVENT_REACTIONS_QUEUE],
-      expected: { confirmResolutionFromCsat: (id) => [id, 5] },
+      expected: { confirmResolutionFromCsat: (id) => [id, 5, new Date('2026-01-01')] },
     },
     {
       type: 'message.created',
