@@ -389,13 +389,17 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
       __setJobDefinitionsForTests(
         JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE)
       )
+      // Other suites commit reaction rows while this runs: park them before each drain.
+      const ours = [stuckRow.eventId, nextRow.eventId]
       try {
         // The stuck job fails at its deadline and is requeued for a retry...
+        await parkOtherReactionJobs(ours)
         expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
           claimed: 1,
           retrying: 1,
         })
         // ...which releases the lane, so the next event's reactions run.
+        await parkOtherReactionJobs(ours)
         expect(await drainOnce({ ...runnerConfig(), batchSize: 5 })).toMatchObject({
           claimed: 1,
           succeeded: 1,

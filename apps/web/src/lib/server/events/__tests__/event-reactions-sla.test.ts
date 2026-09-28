@@ -179,24 +179,37 @@ async function seedAnsweredConversation() {
   return { conversationId, customer, agent, start }
 }
 
-/** The pending reaction jobs of every event on `entityId`, oldest first; other suites' leftovers are parked. */
-async function ownReactionJobsFirst(entityId: string): Promise<string[]> {
-  const ours = (
-    await testDb.select().from(events).where(eq(events.entityId, entityId)).orderBy(events.id)
-  ).map((row) => row.eventId)
+/** This test's own event ids: every drain parks every other reaction job first. */
+let ownEventIds: string[] = []
+
+/**
+ * Park every reaction job but this test's, so the drain claims only this
+ * test's jobs. Other suites commit reaction rows to the shared database while
+ * this one runs, so it runs before every drain, not once.
+ */
+async function parkOtherReactionJobs() {
+  if (ownEventIds.length === 0) return
   await testDb.execute(sql`
     UPDATE job_queue SET run_at = now() + interval '1 day'
     WHERE id IN (
       SELECT id FROM job_queue
       WHERE queue = ${EVENT_REACTIONS_QUEUE} AND status = 'pending'
         AND payload->>'eventId' NOT IN (${sql.join(
-          ours.map((id) => sql`${id}`),
+          ownEventIds.map((id) => sql`${id}`),
           sql`, `
         )})
       FOR UPDATE SKIP LOCKED
     )
   `)
-  return ours
+}
+
+/** The event ids on `entityId`, oldest first, which the drains then claim alone. */
+async function ownReactionJobsFirst(entityId: string): Promise<string[]> {
+  ownEventIds = (
+    await testDb.select().from(events).where(eq(events.entityId, entityId)).orderBy(events.id)
+  ).map((row) => row.eventId)
+  await parkOtherReactionJobs()
+  return ownEventIds
 }
 
 /**
@@ -235,10 +248,14 @@ async function expectOneMetCycle(conversationId: ConversationId, customerAt: Dat
   expect(stamp.nextResponseAt).toBe(replyAt.toISOString())
 }
 
-const drain = () => drainOnce({ ...runnerConfig(), batchSize: 5 })
+const drain = async () => {
+  await parkOtherReactionJobs()
+  return drainOnce({ ...runnerConfig(), batchSize: 5 })
+}
 
 describe.skipIf(!fixture.available)('SLA reactions that run out of order', () => {
   beforeEach(() => {
+    ownEventIds = []
     transient.failEventIds.clear()
     sla.finished = []
     sla.delayCustomerMs = 0
@@ -288,6 +305,7 @@ describe.skipIf(!fixture.available)('SLA reactions that run out of order', () =>
 
 describe.skipIf(!fixture.available)('an SLA reaction that fails', () => {
   beforeEach(() => {
+    ownEventIds = []
     resetJobHandlers()
     __setJobDefinitionsForTests(JOB_DEFINITIONS.filter((def) => def.name === EVENT_REACTIONS_QUEUE))
     return fixture.begin()
