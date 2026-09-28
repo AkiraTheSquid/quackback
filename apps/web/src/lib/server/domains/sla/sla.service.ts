@@ -32,6 +32,7 @@ import {
   type EngineSchedule,
 } from '../office-hours/office-hours.service'
 import { getOfficeHoursSchedule } from '../settings/settings.office-hours'
+import { earliestHumanReplyAfter, latestCycleOpenerBetween } from './sla.messages'
 
 /**
  * The `conversations.sla_applied` shape: the one active SLA on a conversation.
@@ -573,18 +574,28 @@ export function shiftIso(iso: string, ms: number): string {
  * behavior, including its archived-policy no-op — the documented backfill
  * tolerance).
  *
+ * The reaction that calls this runs from a queued job that can run late or
+ * out of order, so the cycle comes from the conversation's message rows (see
+ * sla.messages.ts), never from the order the calls arrive in:
+ *
+ *  - a message written at or before the first response, or at or before the
+ *    reply that settled the current cycle, has been answered: nothing arms;
+ *  - when a human reply written after the message already exists, the cycle
+ *    runs from the last customer message before that reply (a later message
+ *    restarts the cycle, as it would have in order) and is settled at the
+ *    reply in the same write, logged met or breached, so the sweep never sees
+ *    an answered cycle as overdue;
+ *  - an unanswered cycle already due at or after the one this message would
+ *    arm came from a later message, and stands.
+ *
  * Guarded and retried on a CAS miss exactly like recordFirstResponse (see its
  * doc comment). Beyond the identity CAS, the re-arm PINS the exact
- * `nextResponseDueAt` it is replacing (see StampContentGuard): the merge
- * clears `nextResponseAt` as part of the fresh cycle, so if a concurrent
- * writer moved the cycle between read and write — a resume's due shift, or a
- * sibling re-arm — this computation is stale and must miss rather than
- * resurrect the state it read over the newer cycle. A settle racing the
- * re-arm touches only `nextResponseAt` — a field the re-arm owns and
- * legitimately resets for the new cycle — so the merge itself can never tear
- * the stamp; ordering between the two is decided by whichever lands first.
- * No sla_events row is logged — arming is stamp state, not a reportable clock
- * event.
+ * `nextResponseDueAt` and `nextResponseAt` it is replacing (see
+ * StampContentGuard): if a concurrent writer moved the cycle between read and
+ * write (a resume's due shift, a sibling re-arm, or a settle), this
+ * computation is stale, so it misses, reloads and decides again against the
+ * fresh stamp. A plain re-arm logs no sla_events row: arming is stamp state,
+ * not a reportable clock event.
  */
 export async function rearmNextResponse(
   conversationId: ConversationId,
@@ -593,28 +604,76 @@ export async function rearmNextResponse(
   let applied = await loadSlaApplied(conversationId)
   for (let attempt = 0; attempt < 2; attempt++) {
     if (!applied || !applied.nextResponseTargetSecs || !applied.firstResponseAt) return
+    if (!isAfter(at, applied.firstResponseAt)) return
+    if (applied.nextResponseAt && !isAfter(at, applied.nextResponseAt)) return
     const schedule = applied.scheduleSnapshot ?? (await legacyScheduleFor(applied.policyId))
     if (!schedule) return
-    const committed = await commitStamp(
-      conversationId,
-      {
-        nextResponseDueAt: addOfficeHoursSeconds(
-          schedule,
-          at,
-          applied.nextResponseTargetSecs
-        ).toISOString(),
-        nextResponseAt: null,
-        nextResponseBreachedAt: null,
-        nextResponseWarningFiredAt: null,
-        nextResponseBreachTriggerFiredAt: null,
-      },
-      at,
-      { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null },
-      { pinnedFields: { nextResponseDueAt: applied.nextResponseDueAt ?? null } }
-    )
-    if (committed) return
+    const reply = await earliestHumanReplyAfter(conversationId, at)
+    const start = reply ? ((await latestCycleOpenerBetween(conversationId, at, reply)) ?? at) : at
+    const dueAt = addOfficeHoursSeconds(schedule, start, applied.nextResponseTargetSecs)
+    if (
+      applied.nextResponseDueAt &&
+      !applied.nextResponseAt &&
+      !isAfter(dueAt, applied.nextResponseDueAt)
+    ) {
+      return
+    }
+    if (await commitNextResponseCycle(conversationId, applied, dueAt, reply, at)) return
     applied = await loadSlaApplied(conversationId)
   }
+}
+
+/** Whether `date` falls strictly after the stamped instant `iso`. */
+function isAfter(date: Date, iso: string): boolean {
+  return date.getTime() > new Date(iso).getTime()
+}
+
+/**
+ * Replace the next-response cycle with a fresh one due at `dueAt`, clearing
+ * the old cycle's settle outcome and per-cycle markers. With a `reply`, the
+ * fresh cycle is settled at it in the same transaction, and the met or
+ * breached event is logged with it. Pinned to the cycle fields the caller
+ * read, so a concurrent re-arm or settle makes it miss.
+ */
+async function commitNextResponseCycle(
+  conversationId: ConversationId,
+  applied: SlaApplied,
+  dueAt: Date,
+  reply: Date | null,
+  at: Date
+): Promise<boolean> {
+  const guard = { appliedAt: applied.appliedAt, pausedAt: applied.pausedAt ?? null }
+  const content: StampContentGuard = {
+    pinnedFields: {
+      nextResponseDueAt: applied.nextResponseDueAt ?? null,
+      nextResponseAt: applied.nextResponseAt ?? null,
+    },
+  }
+  const cycle: Partial<SlaApplied> = {
+    nextResponseDueAt: dueAt.toISOString(),
+    nextResponseAt: null,
+    nextResponseBreachedAt: null,
+    nextResponseWarningFiredAt: null,
+    nextResponseBreachTriggerFiredAt: null,
+  }
+  if (!reply) return commitStamp(conversationId, cycle, at, guard, content)
+
+  const judgedDue = dueAtForSettle(dueAt.toISOString(), applied.pausedAt, reply)
+  const breached = reply.getTime() > judgedDue.getTime()
+  return commitClockEvent(
+    conversationId,
+    applied.policyId,
+    {
+      ...cycle,
+      nextResponseAt: reply.toISOString(),
+      ...(breached ? { nextResponseBreachedAt: reply.toISOString() } : {}),
+    },
+    breached ? 'next_response_breached' : 'next_response_met',
+    judgedDue.toISOString(),
+    reply,
+    guard,
+    content
+  )
 }
 
 /** The pre-scheduleSnapshot schedule source: resolve the LIVE policy's
@@ -738,6 +797,10 @@ export async function pauseSlaOnSnooze(
  * otherwise returns the post-resume stamp it wrote, so a caller settling a
  * clock right after (e.g. the direct snoozed -> closed hook) can reuse it
  * instead of reloading the row it just wrote.
+ *
+ * A resume never ends a pause that began after `at`: the reaction that calls
+ * this runs from a queued job that can run late, after the conversation was
+ * snoozed again, and that later pause stands.
  */
 export async function resumeSlaFromSnooze(
   conversationId: ConversationId,
@@ -745,6 +808,7 @@ export async function resumeSlaFromSnooze(
 ): Promise<SlaApplied | null> {
   const applied = await loadSlaApplied(conversationId)
   if (!applied || !applied.pausedAt) return null
+  if (new Date(applied.pausedAt).getTime() > at.getTime()) return null
 
   const pausedAt = applied.pausedAt
   const shiftMs = Math.max(0, at.getTime() - new Date(pausedAt).getTime())

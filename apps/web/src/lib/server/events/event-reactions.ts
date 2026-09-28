@@ -11,10 +11,17 @@
  *
  * Two queues, split by what the reactions need:
  *
- * - `event-reactions` holds the reactions that read state the previous event
+ * - `event-reactions` holds the reactions that read state an earlier event
  *   left (the SLA recorders above all: a visitor message re-arms the clock the
- *   agent's reply settles). It runs one job at a time in enqueue order, so they
- *   apply in event order. Its handler is `event-reactions-queue.ts`.
+ *   agent's reply settles). It runs one job at a time per worker process in
+ *   enqueue order, so in the common case they apply in event order. That is
+ *   not a global order: a retry runs behind later jobs, two worker processes
+ *   each run one, a crashed job re-runs once its lease lapses, and a queue
+ *   drained after a rollback runs old jobs late. So these reactions read the
+ *   database rather than rely on the order: the next-response clock reads the
+ *   conversation's messages (`domains/sla/sla.messages.ts`) and the pair-ticket
+ *   reopen leaves a later close standing. Its handler is
+ *   `event-reactions-queue.ts`.
  * - `event-summaries` holds the close summaries: slow AI calls that do not
  *   depend on order, kept off the serial queue so a slow provider cannot hold
  *   up an SLA clock. Its handler is `event-summaries-queue.ts`.

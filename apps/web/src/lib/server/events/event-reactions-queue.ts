@@ -1,7 +1,7 @@
 /**
- * `event-reactions` job handler: one event's order-dependent reactions (SLA
- * clocks, pair-ticket reopen, CSAT confirm; see `event-reactions.ts`). The
- * queue runs one job at a time, so these apply in event order.
+ * `event-reactions` job handler: one event's reactions that read state an
+ * earlier event left (SLA clocks, pair-ticket reopen, CSAT confirm; see
+ * `event-reactions.ts`, including why they do not rely on the queue's order).
  */
 import type { ConversationId } from '@quackback/ids'
 import { confirmResolutionFromCsat } from '@/lib/server/domains/assistant/assistant.involvement'

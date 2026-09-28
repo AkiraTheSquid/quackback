@@ -7,8 +7,12 @@
  *     (senderType 'agent'): first response first, then the armed next-response
  *     cycle (if any) — the first reply never double-settles a clock the
  *     customer cycle hasn't armed yet. A VISITOR message does the opposite:
- *     it never settles anything, it (re-)arms the next-response clock for the
- *     fresh customer-message cycle.
+ *     it (re-)arms the next-response clock for the fresh customer-message
+ *     cycle. Both are timed by the message's own createdAt, and the
+ *     next-response clock reads the conversation's message rows, because the
+ *     reactions run from queued jobs that can run late or out of order (see
+ *     sla.messages.ts): a visitor message whose reply already exists arms its
+ *     cycle and settles it at that reply.
  *   - conversation.status_changed drives the other three recorders (pause on
  *     entering 'snoozed', resume on leaving it, settle time-to-close on a
  *     close) with NO actor check at all. This is intentional, not an
@@ -66,12 +70,21 @@ import {
 
 const log = logger.child({ component: 'sla-event-hooks' })
 
+/** When the message was written, falling back to the event's time when the payload lacks it. */
+function messageTime(createdAt: string | undefined, eventTimestamp: string): Date {
+  const written = createdAt ? new Date(createdAt) : null
+  return written && !Number.isNaN(written.getTime()) ? written : new Date(eventTimestamp)
+}
+
 export async function recordSlaFromEvent(event: EventData): Promise<void> {
   try {
     switch (event.type) {
       case 'message.created': {
         const conversationId = event.data.message.conversationId as ConversationId
-        const at = new Date(event.timestamp)
+        // The message's own time, not the event's: the reaction runs from a
+        // queued job that can run late, and the recorders compare this time
+        // with the conversation's message rows.
+        const at = messageTime(event.data.message.createdAt, event.timestamp)
         if (event.data.message.senderType === 'agent' && event.actor?.type !== 'service') {
           // Service actors (Quinn, workflow blocks) never satisfy human-response
           // semantics — the same vocabulary the wait-interrupt path uses.
@@ -87,11 +100,13 @@ export async function recordSlaFromEvent(event: EventData): Promise<void> {
           // conversation.status_changed — the only other resume trigger — so
           // without this the stamp would keep pausedAt forever: the sweep
           // skips paused stamps and every later settle would exclude the
-          // whole post-reopen span. No-op when the stamp isn't paused.
+          // whole post-reopen span. No-op when the stamp isn't paused, or
+          // when the pause began after this message.
           await resumeSlaFromSnooze(conversationId, at)
           // A visitor message (re-)arms the next-response clock for the fresh
-          // customer-message cycle; it never settles anything itself. Runs
-          // after the resume so it reads the post-shift stamp.
+          // customer-message cycle. When the reply to it already exists (the
+          // reaction ran late), the re-arm settles the cycle at that reply.
+          // Runs after the resume so it reads the post-shift stamp.
           await rearmNextResponse(conversationId, at)
         }
         break

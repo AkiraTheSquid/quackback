@@ -417,8 +417,10 @@ shapes were available and the other two were rejected for reasons worth keeping:
   and doubles the always-warm connection count.
 - **One undifferentiated pool** loses the reference's per-queue `concurrency`,
   and one of those numbers is load-bearing: `workflow-dispatch` is 1 because it
-  is a global FIFO, not because it is slow. Two dispatch jobs in parallel
-  reorder a reply and a close on one conversation.
+  dispatches in enqueue order, not because it is slow. Two dispatch jobs in
+  parallel reorder a reply and a close on one conversation. That order holds
+  within one worker process while jobs succeed first time; it is not global
+  (see the reaction queues below).
 
 So the cap is **per queue**, the claim asks for exactly the free slots each
 queue has (one `LATERAL` query), and each queue's rows are leased for that
@@ -528,11 +530,29 @@ converted onto the job path when the job worker start.
 **An event's reactions ride their own queues.** For a type that has reactions,
 `emit()` also writes a job per reaction queue in that transaction. They do not
 wait on `event-dispatch`, so a failing target resolver never delays a reaction
-and a crash after the event is published cannot lose one. `event-reactions`
-(SLA clocks, pair-ticket reopen, CSAT confirm) is a global FIFO like
-`workflow-dispatch`, because the SLA recorders must apply in event order.
-`event-summaries` (the close summaries) runs concurrently, so a slow AI call
-cannot hold up an SLA clock.
+and a crash after the event is published cannot lose one. `event-summaries`
+(the close summaries) runs concurrently, so a slow AI call cannot hold up an
+SLA clock.
+
+`event-reactions` (SLA clocks, pair-ticket reopen, CSAT confirm) runs one job
+at a time per worker process, claimed in enqueue order, so in the common case
+its reactions apply in event order. That is all it guarantees. The order is
+not global:
+
+- a failed job is retried with `run_at = now() + backoff`, behind later jobs;
+- two worker processes (for example during a deploy overlap) each run one job
+  at once;
+- a job whose worker crashed runs again only once its lease lapses, after
+  later jobs;
+- a queue drained after a rollback runs old jobs late.
+
+So the reactions that would go wrong out of order read the database instead of
+relying on it. The next-response clock reads the conversation's message rows
+(`domains/sla/sla.messages.ts`): a customer message whose reply already exists
+arms its cycle and settles it at that reply, and a message never re-arms over
+a cycle the clock has already moved past. The pair-ticket reopen leaves
+standing a close made after the message, and writes only on the status it
+read.
 
 ## 11. Running the evidence
 

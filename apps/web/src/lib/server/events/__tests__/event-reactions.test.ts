@@ -2,8 +2,10 @@
  * The event reactions run from durable jobs that `emit()` queues in the
  * event's own transaction, whichever path produced the event:
  *
- * - `event-reactions` runs the reactions that depend on order (SLA clocks,
- *   pair-ticket reopen, CSAT confirm), one job at a time in event order.
+ * - `event-reactions` runs the reactions that read earlier state (SLA clocks,
+ *   pair-ticket reopen, CSAT confirm), one job at a time per worker process in
+ *   enqueue order. What happens when that order breaks is covered by
+ *   event-reactions-sla-order.test.ts.
  * - `event-summaries` runs the close summaries, slow AI calls that do not
  *   depend on order, off that serial queue.
  *
@@ -306,7 +308,7 @@ describe.skipIf(!fixture.available)('event reactions (real DB, rolled back)', ()
     expectReacted(ticketClosedReactions, ticketId)
   })
 
-  it('runs the ordered reactions of one event to completion before the next, in event order', async () => {
+  it("within one worker process, runs one event's reactions to completion before the next, in enqueue order", async () => {
     const conversation = convRef()
     const visitor = messageIn(conversation, 'visitor')
     const reply = messageIn(conversation, 'agent')
