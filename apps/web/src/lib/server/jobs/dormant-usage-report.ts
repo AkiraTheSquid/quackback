@@ -74,26 +74,37 @@ export async function catchUpDormantUsageReports(
     // A pending wake outlives a month boundary: the report it was for is still
     // queued, and the new month's report may already exist and insert nothing.
     let wakePending = prior?.wakePending === true
+    let failure: unknown = null
     try {
       const { inserted } = await d.enqueueIn(key, month)
       if (inserted) {
         queued += 1
         wakePending = true
       }
-      if (wakePending) {
+    } catch (err) {
+      failure = err
+    }
+    // The wake does not depend on the queue: one still owed from an earlier
+    // pass is made even when this pass could not queue.
+    if (wakePending) {
+      try {
         await d.wake(key)
         wakePending = false
+      } catch (err) {
+        failure ??= err
       }
-      checked.set(key, { month })
-    } catch (err) {
-      checked.set(key, { month, retryAt: now.getTime() + DORMANT_REPORT_RETRY_MS, wakePending })
-      d.warn(
-        { err, workspace_key: key, month, wake_pending: wakePending },
-        wakePending
-          ? 'queued the monthly usage report for a dormant workspace but could not wake it; retrying later'
-          : 'could not queue the monthly usage report for a dormant workspace; retrying later'
-      )
     }
+    if (failure === null) {
+      checked.set(key, { month })
+      continue
+    }
+    checked.set(key, { month, retryAt: now.getTime() + DORMANT_REPORT_RETRY_MS, wakePending })
+    d.warn(
+      { err: failure, workspace_key: key, month, wake_pending: wakePending },
+      wakePending
+        ? 'a monthly usage report is queued for a dormant workspace that could not be woken; retrying later'
+        : 'could not queue the monthly usage report for a dormant workspace; retrying later'
+    )
   }
   return { queued, checked: asked }
 }

@@ -111,6 +111,35 @@ describe('catchUpDormantUsageReports', () => {
     expect(d.wake).toHaveBeenLastCalledWith('ws_a')
   })
 
+  it('still makes a pending wake when the retry cannot queue', async () => {
+    let calls = 0
+    const d = deps({
+      dormant: () => ['ws_a'],
+      enqueueIn: vi.fn(async () => {
+        calls += 1
+        if (calls === 1) return { inserted: true }
+        if (calls === 2) throw new Error('scope unavailable')
+        return { inserted: false }
+      }),
+      wake: vi
+        .fn<DormantUsageReportDeps['wake']>()
+        .mockRejectedValueOnce(new Error('lookup failed'))
+        .mockResolvedValue(undefined),
+    })
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(1)
+
+    // The queue fails this time, but the wake it still owes does not depend on it.
+    d.setNow(new Date(SEP.getTime() + DORMANT_REPORT_RETRY_MS + 1))
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(2)
+
+    // The next retry queues nothing new and owes no wake.
+    d.setNow(new Date(SEP.getTime() + 2 * DORMANT_REPORT_RETRY_MS + 2))
+    await catchUpDormantUsageReports(d)
+    expect(d.wake).toHaveBeenCalledTimes(2)
+  })
+
   it('does not wake on a retry after a failed queue that finds the month already reported', async () => {
     const d = deps({
       dormant: () => ['ws_b'],
