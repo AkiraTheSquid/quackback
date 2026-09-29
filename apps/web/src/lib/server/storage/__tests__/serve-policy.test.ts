@@ -7,7 +7,7 @@ import { downloadFileName, isInlineType, redirectPolicy } from '../serve-policy'
  * shown inline; everything else is a download.
  */
 describe('isInlineType', () => {
-  it.each(['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'audio/mpeg', 'application/pdf', 'IMAGE/PNG', 'image/png; charset=binary'])(
+  it.each(['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/x-m4v', 'video/m4v', 'audio/mpeg', 'application/pdf', 'IMAGE/PNG', 'image/png; charset=binary'])(
     'shows %s inline',
     (type) => expect(isInlineType(type)).toBe(true)
   )
@@ -25,6 +25,10 @@ describe('redirectPolicy', () => {
   it('forces the canonical type for an inline extension', () => {
     expect(redirectPolicy('chat-images/2026/09/3f2b8c1e-1a2b-4c3d-9e8f-0123456789ab-photo.png')).toEqual({ inlineType: 'image/png' })
     expect(redirectPolicy('chat-files/2026/09/3f2b8c1e-1a2b-4c3d-9e8f-0123456789ab-report.PDF')).toEqual({ inlineType: 'application/pdf' })
+  })
+
+  it('keeps every video type uploads accept inline, M4V included', () => {
+    expect(redirectPolicy('post-media/2026/09/3f2b8c1e-1a2b-4c3d-9e8f-0123456789ab-demo.m4v')).toEqual({ inlineType: 'video/x-m4v' })
   })
 
   it('downloads anything else, under a readable name', () => {
