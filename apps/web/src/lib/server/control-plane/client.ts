@@ -270,7 +270,15 @@ export type HostedBillingSessionInput =
       brandingRemoval?: boolean
     }
   | { action: 'downgrade'; planId: 'free' }
-  | { action: 'topup'; meter: 'ai' | 'email'; packs: number }
+  | {
+      action: 'topup'
+      meter: 'ai' | 'email'
+      packs: number
+      /** The per-pack price the customer was shown; charged only if it is still live. */
+      packCents?: number
+      /** The emails per pack the customer was shown (email packs). */
+      packUnits?: number
+    }
   | { action: 'branding'; billingPeriod: 'monthly' | 'annual' }
   | { action: 'branding-remove' }
 
