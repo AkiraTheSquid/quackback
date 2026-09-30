@@ -87,7 +87,7 @@ describe('QuinnPerformanceCard', () => {
 
   it('shows a loading placeholder before data arrives', () => {
     renderWithClient(<QuinnPerformanceCard range={RANGE} />)
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('No data').length).toBeGreaterThan(0)
   })
 
   it('fetches the last-30-days range', async () => {

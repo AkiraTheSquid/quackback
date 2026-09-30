@@ -11,7 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { MetricTile, type DateRange } from './metric-tile'
+import { BoltIcon } from '@heroicons/react/24/outline'
+import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { EmptyState } from '@/components/shared/empty-state'
+import type { DateRange } from './performance-format'
 import { quinnToolMetricsQuery } from '@/lib/client/queries/assistant-tools-analytics'
 
 function ActionLabel({ toolName }: { toolName: string }) {
@@ -69,13 +72,10 @@ export function QuinnToolsCard({ range }: { range: DateRange }) {
         id: 'automation.performance.actions.title',
         defaultMessage: 'Actions',
       })}
-      description={intl.formatMessage({
-        id: 'automation.performance.actions.description',
-        defaultMessage: 'Confirmed action outcomes over the last 30 days.',
-      })}
+      contentClassName="p-0"
     >
       {toolsQuery.isError ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 p-4 sm:p-6">
           <p role="alert" className="text-sm text-destructive">
             {intl.formatMessage({
               id: 'automation.performance.actions.error',
@@ -92,48 +92,51 @@ export function QuinnToolsCard({ range }: { range: DateRange }) {
             {intl.formatMessage({ id: 'automation.agent.retry', defaultMessage: 'Try again' })}
           </Button>
         </div>
+      ) : toolsQuery.isSuccess && toolList.length === 0 ? (
+        <EmptyState
+          size="compact"
+          icon={BoltIcon}
+          title={intl.formatMessage({
+            id: 'automation.performance.actions.empty',
+            defaultMessage: 'No actions in this period',
+          })}
+        />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <MetricTile
-              label={intl.formatMessage({
-                id: 'automation.performance.actions.attempted',
-                defaultMessage: 'Attempted',
-              })}
-              value={String(totals.attempted)}
-            />
-            <MetricTile
-              label={intl.formatMessage({
-                id: 'automation.performance.actions.completed',
-                defaultMessage: 'Completed',
-              })}
-              value={String(totals.completed)}
-            />
-            <MetricTile
-              label={intl.formatMessage({
-                id: 'automation.performance.actions.failed',
-                defaultMessage: 'Failed',
-              })}
-              value={String(totals.failed)}
-            />
-            <MetricTile
-              label={intl.formatMessage({
-                id: 'automation.performance.actions.notRun',
-                defaultMessage: 'Not run',
-              })}
-              value={String(totals.denied)}
-            />
-          </div>
-
-          <div className="mt-4">
-            {toolList.length === 0 ? (
-              <p className="py-2 text-sm text-muted-foreground">
-                {intl.formatMessage({
-                  id: 'automation.performance.actions.empty',
-                  defaultMessage: 'No action activity for this period.',
-                })}
-              </p>
-            ) : (
+          <AnalyticsStatRow
+            stats={[
+              {
+                label: intl.formatMessage({
+                  id: 'automation.performance.actions.attempted',
+                  defaultMessage: 'Attempted',
+                }),
+                value: String(totals.attempted),
+              },
+              {
+                label: intl.formatMessage({
+                  id: 'automation.performance.actions.completed',
+                  defaultMessage: 'Completed',
+                }),
+                value: String(totals.completed),
+              },
+              {
+                label: intl.formatMessage({
+                  id: 'automation.performance.actions.failed',
+                  defaultMessage: 'Failed',
+                }),
+                value: String(totals.failed),
+              },
+              {
+                label: intl.formatMessage({
+                  id: 'automation.performance.actions.notRun',
+                  defaultMessage: 'Not run',
+                }),
+                value: String(totals.denied),
+              },
+            ]}
+          />
+          {toolList.length > 0 && (
+            <div className="border-t border-border/50 p-4 sm:p-6">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -178,8 +181,8 @@ export function QuinnToolsCard({ range }: { range: DateRange }) {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
     </SettingsCard>

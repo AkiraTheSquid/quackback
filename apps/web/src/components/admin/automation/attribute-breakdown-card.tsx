@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import { useLast30DaysRange } from './metric-tile'
+import { useLast30DaysRange } from './performance-format'
 import { attributeBreakdownQuery } from '@/lib/client/queries/support-reporting'
 import { conversationAttributeQueries } from '@/lib/client/queries/conversation-attributes'
 import {

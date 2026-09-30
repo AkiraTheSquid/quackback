@@ -1,7 +1,7 @@
 /**
  * Workflow & SLA performance (§4.6, §7). A compact read-only view of SLA
- * attainment + workflow run outcomes over the last 30 days, from the support
- * reporting aggregates: four-clock attainment tiles, per-policy attainment,
+ * attainment + workflow run outcomes over the page's period, from the support
+ * reporting aggregates: four-clock attainment stats, per-policy attainment,
  * the hourly breach distribution (the staffing view), and average
  * time-after-miss. The richer charted breakdown belongs in the Analytics
  * dashboard; this surfaces the headline numbers where the automation is
@@ -9,7 +9,8 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import { MetricTile, pct, type DateRange } from './metric-tile'
+import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { NO_DATA, pct, type DateRange } from './performance-format'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supportReportingQuery } from '@/lib/client/queries/support-reporting'
 import { formatSlaCountdown } from '@/lib/shared/conversation/sla'
@@ -45,7 +46,7 @@ function BreachHeatmap({ cells }: { cells: SlaBreachHeatmapCell[] }) {
                 return (
                   <div
                     key={hour}
-                    title={`${label} ${String(hour).padStart(2, '0')}:00 — ${n} breach${n === 1 ? '' : 'es'}`}
+                    title={`${label} ${String(hour).padStart(2, '0')}:00, ${n} breach${n === 1 ? '' : 'es'}`}
                     className="h-3.5 flex-1 rounded-[2px] bg-primary"
                     style={{ opacity: n === 0 ? 0.08 : 0.15 + 0.85 * (n / max) }}
                   />
@@ -84,116 +85,114 @@ export function SupportPerformanceCard({ range }: { range: DateRange }) {
   const anyMiss = miss != null && CLOCKS.some((c) => miss[c.key].count > 0)
 
   return (
-    <SettingsCard
-      title="Performance"
-      description="SLA attainment and workflow outcomes over the last 30 days."
-    >
+    <SettingsCard title="SLAs and workflows" contentClassName="p-0">
       {isLoading ? (
-        // Loading skeleton in the tiles' own grid (B33): without it the tiles
-        // render "—" while fetching, indistinguishable from "no clocks
-        // tracked". The shapes mirror MetricTile (value / label / sub).
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-hidden>
+        // Loading skeleton in the stat row's own grid: without it the stats
+        // read "No data" while fetching, indistinguishable from "no clocks
+        // tracked". The shapes mirror a stat (label / value / caption).
+        <div className="grid grid-cols-2 divide-x divide-border/50 sm:grid-cols-5" aria-hidden>
           {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className="rounded-lg border p-3">
-              <Skeleton className="h-8 w-14" />
-              <Skeleton className="mt-2 h-4 w-24" />
-              <Skeleton className="mt-1 h-3 w-20" />
+            <div key={i} className="px-5 py-4">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="mt-2 h-8 w-14" />
+              <Skeleton className="mt-1.5 h-3 w-24" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {CLOCKS.map((c) => {
-            const clock = data?.sla[c.key]
-            return (
-              <MetricTile
-                key={c.key}
-                label={`${c.label} SLA`}
-                value={pct(clock?.rate)}
-                sub={clock ? `${clock.met} met / ${clock.breached} breached` : undefined}
-              />
-            )
-          })}
-          <MetricTile
-            label="Workflow runs"
-            value={String(runs.started)}
-            sub={`${runs.completed} completed, ${runs.interrupted} interrupted`}
-          />
-        </div>
+        <AnalyticsStatRow
+          stats={[
+            ...CLOCKS.map((c) => {
+              const clock = data?.sla[c.key]
+              return {
+                label: `${c.label} SLA`,
+                value: pct(clock?.rate),
+                caption: clock ? `${clock.met} met / ${clock.breached} breached` : undefined,
+              }
+            }),
+            {
+              label: 'Workflow runs',
+              value: String(runs.started),
+              caption: `${runs.completed} completed, ${runs.interrupted} interrupted`,
+            },
+          ]}
+        />
       )}
 
-      {data && data.slaByPolicy.length > 0 && (
-        <div className="mt-4">
-          <h3 className="mb-2 text-sm font-medium">Attainment by policy</h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th className="pb-1 font-medium">Policy</th>
-                {CLOCKS.map((c) => (
-                  <th key={c.key} className="pb-1 text-right font-medium">
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.slaByPolicy.map((p) => (
-                <tr key={p.policyId} className="border-t border-border/50">
-                  <td className="max-w-40 truncate py-1.5 pr-2">{p.policyName}</td>
-                  {CLOCKS.map((c) => {
-                    const cell = p[c.key]
-                    return (
-                      <td key={c.key} className="py-1.5 text-right tabular-nums">
-                        {pct(cell.rate)}{' '}
-                        {cell.rate != null && (
-                          <span className="text-xs text-muted-foreground">
-                            ({cell.met}/{cell.met + cell.breached})
-                          </span>
-                        )}
-                      </td>
-                    )
-                  })}
+      <div className="space-y-4 p-4 sm:p-6">
+        {data && data.slaByPolicy.length > 0 && (
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Attainment by policy</h3>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="pb-1 font-medium">Policy</th>
+                  {CLOCKS.map((c) => (
+                    <th key={c.key} className="pb-1 text-right font-medium">
+                      {c.label}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {data.slaByPolicy.map((p) => (
+                  <tr key={p.policyId} className="border-t border-border/50">
+                    <td className="max-w-40 truncate py-1.5 pr-2">{p.policyName}</td>
+                    {CLOCKS.map((c) => {
+                      const cell = p[c.key]
+                      return (
+                        <td key={c.key} className="py-1.5 text-right tabular-nums">
+                          {pct(cell.rate)}{' '}
+                          {cell.rate != null && (
+                            <span className="text-xs text-muted-foreground">
+                              ({cell.met}/{cell.met + cell.breached})
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {data && (
-        <div className="mt-4">
-          <h3 className="mb-2 text-sm font-medium">
-            Breaches by time of week{' '}
-            <span className="text-xs font-normal text-muted-foreground">(UTC)</span>
-          </h3>
-          <BreachHeatmap cells={data.slaHeatmap} />
-        </div>
-      )}
+        {data && (
+          <div>
+            <h3 className="mb-2 text-sm font-medium">
+              Breaches by time of week{' '}
+              <span className="text-xs font-normal text-muted-foreground">(UTC)</span>
+            </h3>
+            <BreachHeatmap cells={data.slaHeatmap} />
+          </div>
+        )}
 
-      {anyMiss && (
-        <div className="mt-4">
-          <h3 className="mb-2 text-sm font-medium">Avg time after miss</h3>
-          <p className="text-sm">
-            {CLOCKS.map((c, i) => {
-              const m = miss[c.key]
-              return (
-                <span key={c.key}>
-                  {i > 0 && <span className="text-muted-foreground"> · </span>}
-                  <span className="text-muted-foreground">{c.label.toLowerCase()} </span>
-                  {m.count > 0 && m.avgOverdueSecs != null ? (
-                    <>
-                      {formatSlaCountdown(m.avgOverdueSecs * 1000)}{' '}
-                      <span className="text-xs text-muted-foreground">({m.count})</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </span>
-              )
-            })}
-          </p>
-        </div>
-      )}
+        {anyMiss && (
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Avg time after miss</h3>
+            <p className="text-sm">
+              {CLOCKS.map((c, i) => {
+                const m = miss[c.key]
+                return (
+                  <span key={c.key}>
+                    {i > 0 && <span className="text-muted-foreground"> · </span>}
+                    <span className="text-muted-foreground">{c.label.toLowerCase()} </span>
+                    {m.count > 0 && m.avgOverdueSecs != null ? (
+                      <>
+                        {formatSlaCountdown(m.avgOverdueSecs * 1000)}{' '}
+                        <span className="text-xs text-muted-foreground">({m.count})</span>
+                      </>
+                    ) : (
+                      NO_DATA
+                    )}
+                  </span>
+                )
+              })}
+            </p>
+          </div>
+        )}
+      </div>
     </SettingsCard>
   )
 }

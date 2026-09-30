@@ -1,14 +1,14 @@
 /**
  * Copilot usage + outcome reporting (P2-D.2): questions asked, transforms
  * run, on-demand summaries, the insert/feedback outcomes, the cited-sources
- * leaderboard, and the propose-approve-execute actions funnel, over the last
- * 30 days. Read-only reporting; gated server-side on analytics.view like the
+ * leaderboard, and the propose-approve-execute actions funnel, over the
+ * page's period. Read-only reporting; gated server-side on analytics.view like the
  * rest of the Quinn performance surface. Mounted on the performance page (see
  * automation.performance.tsx). `showActionsFunnel` is a presentational
  * switch for the pending-actions section, not a feature-flag gate.
  *
  * "Top teammates" answers who uses Copilot; "Cited sources" answers what's
- * carrying the answers — the two views over the same question volume a
+ * carrying the answers - the two views over the same question volume a
  * content owner and an admin each care about.
  */
 import { useQuery } from '@tanstack/react-query'
@@ -21,7 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { MetricTile, pct, asRate, type DateRange } from './metric-tile'
+import { UserGroupIcon } from '@heroicons/react/24/outline'
+import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { EmptyState } from '@/components/shared/empty-state'
+import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
 import { copilotUsageMetricsQuery } from '@/lib/client/queries/assistant-copilot-analytics'
 
 /** Admin-facing labels for the raw metadata.transform values. Falls back to
@@ -47,7 +50,7 @@ function CountRow({ label, value }: CountRowProps) {
   return (
     <li className="flex items-center justify-between gap-2">
       <span>{label}</span>
-      <span className="tabular-nums text-muted-foreground">{value ?? '—'}</span>
+      <span className="tabular-nums text-muted-foreground">{value ?? NO_DATA}</span>
     </li>
   )
 }
@@ -67,158 +70,187 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
   const teammates = data?.perTeammate ?? []
   const citedSources = data?.topCitedSources ?? []
 
-  return (
-    <SettingsCard
-      title="Copilot usage"
-      description="Questions, transforms, and summaries from the inbox Copilot sidebar over the last 30 days, and whether the answers actually got used."
-    >
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricTile label="Questions asked" value={data ? String(data.totalQuestions) : '—'} />
-        <MetricTile label="Transforms run" value={data ? String(data.totalTransforms) : '—'} />
-        <MetricTile label="Summaries generated" value={data ? String(data.totalSummaries) : '—'} />
-        {showActionsFunnel && (
-          <MetricTile
-            label="Approval rate"
-            value={pct(asRate(data?.approvalRate))}
-            sub={data ? `${data.actionsApproved} of ${data.actionsProposed} proposed` : undefined}
-          />
-        )}
-      </div>
+  // A period with no Copilot use at all reads as one empty state, not a grid of zeros.
+  const unused =
+    data !== undefined &&
+    data.totalQuestions + data.totalTransforms + data.totalSummaries + data.actionsProposed === 0
 
-      <div className="mt-6 border-t border-border/50 pt-6">
-        <h3 className="mb-2 text-sm font-medium">Outcomes</h3>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <MetricTile
-              label="Insert rate"
-              value={pct(asRate(data?.insertRate))}
-              sub={
-                data
-                  ? // totalInserted is insertRate's own numerator (every
-                    // INSERT_EVENT_TYPES row, server-derived), so the
-                    // sub-line can never drift from the rate above it.
-                    `${data.totalInserted} inserted from ${data.totalQuestions} questions`
-                  : undefined
-              }
-            />
+  if (unused) {
+    return (
+      <SettingsCard title="Copilot usage" contentClassName="p-0">
+        <EmptyState
+          size="compact"
+          icon={UserGroupIcon}
+          title="No Copilot activity in this period"
+        />
+      </SettingsCard>
+    )
+  }
+
+  return (
+    <SettingsCard title="Copilot usage" contentClassName="p-0">
+      <AnalyticsStatRow
+        stats={[
+          {
+            label: 'Questions asked',
+            value: data ? String(data.totalQuestions) : NO_DATA,
+          },
+          {
+            label: 'Transforms run',
+            value: data ? String(data.totalTransforms) : NO_DATA,
+          },
+          {
+            label: 'Summaries generated',
+            value: data ? String(data.totalSummaries) : NO_DATA,
+          },
+          ...(showActionsFunnel
+            ? [
+                {
+                  label: 'Approval rate',
+                  value: pct(asRate(data?.approvalRate)),
+                  caption: data
+                    ? `${data.actionsApproved} of ${data.actionsProposed} proposed`
+                    : undefined,
+                },
+              ]
+            : []),
+        ]}
+      />
+
+      <div className="space-y-6 p-4 sm:p-6">
+        <div>
+          <h3 className="mb-2 text-sm font-medium">Outcomes</h3>
+          <AnalyticsStatRow
+            stats={[
+              {
+                label: 'Insert rate',
+                value: pct(asRate(data?.insertRate)),
+                // totalInserted is insertRate's own numerator (every
+                // INSERT_EVENT_TYPES row, server-derived), so the caption can
+                // never drift from the rate beside it.
+                caption: data
+                  ? `${data.totalInserted} inserted from ${data.totalQuestions} questions`
+                  : undefined,
+              },
+              {
+                label: 'Helpful votes',
+                value: data ? String(data.feedbackUp) : NO_DATA,
+                caption: data ? `${data.feedbackDown} not helpful` : undefined,
+              },
+            ]}
+          />
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
             {/* What was inserted (the gesture kinds), then where it landed
-                (the destination split) — the two axes of every insert event. */}
-            <ul className="mt-3 space-y-1.5 text-sm">
+              (the destination split): the two axes of every insert event. */}
+            <ul className="space-y-1.5 text-sm">
               <CountRow label="Answers inserted" value={data?.answersInserted} />
               <CountRow label="Transforms inserted" value={data?.transformsInserted} />
               <CountRow label="Summaries inserted" value={data?.summariesInserted} />
               <CountRow label="Landed in a reply" value={data?.insertedReplies} />
               <CountRow label="Landed in a note" value={data?.insertedNotes} />
             </ul>
-          </div>
-          <div>
-            <MetricTile
-              label="Helpful votes"
-              value={data ? String(data.feedbackUp) : '—'}
-              sub={data ? `${data.feedbackDown} not helpful` : undefined}
-            />
-            {/* The up/down split already lives on the tile; the list only
-                carries the one count the tile can't: reasoned thumbs-downs. */}
-            <ul className="mt-3 space-y-1.5 text-sm">
+            {/* The up/down split already lives on the stat above; the list only
+              carries the one count it can't: reasoned thumbs-downs. */}
+            <ul className="space-y-1.5 text-sm">
               <CountRow label="Thumbs down with a reason" value={data?.feedbackDownWithReason} />
             </ul>
           </div>
         </div>
-      </div>
 
-      {citedSources.length > 0 && (
-        <div className="mt-6 border-t border-border/50 pt-6">
-          <h3 id="copilot-cited-sources-heading" className="mb-2 text-sm font-medium">
-            Cited sources
-          </h3>
-          <p className="mb-2 text-xs text-muted-foreground">
-            Help Center articles Copilot answers cited most, ranked by how many questions drew on
-            them, with how often the citing answer actually got copied into a reply — a popular
-            source with a low copied rate is the one worth reviewing first.
-          </p>
-          <Table aria-labelledby="copilot-cited-sources-heading">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead className="text-end">Questions</TableHead>
-                <TableHead className="text-end">Copied</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {citedSources.map((source) => (
-                <TableRow key={source.id}>
-                  <TableCell className="max-w-64 truncate">
-                    <a href={source.url} className="underline-offset-2 hover:underline">
-                      {source.title}
-                    </a>
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums text-muted-foreground">
-                    {source.questions}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums text-muted-foreground">
-                    {pct(asRate(source.insertRate))}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-6 border-t border-border/50 pt-6 sm:grid-cols-2">
-        <div>
-          <h3 className="mb-2 text-sm font-medium">Top teammates</h3>
-          {teammates.length === 0 ? (
-            <p className="py-2 text-sm text-muted-foreground">
-              No Copilot questions for this period.
+        {citedSources.length > 0 && (
+          <div className="border-t border-border/50 pt-6">
+            <h3 id="copilot-cited-sources-heading" className="mb-2 text-sm font-medium">
+              Cited sources
+            </h3>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Help Center articles Copilot answers cited most, ranked by how many questions drew on
+              them, with how often the citing answer actually got copied into a reply. A popular
+              source with a low copied rate is the one worth reviewing first.
             </p>
-          ) : (
-            <ul className="space-y-1.5">
-              {teammates.map((teammate) => (
-                <li
-                  key={teammate.principalId}
-                  className="flex items-center justify-between gap-2 text-sm"
-                >
-                  <span className="truncate">{teammate.displayName ?? 'Unknown teammate'}</span>
-                  <span className="tabular-nums text-muted-foreground">{teammate.questions}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+            <Table aria-labelledby="copilot-cited-sources-heading">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="text-end">Questions</TableHead>
+                  <TableHead className="text-end">Copied</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {citedSources.map((source) => (
+                  <TableRow key={source.id}>
+                    <TableCell className="max-w-64 truncate">
+                      <a href={source.url} className="underline-offset-2 hover:underline">
+                        {source.title}
+                      </a>
+                    </TableCell>
+                    <TableCell className="text-end tabular-nums text-muted-foreground">
+                      {source.questions}
+                    </TableCell>
+                    <TableCell className="text-end tabular-nums text-muted-foreground">
+                      {pct(asRate(source.insertRate))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-          {transforms.length > 0 && (
-            <>
-              <h3 className="mt-4 mb-2 text-sm font-medium border-t border-border/50 pt-4">
-                Transforms by kind
-              </h3>
+        <div className="grid gap-6 border-t border-border/50 pt-6 sm:grid-cols-2">
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Top teammates</h3>
+            {teammates.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">
+                No Copilot questions for this period.
+              </p>
+            ) : (
               <ul className="space-y-1.5">
-                {transforms.map((row) => (
+                {teammates.map((teammate) => (
                   <li
-                    key={row.transform}
+                    key={teammate.principalId}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span className="truncate">
-                      {TRANSFORM_LABELS[row.transform] ?? row.transform}
-                    </span>
-                    <span className="tabular-nums text-muted-foreground">{row.count}</span>
+                    <span className="truncate">{teammate.displayName ?? 'Unknown teammate'}</span>
+                    <span className="tabular-nums text-muted-foreground">{teammate.questions}</span>
                   </li>
                 ))}
               </ul>
-            </>
+            )}
+
+            {transforms.length > 0 && (
+              <>
+                <h3 className="mt-4 mb-2 text-sm font-medium border-t border-border/50 pt-4">
+                  Transforms by kind
+                </h3>
+                <ul className="space-y-1.5">
+                  {transforms.map((row) => (
+                    <li
+                      key={row.transform}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <span className="truncate">
+                        {TRANSFORM_LABELS[row.transform] ?? row.transform}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">{row.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          {showActionsFunnel && (
+            <div className="sm:border-l sm:border-border/50 sm:pl-6">
+              <h3 className="mb-2 text-sm font-medium">Actions funnel</h3>
+              <ul className="space-y-1.5 text-sm">
+                <CountRow label="Proposed" value={data?.actionsProposed} />
+                <CountRow label="Approved" value={data?.actionsApproved} />
+                <CountRow label="Rejected" value={data?.actionsRejected} />
+                <CountRow label="Expired" value={data?.actionsExpired} />
+              </ul>
+            </div>
           )}
         </div>
-
-        {showActionsFunnel && (
-          <div className="sm:border-l sm:border-border/50 sm:pl-6">
-            <h3 className="mb-2 text-sm font-medium">Actions funnel</h3>
-            <ul className="space-y-1.5 text-sm">
-              <CountRow label="Proposed" value={data?.actionsProposed} />
-              <CountRow label="Approved" value={data?.actionsApproved} />
-              <CountRow label="Rejected" value={data?.actionsRejected} />
-              <CountRow label="Expired" value={data?.actionsExpired} />
-            </ul>
-          </div>
-        )}
       </div>
     </SettingsCard>
   )

@@ -1,56 +1,17 @@
 /**
  * Quinn performance headline: involvement,
- * resolution, and escalation rates over the last 30 days, the
+ * resolution, and escalation rates over the page's period, the
  * confirmed-vs-assumed resolution split, and actions taken via tool calls.
  * Read-only reporting — gated server-side on analytics.view like the rest
  * of the analytics surface.
  */
 import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
-import { AreaChart, Area, XAxis } from 'recharts'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Button } from '@/components/ui/button'
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart'
-import { MetricTile, pct, asRate, type DateRange } from './metric-tile'
+import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
 import { quinnPerformanceQuery } from '@/lib/client/queries/assistant-analytics'
-
-const TREND_CHART_CONFIG: ChartConfig = {
-  involvements: { label: 'Involvements', color: 'var(--primary)' },
-}
-
-/** Compact daily-involvements trend. Involvement volume is low (like CSAT),
- *  so this rides a live per-day grouping rather than a materialized rollup;
- *  once volume grows, this can move onto a daily rollup like
- *  analyticsDailyStats without changing the card's shape. */
-function TrendSparkline({ data }: { data: Array<{ date: string; involvements: number }> }) {
-  const intl = useIntl()
-  if (data.length === 0) {
-    return (
-      <div className="flex h-20 items-center justify-center text-xs text-muted-foreground">
-        {intl.formatMessage({
-          id: 'automation.performance.noData',
-          defaultMessage: 'No data for this period',
-        })}
-      </div>
-    )
-  }
-  return (
-    <ChartContainer config={TREND_CHART_CONFIG} className="aspect-auto h-20 w-full">
-      <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-        <XAxis dataKey="date" hide />
-        <Area
-          type="monotone"
-          dataKey="involvements"
-          stroke="var(--color-involvements)"
-          fill="var(--color-involvements)"
-          fillOpacity={0.15}
-          strokeWidth={2}
-          dot={false}
-        />
-      </AreaChart>
-    </ChartContainer>
-  )
-}
 
 export function QuinnPerformanceCard({ range }: { range: DateRange }) {
   const intl = useIntl()
@@ -61,15 +22,12 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
     <SettingsCard
       title={intl.formatMessage({
         id: 'automation.performance.agent.title',
-        defaultMessage: 'AI agent performance',
+        defaultMessage: 'AI agent',
       })}
-      description={intl.formatMessage({
-        id: 'automation.performance.agent.description',
-        defaultMessage: 'Involvement, resolution, and escalation over the last 30 days.',
-      })}
+      contentClassName="p-0"
     >
       {performanceQuery.isError ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 p-4 sm:p-6">
           <p role="alert" className="text-sm text-destructive">
             {intl.formatMessage({
               id: 'automation.performance.agent.error',
@@ -81,75 +39,69 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
           </Button>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <MetricTile
-              label={intl.formatMessage({
+        <AnalyticsStatRow
+          stats={[
+            {
+              label: intl.formatMessage({
                 id: 'automation.performance.agent.involvement',
                 defaultMessage: 'Involvement rate',
-              })}
-              value={pct(asRate(data?.involvementRate))}
-              sub={
-                data
-                  ? intl.formatMessage(
-                      {
-                        id: 'automation.performance.agent.involvementDetail',
-                        defaultMessage: '{involvements} of {conversations} conversations',
-                      },
-                      { involvements: data.involvements, conversations: data.conversations }
-                    )
-                  : undefined
-              }
-            />
-            <MetricTile
-              label={intl.formatMessage({
+              }),
+              value: pct(asRate(data?.involvementRate)),
+              caption: data
+                ? intl.formatMessage(
+                    {
+                      id: 'automation.performance.agent.involvementDetail',
+                      defaultMessage: '{involvements} of {conversations} conversations',
+                    },
+                    { involvements: data.involvements, conversations: data.conversations }
+                  )
+                : undefined,
+            },
+            {
+              label: intl.formatMessage({
                 id: 'automation.performance.agent.resolution',
                 defaultMessage: 'Resolution rate',
-              })}
-              value={pct(asRate(data?.resolutionRate))}
-              sub={
-                data
-                  ? intl.formatMessage(
-                      {
-                        id: 'automation.performance.agent.resolutionDetail',
-                        defaultMessage: '{confirmed} confirmed / {assumed} assumed',
-                      },
-                      { confirmed: data.resolvedConfirmed, assumed: data.resolvedAssumed }
-                    )
-                  : undefined
-              }
-            />
-            <MetricTile
-              label={intl.formatMessage({
+              }),
+              value: pct(asRate(data?.resolutionRate)),
+              caption: data
+                ? intl.formatMessage(
+                    {
+                      id: 'automation.performance.agent.resolutionDetail',
+                      defaultMessage: '{confirmed} confirmed / {assumed} assumed',
+                    },
+                    { confirmed: data.resolvedConfirmed, assumed: data.resolvedAssumed }
+                  )
+                : undefined,
+            },
+            {
+              label: intl.formatMessage({
                 id: 'automation.performance.agent.escalation',
                 defaultMessage: 'Escalation rate',
-              })}
-              value={pct(asRate(data?.escalationRate))}
-              sub={
-                data
-                  ? intl.formatMessage(
-                      {
-                        id: 'automation.performance.agent.escalationDetail',
-                        defaultMessage: '{count} handed off',
-                      },
-                      { count: data.handedOff }
-                    )
-                  : undefined
-              }
-            />
-            <MetricTile
-              label={intl.formatMessage({
+              }),
+              value: pct(asRate(data?.escalationRate)),
+              caption: data
+                ? intl.formatMessage(
+                    {
+                      id: 'automation.performance.agent.escalationDetail',
+                      defaultMessage: '{count} handed off',
+                    },
+                    { count: data.handedOff }
+                  )
+                : undefined,
+            },
+            {
+              label: intl.formatMessage({
                 id: 'automation.performance.agent.actions',
                 defaultMessage: 'Actions completed',
-              })}
-              value={data ? String(data.actionsTaken) : '—'}
-            />
-            <MetricTile
-              label={intl.formatMessage({
+              }),
+              value: data ? String(data.actionsTaken) : NO_DATA,
+            },
+            {
+              label: intl.formatMessage({
                 id: 'automation.performance.agent.csat',
                 defaultMessage: 'Customer satisfaction',
-              })}
-              value={
+              }),
+              value:
                 data && data.csat.responseCount > 0
                   ? intl.formatMessage(
                       {
@@ -163,25 +115,19 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
                         }),
                       }
                     )
-                  : '—'
-              }
-              sub={
-                data
-                  ? intl.formatMessage(
-                      {
-                        id: 'automation.performance.agent.csatDetail',
-                        defaultMessage: '{count, plural, one {# rating} other {# ratings}}',
-                      },
-                      { count: data.csat.responseCount }
-                    )
-                  : undefined
-              }
-            />
-          </div>
-          <div className="mt-4">
-            <TrendSparkline data={data?.dailyTrend ?? []} />
-          </div>
-        </>
+                  : NO_DATA,
+              caption: data
+                ? intl.formatMessage(
+                    {
+                      id: 'automation.performance.agent.csatDetail',
+                      defaultMessage: '{count, plural, one {# rating} other {# ratings}}',
+                    },
+                    { count: data.csat.responseCount }
+                  )
+                : undefined,
+            },
+          ]}
+        />
       )}
     </SettingsCard>
   )

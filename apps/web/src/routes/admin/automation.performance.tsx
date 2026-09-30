@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { CopilotUsageCard } from '@/components/admin/automation/copilot-usage-card'
 import { QuinnPerformanceCard } from '@/components/admin/automation/quinn-performance-card'
 import { QuinnToolsCard } from '@/components/admin/automation/quinn-tools-card'
@@ -15,9 +14,10 @@ export const Route = createFileRoute('/admin/automation/performance')({
       throw new Error('Access denied: requires analytics.view')
     }
   },
-  // The cards read the last 30 days, and the window is part of each card's
-  // query key: the loader fixes it once, warms the cards with it, and hands it
-  // to them, so the server-rendered page carries their data.
+  // The cards read the last 30 days, the period the header names. The window
+  // is part of each card's query key: the loader fixes it once, warms the
+  // cards with it, and hands it to them, so the server-rendered page carries
+  // their data.
   loader: async ({ context }) => {
     // Imported here rather than at the top: route loaders ship in the entry
     // chunk every page loads.
@@ -35,27 +35,22 @@ function AutomationPerformancePage() {
   const { range } = Route.useLoaderData()
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <div className="lg:hidden">
-        <BackLink to="/admin/automation">
-          {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-        </BackLink>
-      </div>
-      <PageHeader
-        title={intl.formatMessage({
-          id: 'automation.performance.title',
-          defaultMessage: 'AI performance',
-        })}
-        description={intl.formatMessage({
-          id: 'automation.performance.description',
-          defaultMessage:
-            'Understand how the AI agent and Copilot are helping over the last 30 days.',
-        })}
-      />
+    <SettingsPage
+      page="/admin/automation/performance"
+      area="automation"
+      actions={
+        <span className="inline-flex h-8 items-center rounded-lg border border-border bg-card px-3 text-[13px] font-medium">
+          {intl.formatMessage({
+            id: 'automation.performance.period',
+            defaultMessage: 'Last 30 days',
+          })}
+        </span>
+      }
+    >
       <QuinnPerformanceCard range={range} />
       <QuinnToolsCard range={range} />
       <CopilotUsageCard showActionsFunnel range={range} />
       <SupportPerformanceCard range={range} />
-    </div>
+    </SettingsPage>
   )
 }
