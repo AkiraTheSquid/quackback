@@ -16,9 +16,10 @@ import {
   type OfficeHoursInterval,
   type OfficeHoursHoliday,
 } from '@/lib/shared/office-hours'
+import { AUTOSAVE } from '@/lib/client/autosave'
 import { fetchOfficeHoursFn, updateOfficeHoursFn } from '@/lib/server/functions/settings'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { SettingRow } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Combobox } from '@/components/ui/combobox'
 import { Switch } from '@/components/ui/switch'
@@ -94,6 +95,7 @@ function OfficeHoursPage() {
 
   const mutation = useMutation({
     mutationFn: (next: OfficeHoursSchedule) => updateOfficeHoursFn({ data: next }),
+    meta: AUTOSAVE,
     onSuccess: (saved) => {
       setSchedule(saved)
       queryClient.setQueryData(officeHoursQuery.queryKey, saved)
@@ -203,36 +205,22 @@ function OfficeHoursPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="lg:hidden">
-        <BackLink to="/admin/settings/support">Support</BackLink>
-      </div>
-      <PageHeader
-        title="Office Hours"
-        description="One weekly schedule for your team's availability. Customers only see it once a human is involved; the assistant handles things first."
-      />
-
-      <SettingsCard
-        title="Availability"
-        description="Off means you're available 24/7. Turn it on to define the hours your team is around."
-      >
+    <SettingsPage page="/admin/settings/office-hours" crumbs={[{ label: 'Support' }]}>
+      <SettingsCard title="Availability" description="Off means available 24/7.">
         <div className="space-y-5">
-          <div className="flex items-center justify-between py-1">
-            <div className="pr-4">
-              <Label htmlFor="office-hours-enabled" className="text-sm font-medium cursor-pointer">
-                Set office hours
-              </Label>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                When enabled, consumers see when you&apos;ll be back outside these windows.
-              </p>
-            </div>
-            <Switch
-              id="office-hours-enabled"
-              checked={schedule.enabled}
-              onCheckedChange={onToggleEnabled}
-              disabled={isBusy}
-            />
-          </div>
+          <SettingRow
+            label="Set office hours"
+            description="Customers see when you'll be back."
+            htmlFor="office-hours-enabled"
+            control={
+              <Switch
+                id="office-hours-enabled"
+                checked={schedule.enabled}
+                onCheckedChange={onToggleEnabled}
+                disabled={isBusy}
+              />
+            }
+          />
 
           {schedule.enabled && (
             <>
@@ -341,8 +329,8 @@ function OfficeHoursPage() {
                 <div className="space-y-1">
                   <Label>Holidays</Label>
                   <p className="text-xs text-muted-foreground">
-                    Days you&apos;re closed on top of the weekly windows — SLA clocks pause and
-                    reply expectations don&apos;t fire. Dates are read in the schedule timezone.
+                    Days you&apos;re closed on top of the weekly windows. SLA clocks pause and reply
+                    expectations don&apos;t fire. Dates are read in the schedule timezone.
                   </p>
                 </div>
 
@@ -417,7 +405,7 @@ function OfficeHoursPage() {
           )}
         </div>
       </SettingsCard>
-    </div>
+    </SettingsPage>
   )
 }
 
@@ -451,7 +439,7 @@ function OfficeHoursPreview({ schedule }: { schedule: OfficeHoursSchedule }) {
     <div className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm">
       <span
         className={
-          open ? 'size-2 rounded-full bg-emerald-500' : 'size-2 rounded-full bg-muted-foreground/40'
+          open ? 'size-2 rounded-full bg-success' : 'size-2 rounded-full bg-muted-foreground/40'
         }
         aria-hidden
       />

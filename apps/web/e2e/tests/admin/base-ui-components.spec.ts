@@ -111,7 +111,7 @@ test.describe('Base UI component usability', () => {
     await expect(tagDialog).toBeHidden()
 
     await page.goto('/admin/settings/office-hours')
-    await expect(page.getByRole('heading', { name: 'Office Hours' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Office hours' })).toBeVisible({
       timeout: 15_000,
     })
     await expect(page.locator('#office-hours-enabled')).toBeVisible()
