@@ -50,14 +50,12 @@ function ToolGroup({
   defaultPolicy,
   onDefault,
   onTool,
-  chips,
 }: {
   title: string
   tools: ConnectorToolDTO[]
   defaultPolicy?: ConnectorToolPolicy
   onDefault?: (next: ConnectorToolPolicy) => void
   onTool?: (name: string, next: ConnectorToolPolicy) => void
-  chips?: boolean
 }) {
   if (tools.length === 0) return null
   return (
@@ -68,22 +66,8 @@ function ToolGroup({
           {tools.length}
         </span>
         <span className="ms-auto">
-          {chips ? (
-            <Badge
-              size="sm"
-              className={
-                defaultPolicy === 'always'
-                  ? 'border-transparent bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                  : 'border-transparent bg-amber-500/10 text-amber-800 dark:text-amber-300'
-              }
-            >
-              {defaultPolicy === 'always'
-                ? 'Always run'
-                : 'Automatic on Agent · Approval on Copilot'}
-            </Badge>
-          ) : (
-            defaultPolicy &&
-            onDefault && <PolicyDefaultSelect value={defaultPolicy} onChange={onDefault} />
+          {defaultPolicy && onDefault && (
+            <PolicyDefaultSelect value={defaultPolicy} onChange={onDefault} />
           )}
         </span>
       </div>
@@ -94,7 +78,7 @@ function ToolGroup({
         >
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5 text-[13px] font-medium">
-              {chips ? tool.title || tool.name : tool.name}
+              {tool.name}
               {tool.destructive && (
                 <Badge
                   size="sm"
@@ -109,35 +93,12 @@ function ToolGroup({
               <p className="truncate text-[11.5px] text-muted-foreground">{tool.description}</p>
             )}
           </div>
-          {chips ? (
-            <div className="flex shrink-0 flex-wrap justify-end gap-1">
-              {tool.group === 'read' ? (
-                <Badge
-                  size="sm"
-                  className="border-transparent bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                >
-                  Always runs
-                </Badge>
-              ) : (
-                <>
-                  <Badge size="sm">Agent: automatic</Badge>
-                  <Badge
-                    size="sm"
-                    className="border-transparent bg-amber-500/10 text-amber-800 dark:text-amber-300"
-                  >
-                    Copilot: approval
-                  </Badge>
-                </>
-              )}
-            </div>
-          ) : (
-            onTool && (
-              <PolicyDial
-                value={tool.policy}
-                labelledBy={tool.name}
-                onChange={(next) => onTool(tool.name, next)}
-              />
-            )
+          {onTool && (
+            <PolicyDial
+              value={tool.policy}
+              labelledBy={tool.name}
+              onChange={(next) => onTool(tool.name, next)}
+            />
           )}
         </div>
       ))}
