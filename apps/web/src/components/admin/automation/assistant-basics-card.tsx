@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Button } from '@/components/ui/button'
@@ -13,11 +13,10 @@ import {
   type AssistantTone,
 } from '@/lib/shared/assistant/config'
 import {
-  AssistantSaveFeedback,
-  type AssistantSaveState,
+  AssistantConflictNotice,
   isAssistantFieldManaged,
-  isAssistantRevisionConflict,
   ManagedSettingHint,
+  useAssistantAutosave,
   useUnsavedChanges,
 } from './assistant-form'
 
@@ -53,17 +52,41 @@ const LENGTH_MESSAGES: Record<AssistantResponseLength, { label: string; descript
 
 export function AssistantVoiceCard() {
   const intl = useIntl()
+  const queryClient = useQueryClient()
   const settingsQuery = useQuery(assistantQueries.settings())
   const updateVoice = useUpdateAssistantVoice()
   const [tone, setTone] = useState<AssistantTone | null>(null)
   const [responseLength, setResponseLength] = useState<AssistantResponseLength | null>(null)
   const [savedTone, setSavedTone] = useState<AssistantTone | null>(null)
   const [savedLength, setSavedLength] = useState<AssistantResponseLength | null>(null)
-  const [saveState, setSaveState] = useState<AssistantSaveState>('idle')
   const dirty = Boolean(
     tone && responseLength && (tone !== savedTone || responseLength !== savedLength)
   )
-  useUnsavedChanges(dirty, 'basics')
+  useUnsavedChanges(dirty)
+
+  async function save() {
+    const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
+    if (!latest || !tone || !responseLength) return
+    const sentTone = tone
+    const sentLength = responseLength
+    await updateVoice.mutateAsync({
+      expectedRevision: latest.revision,
+      voice: {
+        ...latest.config.agents.agent.voice,
+        tone: sentTone,
+        responseLength: sentLength,
+      },
+    })
+    setSavedTone(sentTone)
+    setSavedLength(sentLength)
+  }
+
+  const { conflict, clearConflict } = useAssistantAutosave({
+    dirty,
+    signature: `${tone}|${responseLength}`,
+    delayMs: 0,
+    save,
+  })
 
   useEffect(() => {
     if (!settingsQuery.data || dirty) return
@@ -127,32 +150,7 @@ export function AssistantVoiceCard() {
     setResponseLength(voice.responseLength)
     setSavedTone(voice.tone)
     setSavedLength(voice.responseLength)
-    setSaveState('idle')
-  }
-
-  async function save() {
-    if (!settingsQuery.data) return
-    const selectedTone = tone
-    const selectedLength = responseLength
-    if (!selectedTone || !selectedLength) return
-    setSaveState('saving')
-    try {
-      const result = await updateVoice.mutateAsync({
-        expectedRevision: settingsQuery.data.revision,
-        voice: {
-          ...settingsQuery.data.config.agents.agent.voice,
-          tone: selectedTone,
-          responseLength: selectedLength,
-        },
-      })
-      setTone(result.config.agents.agent.voice.tone)
-      setResponseLength(result.config.agents.agent.voice.responseLength)
-      setSavedTone(result.config.agents.agent.voice.tone)
-      setSavedLength(result.config.agents.agent.voice.responseLength)
-      setSaveState('saved')
-    } catch (error) {
-      setSaveState(isAssistantRevisionConflict(error) ? 'conflict' : 'error')
-    }
+    clearConflict()
   }
 
   return (
@@ -160,10 +158,6 @@ export function AssistantVoiceCard() {
       title={intl.formatMessage({
         id: 'automation.agent.voice.title',
         defaultMessage: 'Response style',
-      })}
-      description={intl.formatMessage({
-        id: 'automation.agent.voice.description',
-        defaultMessage: 'Set the tone and level of detail used in customer replies.',
       })}
     >
       <div className="space-y-6">
@@ -175,10 +169,9 @@ export function AssistantVoiceCard() {
             value={tone}
             aria-labelledby="assistant-tone-label"
             className="grid gap-2 sm:grid-cols-3"
-            disabled={toneManaged || saveState === 'saving'}
+            disabled={toneManaged}
             onValueChange={(value) => {
               setTone(value as AssistantTone)
-              setSaveState('idle')
             }}
           >
             {ASSISTANT_TONES.map((value) => {
@@ -225,10 +218,9 @@ export function AssistantVoiceCard() {
             value={responseLength}
             aria-labelledby="assistant-length-label"
             className="grid gap-2 sm:grid-cols-3"
-            disabled={lengthManaged || saveState === 'saving'}
+            disabled={lengthManaged}
             onValueChange={(value) => {
               setResponseLength(value as AssistantResponseLength)
-              setSaveState('idle')
             }}
           >
             {ASSISTANT_RESPONSE_LENGTHS.map((value) => {
@@ -264,25 +256,7 @@ export function AssistantVoiceCard() {
           {lengthManaged && <ManagedSettingHint />}
         </fieldset>
 
-        <AssistantSaveFeedback state={saveState} onReload={reloadLatest} />
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            className="min-h-11 sm:min-h-9"
-            disabled={!dirty || saveState === 'saving'}
-            onClick={() => void save()}
-          >
-            {saveState === 'saving'
-              ? intl.formatMessage({
-                  id: 'automation.agent.save.savingButton',
-                  defaultMessage: 'Saving…',
-                })
-              : intl.formatMessage({
-                  id: 'automation.agent.save.button',
-                  defaultMessage: 'Save changes',
-                })}
-          </Button>
-        </div>
+        {conflict && <AssistantConflictNotice onReload={reloadLatest} />}
       </div>
     </SettingsCard>
   )
