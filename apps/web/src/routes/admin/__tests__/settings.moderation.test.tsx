@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { IntlProvider } from 'react-intl'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -81,13 +81,33 @@ describe('Moderation page', () => {
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ requireApproval: 'anonymous' }))
   })
 
-  it('reverts the switch when the save fails', async () => {
-    mutateAsync.mockRejectedValue(new Error('boom'))
+  it('flips the switch at once and reverts it when the save fails', async () => {
+    let reject!: (e: Error) => void
+    mutateAsync.mockReturnValue(new Promise((_, r) => (reject = r)))
     renderPage()
     const images = screen.getByLabelText('Images')
+    expect(images).not.toBeChecked()
     fireEvent.click(images)
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalled())
+    await waitFor(() => expect(images).toBeChecked())
+    await act(async () => reject(new Error('boom')))
     await waitFor(() => expect(images).not.toBeChecked())
+  })
+
+  it('locks the switches while a save is in flight and reverts only that change on failure', async () => {
+    let rejectFirst!: (e: Error) => void
+    mutateAsync.mockReturnValueOnce(new Promise((_, r) => (rejectFirst = r)))
+    renderPage()
+    const anonymous = screen.getByLabelText('Anonymous posts')
+    const signedIn = screen.getByLabelText('Signed-in posts')
+    fireEvent.click(anonymous)
+    await waitFor(() => expect(anonymous).toBeChecked())
+    expect(signedIn).toBeDisabled()
+    fireEvent.click(signedIn)
+    expect(mutateAsync).toHaveBeenCalledTimes(1)
+    await act(async () => rejectFirst(new Error('boom')))
+    await waitFor(() => expect(anonymous).not.toBeChecked())
+    expect(signedIn).not.toBeChecked()
+    expect(signedIn).toBeEnabled()
   })
 
   it('has no per-switch spinner', () => {

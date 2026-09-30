@@ -16,6 +16,8 @@ import {
   type ApprovalToggles,
 } from '@/lib/shared/moderation-policy'
 
+type ModerationInput = Parameters<ReturnType<typeof useUpdateModerationDefault>['mutateAsync']>[0]
+
 export function ModerationPage() {
   const router = useRouter()
   const updateModerationDefault = useUpdateModerationDefault()
@@ -33,37 +35,42 @@ export function ModerationPage() {
     portalConfigQuery.data.moderationDefault?.holdLinks === true
   )
 
-  // Each switch saves on change. A failed save reverts it; the autosave
-  // handler shows the one toast.
-  async function updateModeration(key: keyof ApprovalToggles, checked: boolean) {
-    const prev = moderationToggles
+  // Each switch saves on change. Switches are locked while a save is in
+  // flight, so a failed save reverts exactly the change it carried and a
+  // later save never includes an unconfirmed one. A failed save reverts the
+  // switch; the autosave handler shows the one toast.
+  const [saving, setSaving] = useState(false)
+
+  async function save(apply: (checked: boolean) => void, checked: boolean, input: ModerationInput) {
+    setSaving(true)
+    apply(checked)
+    try {
+      await updateModerationDefault.mutateAsync(input)
+      startTransition(() => router.invalidate())
+    } catch {
+      apply(!checked)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function updateModeration(key: keyof ApprovalToggles, checked: boolean) {
     const next = { ...moderationToggles, [key]: checked }
-    setModerationToggles(next)
-    try {
-      await updateModerationDefault.mutateAsync({
-        requireApproval: togglesToRequireApproval(next),
-      })
-      startTransition(() => router.invalidate())
-    } catch {
-      setModerationToggles(prev)
-    }
+    return save(
+      (value) => setModerationToggles((cur) => ({ ...cur, [key]: value })),
+      checked,
+      { requireApproval: togglesToRequireApproval(next) }
+    )
   }
 
-  async function updateContentHold(key: 'holdImages' | 'holdLinks', checked: boolean) {
-    const setFlag = key === 'holdImages' ? setHoldImages : setHoldLinks
-    setFlag(checked)
-    try {
-      await updateModerationDefault.mutateAsync({
-        requireApproval: togglesToRequireApproval(moderationToggles),
-        [key]: checked,
-      })
-      startTransition(() => router.invalidate())
-    } catch {
-      setFlag(!checked)
-    }
+  function updateContentHold(key: 'holdImages' | 'holdLinks', checked: boolean) {
+    return save(key === 'holdImages' ? setHoldImages : setHoldLinks, checked, {
+      requireApproval: togglesToRequireApproval(moderationToggles),
+      [key]: checked,
+    })
   }
 
-  const disabled = isPending
+  const disabled = isPending || saving
 
   return (
     <SettingsPage
