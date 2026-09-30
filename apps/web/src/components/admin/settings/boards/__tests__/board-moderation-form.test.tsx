@@ -7,16 +7,14 @@
  *   - Inheritance banner reflects override state
  *   - Inherit sub-pill mirrors the workspace default ("none" → Off,
  *     "all" → On, axis-aware mapping otherwise)
- *   - Switching a rule from Inherit to On dirties the form
- *   - Save submits a payload that overwrites only the moderation slice
- *     and preserves the rest of `board.access` verbatim
- *   - Discard restores the original moderation
+ *   - A rule change autosaves a payload that overwrites only the moderation
+ *     slice and preserves the rest of `board.access` verbatim
  *
  * The mutation and portalConfig queries are mocked. portalConfig is
  * mutable so tests can flip workspace defaults between renders.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BoardModerationForm } from '../board-moderation-form'
 import { DEFAULT_BOARD_ACCESS, type BoardAccess } from '@/lib/shared/db-types'
@@ -194,26 +192,33 @@ describe('<BoardModerationForm> inheritance pill', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Dirty / Save / Discard
+// Autosave
 // ---------------------------------------------------------------------------
 
-describe('<BoardModerationForm> save', () => {
-  it('Save dock is collapsed until form is dirty', () => {
-    renderForm(PUBLIC_ACCESS)
-    const region = screen.getByRole('region', { name: /save changes/i })
-    expect(region.getAttribute('data-dirty')).toBeNull()
+describe('<BoardModerationForm> autosave', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it('switching Inherit → On dirties the form', () => {
+  it('renders no save dock or Save button', () => {
     renderForm(PUBLIC_ACCESS)
-    fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: On` }))
-    const region = screen.getByRole('region', { name: /save changes/i })
-    expect(region.getAttribute('data-dirty')).toBe('true')
+    expect(screen.queryByRole('region', { name: /save changes/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument()
   })
 
-  it('submits a payload that overwrites only moderation and preserves the rest of access', async () => {
-    // Non-default access shape — we expect every field to round-trip
-    // through the save payload unchanged.
+  it('does not save until a rule changes', () => {
+    renderForm(PUBLIC_ACCESS)
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('saves a payload that overwrites only moderation and preserves the rest of access', () => {
+    // Non-default access shape: every field must round-trip unchanged.
     const access: BoardAccess = {
       view: 'anonymous',
       vote: 'segments',
@@ -231,39 +236,33 @@ describe('<BoardModerationForm> save', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: On` }))
     fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.comments}: Off` }))
-    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
+    expect(mutate).not.toHaveBeenCalled()
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
 
-    await waitFor(() =>
-      expect(mutate).toHaveBeenCalledWith({
-        boardId: BOARD_ID,
-        access: {
-          // Access slice — must round-trip verbatim, including segments.
-          view: 'anonymous',
-          vote: 'segments',
-          comment: 'team',
-          submit: 'authenticated',
-          segments: {
-            view: [],
-            vote: ['seg_alpha'],
-            comment: [],
-            submit: [],
-          },
-          // Only moderation changed.
-          moderation: { anonPosts: 'on', signedPosts: 'inherit', comments: 'off' },
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(mutate).toHaveBeenCalledWith({
+      boardId: BOARD_ID,
+      access: {
+        view: 'anonymous',
+        vote: 'segments',
+        comment: 'team',
+        submit: 'authenticated',
+        segments: {
+          view: [],
+          vote: ['seg_alpha'],
+          comment: [],
+          submit: [],
         },
-      })
-    )
+        moderation: { anonPosts: 'on', signedPosts: 'inherit', comments: 'off' },
+      },
+    })
   })
 
-  it('Discard restores the original moderation', () => {
+  it('shows the Override badge as soon as a rule is set', () => {
     renderForm(PUBLIC_ACCESS)
     fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: On` }))
-    // Override badge surfaces on dirty
     expect(screen.getByText('Override')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /discard/i }))
-    // Override badge gone; dock collapses.
-    expect(screen.queryByText('Override')).not.toBeInTheDocument()
-    const region = screen.getByRole('region', { name: /save changes/i })
-    expect(region.getAttribute('data-dirty')).toBeNull()
   })
 })

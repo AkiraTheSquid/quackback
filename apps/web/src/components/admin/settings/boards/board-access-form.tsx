@@ -29,8 +29,7 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/solid'
 import { Checkbox } from '@/components/ui/checkbox'
-import { BoardSettingsSaveDock } from './board-settings-save-dock'
-import { FormError } from '@/components/shared/form-error'
+import { useDebouncedSave } from '@/lib/client/hooks/use-debounced-save'
 import { useUpdateBoardAccess } from '@/lib/client/mutations'
 import { useSegments } from '@/lib/client/hooks/use-segments-queries'
 import { settingsQueries } from '@/lib/client/queries/settings'
@@ -202,6 +201,8 @@ function deriveActivePreset(values: FormShape): PresetName {
   return 'custom'
 }
 
+const AUTOSAVE_DELAY_MS = 400
+
 // ─── Main form ────────────────────────────────────────────────────────
 
 export function BoardAccessForm({ board }: BoardAccessFormProps) {
@@ -244,8 +245,8 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
 
   // Auto-bump: when the workspace `allowAnonymous` master switch flips
   // off, any of vote/comment/submit currently set to 'anonymous' gets
-  // bumped to 'authenticated' together. The bumped form is dirty so the
-  // user sees the save dock and can confirm or discard. We read the
+  // bumped to 'authenticated' together. The bumped form is dirty so it
+  // saves like any other change. We read the
   // current tier via `form.getValues()` so the effect doesn't have to
   // depend on `values` (which would re-fire on every keystroke / cell
   // click).
@@ -290,9 +291,8 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
       const meta = PRESET_META.find((p) => p.id === id)
       if (!meta) return
       // Apply via setValue (not form.reset) so the change is tracked as
-      // dirty and the save bar appears. reset() re-baselines defaultValues,
-      // leaving isDirty false — which silently hides the save dock after a
-      // preset click. moderation is left untouched (owned by the Moderation
+      // dirty and autosaves. reset() re-baselines defaultValues, leaving
+      // isDirty false, so a preset click would never be saved. moderation is left untouched (owned by the Moderation
       // sub-tab); presets target the access matrix only.
       const opts = { shouldDirty: true } as const
       ACTIONS.forEach((a) => form.setValue(a.id, meta.tiers[a.id], opts))
@@ -358,24 +358,19 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
     [form]
   )
 
-  const onSubmit = useCallback(
-    (next: FormShape) => {
-      if (segsError) return
-      mutation.mutate({ boardId: board.id, access: next })
-    },
-    [board.id, mutation, segsError]
+  const { queue } = useDebouncedSave<FormShape>(
+    (next) => mutation.mutate({ boardId: board.id, access: next }),
+    AUTOSAVE_DELAY_MS
   )
 
-  const handleDiscard = useCallback(() => {
-    const original = board.access ?? DEFAULT_BOARD_ACCESS
-    form.reset(original)
-    setOpenPicker(null)
-  }, [board.access, form])
+  // Changes save after a short pause, once every Segments tier has a segment.
+  const valuesKey = JSON.stringify(values)
+  useEffect(() => {
+    if (dirty && !segsError) queue(form.getValues())
+  }, [valuesKey, dirty, segsError, form, queue])
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24">
-      {mutation.isError && <FormError message={mutation.error?.message ?? 'An error occurred'} />}
-
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
       <div className="space-y-4">
         <p className="text-xs text-muted-foreground max-w-xl">
           Pick a preset, or tweak any cell to fine-tune. Custom is set automatically when your
@@ -439,16 +434,14 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheckIcon className="h-3 w-3" />
-        Team members and admins always have full access — they bypass these rules.
+        Team members and admins always have full access. They bypass these rules.
       </p>
 
-      <BoardSettingsSaveDock
-        dirty={dirty}
-        error={segsError}
-        errorMessage="Some rules use Segments but no segments are selected."
-        saving={mutation.isPending}
-        onDiscard={handleDiscard}
-      />
+      {segsError && (
+        <p role="alert" className="text-xs text-destructive">
+          Some rules use Segments but no segments are selected.
+        </p>
+      )}
     </form>
   )
 }

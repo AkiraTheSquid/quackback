@@ -8,8 +8,7 @@ import {
   ShieldCheckIcon,
   UserIcon,
 } from '@heroicons/react/24/solid'
-import { FormError } from '@/components/shared/form-error'
-import { BoardSettingsSaveDock } from './board-settings-save-dock'
+import { useDebouncedSave } from '@/lib/client/hooks/use-debounced-save'
 import { useUpdateBoardAccess } from '@/lib/client/mutations'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { cn } from '@/lib/shared/utils/cn'
@@ -33,10 +32,12 @@ import {
  * resolved default ("On" / "Off") so admins can tell what they'd fall back
  * to.
  *
- * This form owns its own dirty state and only mutates the `moderation`
- * slice — on save it preserves the rest of `board.access` verbatim so a
+ * Changes autosave after a short pause. The form only mutates the
+ * `moderation` slice and preserves the rest of `board.access` verbatim so a
  * concurrent edit on the Access page is never zeroed out.
  */
+
+const AUTOSAVE_DELAY_MS = 400
 
 // ─── Rule config ──────────────────────────────────────────────────────
 
@@ -116,28 +117,22 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
     [form]
   )
 
-  const onSubmit = useCallback(
-    (next: ModerationShape) => {
-      // Only touch the moderation slice — preserve the rest of access so a
-      // concurrent edit on the Access page isn't zeroed out.
-      mutation.mutate({
-        boardId: board.id,
-        access: { ...board.access, moderation: next },
-      })
-    },
-    [board.id, board.access, mutation]
+  // Only touch the moderation slice; preserve the rest of access so a
+  // concurrent edit on the Access page isn't zeroed out.
+  const { queue } = useDebouncedSave<ModerationShape>(
+    (next) => mutation.mutate({ boardId: board.id, access: { ...board.access, moderation: next } }),
+    AUTOSAVE_DELAY_MS
   )
 
-  const handleDiscard = useCallback(() => {
-    form.reset(defaults)
-  }, [defaults, form])
+  const valuesKey = JSON.stringify(values)
+  useEffect(() => {
+    if (dirty) queue(form.getValues())
+  }, [valuesKey, dirty, form, queue])
 
   const anyOverridden = MOD_RULES.some((r) => values[r.id] !== 'inherit')
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-24">
-      {mutation.isError && <FormError message={mutation.error?.message ?? 'An error occurred'} />}
-
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
       {/* Inheritance banner */}
       <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
         <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border bg-muted/40 text-muted-foreground">
@@ -181,8 +176,6 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
         <InformationCircleIcon className="h-3 w-3" />
         Held posts and comments appear in the <span className="text-foreground">review queue</span>.
       </p>
-
-      <BoardSettingsSaveDock dirty={dirty} saving={mutation.isPending} onDiscard={handleDiscard} />
     </form>
   )
 }

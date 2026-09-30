@@ -11,15 +11,15 @@
  *   - Tier hierarchy: raising View auto-clamps Vote/Comment/Submit
  *   - Workspace anonymous-* feature flags block the Anyone cell + banner
  *   - Auto-bump when workspace flips off while a cell sits on Anonymous
- *   - Save payload preserves `moderation` round-trip (passthrough only —
+ *   - Changes autosave; the payload preserves `moderation` round-trip (passthrough only —
  *     editing moderation lives in `<BoardModerationForm>`)
  *
  * The mutation, segments, and portalConfig queries are mocked. The
  * portalConfig mock is mutable so tests can flip workspace flags between
  * renders.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BoardAccessForm, PRESET_META } from '../board-access-form'
 import { DEFAULT_BOARD_ACCESS, type BoardAccess } from '@/lib/shared/db-types'
@@ -220,29 +220,29 @@ describe('<BoardAccessForm> presets', () => {
     expect(isCellSelected('Submit posts', 'Signed-in')).toBe(true)
   })
 
-  it('clicking a preset surfaces the save bar (preset change is dirty, not a reset)', () => {
+  it('clicking a preset marks the form dirty so it autosaves', () => {
     // Regression: applying a preset via form.reset() re-baselined the
-    // defaults so isDirty stayed false and the save dock never appeared,
-    // leaving the user unable to save a preset change. Presets must mark
-    // the form dirty.
-    renderForm({
-      view: 'team',
-      vote: 'team',
-      comment: 'team',
-      submit: 'team',
-      segments: { view: [], vote: [], comment: [], submit: [] },
-      moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
-    })
-    // Save bar hidden initially (clean form).
-    expect(
-      screen.getByRole('region', { name: /save changes/i }).getAttribute('data-dirty')
-    ).toBeNull()
-    // Click a different preset → form is now dirty → save bar appears.
-    fireEvent.click(screen.getByRole('button', { name: 'Public' }))
-    expect(screen.getByRole('region', { name: /save changes/i }).getAttribute('data-dirty')).toBe(
-      'true'
-    )
-    expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled()
+    // defaults so isDirty stayed false and the change was never saved.
+    // Presets must mark the form dirty.
+    vi.useFakeTimers()
+    try {
+      renderForm({
+        view: 'team',
+        vote: 'team',
+        comment: 'team',
+        submit: 'team',
+        segments: { view: [], vote: [], comment: [], submit: [] },
+        moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
+      })
+      expect(mutate).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByRole('button', { name: 'Public' }))
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(mutate).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('preset flips to Custom after editing a cell, and back to Public when restored', () => {
@@ -385,32 +385,45 @@ describe('<BoardAccessForm> workspace ceiling', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Save / discard
+// Autosave
 // ---------------------------------------------------------------------------
 
-describe('<BoardAccessForm> save', () => {
-  it('Save dock is collapsed until form is dirty', () => {
-    renderForm(PUBLIC_ACCESS)
-    const region = screen.getByRole('region', { name: /save changes/i })
-    expect(region.getAttribute('data-dirty')).toBeNull()
+function flushAutosave() {
+  act(() => {
+    vi.advanceTimersByTime(1000)
+  })
+}
+
+describe('<BoardAccessForm> autosave', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it('Save dock surfaces once the form is dirty', () => {
+  it('renders no save dock or Save button', () => {
     renderForm(PUBLIC_ACCESS)
     clickTierCell('Comment', 'Team only')
-    const region = screen.getByRole('region', { name: /save changes/i })
-    expect(region.getAttribute('data-dirty')).toBe('true')
+    expect(screen.queryByRole('region', { name: /save changes/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument()
   })
 
-  it('disables Save when any action is on Segments tier with empty list', () => {
+  it('does not save until a cell changes', () => {
     renderForm(PUBLIC_ACCESS)
-    // Pick Segments on View — empty list ⇒ save disabled
-    clickTierCell('View', 'Segments')
-    const save = screen.getByRole('button', { name: /save changes/i })
-    expect(save).toBeDisabled()
+    flushAutosave()
+    expect(mutate).not.toHaveBeenCalled()
   })
 
-  it('submits the BoardAccess payload preserving moderation overrides', async () => {
+  it('does not save while an action is on Segments with no segment, and says why', () => {
+    renderForm(PUBLIC_ACCESS)
+    clickTierCell('View', 'Segments')
+    flushAutosave()
+    expect(mutate).not.toHaveBeenCalled()
+    expect(screen.getByText(/no segments are selected/i)).toBeInTheDocument()
+  })
+
+  it('saves the BoardAccess payload preserving moderation overrides', () => {
     renderForm({
       view: 'anonymous',
       vote: 'authenticated',
@@ -420,36 +433,25 @@ describe('<BoardAccessForm> save', () => {
       // Non-default moderation values to verify the form preserves them on save.
       moderation: { anonPosts: 'on', signedPosts: 'on', comments: 'off' },
     })
-    // Mark dirty by tweaking a cell.
     clickTierCell('Comment', 'Team only')
-    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
-    await waitFor(() =>
-      expect(mutate).toHaveBeenCalledWith({
-        boardId: BOARD_ID,
-        access: expect.objectContaining({
-          comment: 'team',
-          segments: expect.objectContaining({
-            view: expect.any(Array),
-            vote: expect.any(Array),
-            comment: expect.any(Array),
-            submit: expect.any(Array),
-          }),
-          moderation: { anonPosts: 'on', signedPosts: 'on', comments: 'off' },
+    flushAutosave()
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(mutate).toHaveBeenCalledWith({
+      boardId: BOARD_ID,
+      access: expect.objectContaining({
+        comment: 'team',
+        segments: expect.objectContaining({
+          view: expect.any(Array),
+          vote: expect.any(Array),
+          comment: expect.any(Array),
+          submit: expect.any(Array),
         }),
-      })
-    )
+        moderation: { anonPosts: 'on', signedPosts: 'on', comments: 'off' },
+      }),
+    })
   })
 
-  it('Discard restores the original access', () => {
-    renderForm(PUBLIC_ACCESS)
-    clickTierCell('Comment', 'Team only')
-    expect(isCellSelected('Comment', 'Team only')).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: /discard/i }))
-    expect(isCellSelected('Comment', 'Signed-in')).toBe(true)
-    expect(isCellSelected('Comment', 'Team only')).toBe(false)
-  })
-
-  it('raising view to team clears stale segment lists on cascaded actions', async () => {
+  it('raising view to team clears stale segment lists on cascaded actions', () => {
     renderForm(PUBLIC_ACCESS)
     // 1. set Submit posts -> Segments; the empty-list picker opens.
     clickTierCell('Submit posts', 'Segments')
@@ -458,21 +460,20 @@ describe('<BoardAccessForm> save', () => {
     fireEvent.click(alphaOption)
     // 3. raise View -> Team only (cascades vote/comment/submit up to team).
     clickTierCell('View', 'Team only')
-    // 4. save and assert the cascaded submit dropped its stale segment list.
-    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
-    await waitFor(() =>
-      expect(mutate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          access: expect.objectContaining({
-            submit: 'team',
-            segments: expect.objectContaining({ submit: [] }),
-          }),
-        })
-      )
+    // 4. the autosave carries the cascaded submit without its stale segment list.
+    flushAutosave()
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        access: expect.objectContaining({
+          submit: 'team',
+          segments: expect.objectContaining({ submit: [] }),
+        }),
+      })
     )
   })
 
-  it('clicking a preset clears stale segment selections', async () => {
+  it('clicking a preset clears stale segment selections', () => {
     renderForm({
       view: 'segments',
       vote: 'segments',
@@ -487,15 +488,13 @@ describe('<BoardAccessForm> save', () => {
       moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Public' }))
-    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
-    await waitFor(() =>
-      expect(mutate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          access: expect.objectContaining({
-            segments: { view: [], vote: [], comment: [], submit: [] },
-          }),
-        })
-      )
+    flushAutosave()
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        access: expect.objectContaining({
+          segments: { view: [], vote: [], comment: [], submit: [] },
+        }),
+      })
     )
   })
 })
