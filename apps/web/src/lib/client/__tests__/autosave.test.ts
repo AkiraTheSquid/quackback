@@ -87,3 +87,45 @@ describe('settings autosave hooks', () => {
     expect(body('useMintWidgetInstallCode')).not.toContain('AUTOSAVE')
   })
 })
+
+describe('autosave error ownership', () => {
+  it('names the server reason when the mutation asks for it', async () => {
+    const client = clientWithHandler()
+    const mutation = client.getMutationCache().build(client, {
+      meta: { ...AUTOSAVE, showServerMessage: true },
+      mutationFn: async () => Promise.reject(new Error('Resume the channel before enabling it.')),
+    })
+    await expect(mutation.execute(undefined)).rejects.toThrow()
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    expect(toastError).toHaveBeenCalledWith("Couldn't save. Resume the channel before enabling it.")
+  })
+
+  it('keeps the generic message for other autosave failures', async () => {
+    const client = clientWithHandler()
+    const mutation = client.getMutationCache().build(client, {
+      meta: AUTOSAVE,
+      mutationFn: async () => Promise.reject(new Error('internal detail')),
+    })
+    await expect(mutation.execute(undefined)).rejects.toThrow()
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    expect(toastError).toHaveBeenCalledWith("Couldn't save. Try again.")
+  })
+
+  it('stays silent for an error the page owns, and toasts the rest', async () => {
+    const client = clientWithHandler()
+    const ownsError = (error: unknown) => error instanceof Error && error.message === 'plan'
+    const owned = client.getMutationCache().build(client, {
+      meta: { ...AUTOSAVE, ownsError },
+      mutationFn: async () => Promise.reject(new Error('plan')),
+    })
+    await expect(owned.execute(undefined)).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(toastError).not.toHaveBeenCalled()
+    const other = client.getMutationCache().build(client, {
+      meta: { ...AUTOSAVE, ownsError },
+      mutationFn: async () => Promise.reject(new Error('nope')),
+    })
+    await expect(other.execute(undefined)).rejects.toThrow()
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+  })
+})
