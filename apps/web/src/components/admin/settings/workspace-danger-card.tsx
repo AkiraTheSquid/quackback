@@ -30,7 +30,7 @@ export function WorkspaceDangerCard({ cloudEnabled }: { cloudEnabled: boolean })
     <SettingsCard variant="danger" title="Danger zone">
       <SettingRow
         label="Delete workspace"
-        description="Permanently removes this workspace and all of its data."
+        description="Takes this workspace offline. It can be restored until it is purged."
         control={
           <Button
             size="sm"
@@ -48,7 +48,7 @@ export function WorkspaceDangerCard({ cloudEnabled }: { cloudEnabled: boolean })
         open={wipeOpen}
         onOpenChange={setWipeOpen}
         title="Delete workspace?"
-        description="The workspace leaves the live fleet. Export first if you still need a copy."
+        description="The workspace is taken offline and can be restored until it is purged. Export first if you still need a copy."
         variant="destructive"
         confirmLabel={busy ? 'Deleting…' : 'Delete workspace'}
         isPending={busy}
