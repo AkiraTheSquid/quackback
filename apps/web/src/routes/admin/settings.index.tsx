@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { SettingsNav } from '@/components/admin/settings/settings-nav'
 import { PageHeader } from '@/components/shared/page-header'
-import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 import { useMediaQuery } from '@/lib/client/hooks/use-media-query'
 
 export const Route = createFileRoute('/admin/settings/')({
@@ -24,7 +23,7 @@ function SettingsIndexPage() {
 
   return (
     <div className="lg:hidden">
-      <PageHeader icon={Cog6ToothIcon} title="Settings" className="mb-6" />
+      <PageHeader title="Settings" className="mb-6" />
       <SettingsNav />
     </div>
   )

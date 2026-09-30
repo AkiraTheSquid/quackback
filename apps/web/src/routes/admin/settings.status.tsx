@@ -3,7 +3,6 @@ import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { SignalIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusGeneralCard } from '@/components/admin/settings/status/status-general-card'
@@ -66,7 +65,6 @@ function StatusSettingsPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={SignalIcon}
         title="Status"
         description="Public status page for your services: incidents, maintenance, and uptime history."
       />

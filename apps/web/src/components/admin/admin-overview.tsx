@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { HomeIcon } from '@heroicons/react/24/solid'
 import { adminOverviewQueries } from '@/lib/client/queries/admin-overview'
 import {
   overviewMetricGridClass,
@@ -76,7 +75,7 @@ export function OverviewDashboard({
 
   return (
     <div className="min-w-0 space-y-6">
-      <PageHeader icon={HomeIcon} title="Overview" size="large" action={actions} />
+      <PageHeader title="Overview" actions={actions} />
 
       {banner}
 

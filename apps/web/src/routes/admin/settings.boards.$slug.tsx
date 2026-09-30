@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { adminQueries } from '@/lib/client/queries/admin'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import {
-  ChatBubbleLeftIcon,
   Cog6ToothIcon,
   LockClosedIcon,
   ShieldCheckIcon,
@@ -93,11 +92,7 @@ function BoardSettingsPage() {
       </div>
       <div className="space-y-1.5">
         <BoardSettingsCrumb page={currentBoard.name} />
-        <PageHeader
-          icon={ChatBubbleLeftIcon}
-          title={currentBoard.name}
-          description={currentBoard.description || undefined}
-        />
+        <PageHeader title={currentBoard.name} description={currentBoard.description || undefined} />
       </div>
 
       <Tabs

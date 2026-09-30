@@ -71,7 +71,6 @@ function ApiPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={CommandLineIcon}
         title="Developers"
         description="API keys, webhooks, and the MCP server for programmatic integrations."
       />

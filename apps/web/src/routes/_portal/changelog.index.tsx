@@ -47,13 +47,12 @@ function ChangelogPage() {
   return (
     <div className="mx-auto max-w-6xl w-full px-4 sm:px-6 py-8">
       <PageHeader
-        size="large"
         title={intl.formatMessage({ id: 'portal.changelog.title', defaultMessage: 'Changelog' })}
         description={intl.formatMessage({
           id: 'portal.changelog.description',
           defaultMessage: 'Stay up to date with the latest product updates and shipped features.',
         })}
-        action={
+        actions={
           <div className="flex items-center gap-2">
             <ChangelogSubscribeButton enabled={isIdentified} />
             <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
@@ -69,7 +68,6 @@ function ChangelogPage() {
             </Button>
           </div>
         }
-        animate
         className="mb-8"
       />
 

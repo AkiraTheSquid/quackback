@@ -2,7 +2,6 @@
 
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { SparklesIcon } from '@heroicons/react/24/solid'
 import { AutomationNav } from '@/components/admin/automation/automation-nav'
 import { PageHeader } from '@/components/shared/page-header'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -35,7 +34,6 @@ function AutomationLayout() {
       >
         <div className="shrink-0 px-4 py-3.5">
           <PageHeader
-            icon={SparklesIcon}
             title={intl.formatMessage({
               id: 'automation.nav.label',
               defaultMessage: 'AI & Automation',

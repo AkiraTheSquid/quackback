@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { adminQueries } from '@/lib/client/queries/admin'
-import { BuildingOfficeIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { CompanyAttributesList } from '@/components/admin/settings/company-attributes/company-attributes-list'
@@ -27,7 +26,6 @@ function CompaniesPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={BuildingOfficeIcon}
         title="Companies"
         description="Custom attributes for the companies your users belong to."
       />

@@ -3,7 +3,6 @@ import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { MegaphoneIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { VisibilityCard } from '@/components/admin/settings/changelog/visibility-card'
@@ -64,7 +63,6 @@ function ChangelogSettingsPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={MegaphoneIcon}
         title="Changelog"
         description="Control who sees your changelog, organize entries with labels, and manage subscriber emails."
       />

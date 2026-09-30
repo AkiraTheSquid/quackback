@@ -1,4 +1,3 @@
-import { BeakerIcon } from '@heroicons/react/24/solid'
 import { useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
@@ -20,7 +19,6 @@ export function LabsSettings({ experiments }: LabsSettingsProps) {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={BeakerIcon}
         title="Labs"
         description="Try features we’re still refining. You can turn them off at any time."
       />

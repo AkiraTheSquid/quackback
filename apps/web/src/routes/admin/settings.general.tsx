@@ -3,7 +3,6 @@ import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -127,11 +126,7 @@ function GeneralSettingsPage() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
-      <PageHeader
-        icon={Cog6ToothIcon}
-        title="General"
-        description="Workspace identity and modules"
-      />
+      <PageHeader title="General" description="Workspace identity and modules" />
 
       <WorkspaceIdentityCard
         workspaceName={workspaceName}

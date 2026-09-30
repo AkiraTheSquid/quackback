@@ -9,7 +9,6 @@ import {
   SunIcon,
   MoonIcon,
   ArrowPathIcon,
-  GlobeAltIcon,
   ComputerDesktopIcon,
   DevicePhoneMobileIcon,
   ArrowTopRightOnSquareIcon,
@@ -261,7 +260,6 @@ function PortalPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={GlobeAltIcon}
         title="Portal"
         description="Everything visitors see on your portal — theme, navigation, and content"
       />

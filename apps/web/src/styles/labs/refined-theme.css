@@ -125,10 +125,6 @@
   letter-spacing: -0.02em;
 }
 
-[data-visual-theme='refined'] [data-page-header-icon] {
-  display: none;
-}
-
 /* Admin shell: one charcoal field. No inset rounded canvas. */
 [data-visual-theme='refined'] [data-admin-shell] {
   padding: 0;

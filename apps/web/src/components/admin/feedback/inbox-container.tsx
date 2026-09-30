@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react'
 import { useQueryClient, useQueries } from '@tanstack/react-query'
-import { ChatBubbleLeftIcon } from '@heroicons/react/24/solid'
 import { InboxLayout } from '@/components/admin/feedback/inbox-layout'
 import { InboxFiltersPanel } from '@/components/admin/feedback/inbox-filters'
 import { FeedbackTableView } from '@/components/admin/feedback/table'
@@ -136,7 +135,6 @@ export function InboxContainer({
   return (
     <InboxLayout
       hasActiveFilters={hasActiveFilters}
-      headerIcon={ChatBubbleLeftIcon}
       headerTitle="Feedback"
       filters={
         <InboxFiltersPanel

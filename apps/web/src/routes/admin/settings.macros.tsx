@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
 import { isProductEnabled } from '@/lib/shared/types/settings'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
@@ -43,7 +42,6 @@ function MacrosSettingsPage() {
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
       <PageHeader
-        icon={DocumentDuplicateIcon}
         title="Macros"
         description="Reusable replies with variables and bundled actions"
       />

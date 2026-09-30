@@ -1,7 +1,6 @@
 import { PageHeader } from '@/components/shared/page-header'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { BackLink } from '@/components/ui/back-link'
-import { ArrowsRightLeftIcon } from '@heroicons/react/24/solid'
 import { ImportCsv } from './import-csv'
 import { ImportHistoryList } from './import-history-list'
 import { ExportWorkspaceAction } from './export-workspace-action'
@@ -16,7 +15,6 @@ export function ImportsHubPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={ArrowsRightLeftIcon}
         title="Imports & exports"
         description="Move feedback data in from a CSV or another tool, and out as a full workspace export."
       />

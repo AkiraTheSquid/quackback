@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { BellIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
@@ -25,11 +24,7 @@ function NotificationsPage() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
-      <PageHeader
-        icon={BellIcon}
-        title="Notifications"
-        description="Choose what you're notified about and how."
-      />
+      <PageHeader title="Notifications" description="Choose what you're notified about and how." />
 
       <SettingsCard>
         <NotificationMatrixForm surface="admin" initialPreferences={preferences} />

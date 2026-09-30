@@ -56,7 +56,7 @@ function GitHubChannelPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="space-y-1.5">
         <ChannelSettingsCrumb page="GitHub" />
-        <PageHeader icon={GitHubIcon} title="GitHub" description="Issues as conversations." />
+        <PageHeader title="GitHub" description="Issues as conversations." />
       </div>
 
       {attention && status?.lastError && (

@@ -108,11 +108,7 @@ function ChannelsHubPage() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
-      <PageHeader
-        icon={ChatBubbleLeftRightIcon}
-        title="Channels"
-        description="Where customer conversations happen."
-      />
+      <PageHeader title="Channels" description="Where customer conversations happen." />
 
       <SettingsMenuCard>
         <SettingsMenuRow

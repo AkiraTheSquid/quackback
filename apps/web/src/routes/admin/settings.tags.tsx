@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { adminQueries } from '@/lib/client/queries/admin'
-import { TagIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { TagList } from '@/components/admin/settings/tags/tag-list'
@@ -36,11 +35,7 @@ function TagsPage() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings/feedback">Feedback & Roadmaps</BackLink>
       </div>
-      <PageHeader
-        icon={TagIcon}
-        title="Tags"
-        description="Organize and categorize feedback with tags"
-      />
+      <PageHeader title="Tags" description="Organize and categorize feedback with tags" />
 
       <TagList initialTags={tagsQuery.data} />
       <AiBackfillCard tags={tagsQuery.data} boards={boardsQuery.data} />

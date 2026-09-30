@@ -11,7 +11,6 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import {
   CalendarDaysIcon,
   EllipsisHorizontalIcon,
@@ -184,7 +183,6 @@ function SlaSettingsPage() {
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
       <PageHeader
-        icon={ShieldCheckIcon}
         title="SLA policies"
         description="Response and resolution targets your team commits to. A default can apply when a conversation starts; workflows can still replace it."
       />

@@ -3,7 +3,6 @@ import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useMutation, useQueryClient, useSuspenseQuery, queryOptions } from '@tanstack/react-query'
-import { ClockIcon } from '@heroicons/react/24/solid'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { isProductEnabled } from '@/lib/shared/types/settings'
 import {
@@ -209,7 +208,6 @@ function OfficeHoursPage() {
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
       <PageHeader
-        icon={ClockIcon}
         title="Office Hours"
         description="One weekly schedule for your team's availability. Customers only see it once a human is involved; the assistant handles things first."
       />

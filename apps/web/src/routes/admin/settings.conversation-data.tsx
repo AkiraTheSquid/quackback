@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router'
-import { CircleStackIcon } from '@heroicons/react/24/solid'
 import { isProductEnabled } from '@/lib/shared/types/settings'
 import { conversationAttributeQueries } from '@/lib/client/queries/conversation-attributes'
 import { BackLink } from '@/components/ui/back-link'
@@ -42,7 +41,6 @@ function ConversationDataPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={CircleStackIcon}
         title="Conversation data"
         description="Attributes and tags that structure your conversations and tickets."
       />

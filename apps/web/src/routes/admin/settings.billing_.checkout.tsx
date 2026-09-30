@@ -1,6 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { CreditCardIcon } from '@heroicons/react/24/solid'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { BackLink } from '@/components/ui/back-link'
@@ -50,7 +49,6 @@ function CheckoutPage() {
         Plans &amp; billing
       </BackLink>
       <PageHeader
-        icon={CreditCardIcon}
         title="Configure your plan"
         description="Choose a plan and billing cycle. Payment happens on the next step."
       />

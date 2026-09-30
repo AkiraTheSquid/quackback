@@ -6,7 +6,6 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   ClipboardDocumentIcon,
-  CodeBracketIcon,
 } from '@heroicons/react/24/outline'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -209,7 +208,6 @@ export function WidgetInstallPage() {
         </Link>
       </Button>
       <PageHeader
-        icon={CodeBracketIcon}
         title={
           installed
             ? mode === 'messenger'

@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { adminQueries } from '@/lib/client/queries/admin'
-import { Squares2X2Icon, ChatBubbleLeftIcon, LockClosedIcon } from '@heroicons/react/24/solid'
+import { ChatBubbleLeftIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 import { EmptyState } from '@/components/shared/empty-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
@@ -57,10 +57,9 @@ function BoardsSettingsPage() {
         <BackLink to="/admin/settings/feedback">Feedback & Roadmaps</BackLink>
       </div>
       <PageHeader
-        icon={Squares2X2Icon}
         title="Boards"
         description="Where feedback is collected and organized."
-        action={<CreateBoardDialog />}
+        actions={<CreateBoardDialog />}
       />
 
       <SettingsCard contentClassName="p-0 sm:p-0">
@@ -118,11 +117,7 @@ function EmptyBoardsState() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings/feedback">Feedback & Roadmaps</BackLink>
       </div>
-      <PageHeader
-        icon={Squares2X2Icon}
-        title="Boards"
-        description="Where feedback is collected and organized."
-      />
+      <PageHeader title="Boards" description="Where feedback is collected and organized." />
 
       <SettingsCard>
         <EmptyState

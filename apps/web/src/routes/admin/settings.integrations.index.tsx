@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { PuzzlePieceIcon } from '@heroicons/react/24/solid'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { BackLink } from '@/components/ui/back-link'
@@ -44,7 +43,6 @@ function IntegrationsPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={PuzzlePieceIcon}
         title="Integrations"
         description="Connect external services to automate workflows"
       />

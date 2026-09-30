@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { QueueListIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { TicketStatusList } from '@/components/admin/settings/tickets/ticket-status-list'
@@ -35,7 +34,6 @@ function TicketStatusesPage() {
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
       <PageHeader
-        icon={QueueListIcon}
         title="Ticket statuses"
         description="Define the statuses tickets move through and the stages your customers see."
       />

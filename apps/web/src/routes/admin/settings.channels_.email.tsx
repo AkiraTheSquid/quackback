@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { EnvelopeIcon } from '@heroicons/react/24/solid'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { isProductEnabled } from '@/lib/shared/types/settings'
@@ -58,7 +57,6 @@ function EmailChannelPage() {
       <div className="space-y-1.5">
         <ChannelSettingsCrumb page="Email" />
         <PageHeader
-          icon={EnvelopeIcon}
           title="Email"
           description="Receive and send support conversations from the customer's mailbox."
         />

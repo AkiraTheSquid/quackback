@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { SignalIcon } from '@heroicons/react/24/solid'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { AdminFilterLayout } from '@/components/admin/admin-filter-layout'
 import { FilterSection } from '@/components/shared/filter-section'
@@ -168,11 +167,7 @@ export function StatusAdmin() {
 
   return (
     <>
-      <AdminFilterLayout
-        headerIcon={SignalIcon}
-        headerTitle="Status"
-        filters={<StatusFilterNav view={view} />}
-      >
+      <AdminFilterLayout headerTitle="Status" filters={<StatusFilterNav view={view} />}>
         {view === 'overview' && <StatusOverviewView />}
         {view === 'open' && (
           <StatusIncidentList

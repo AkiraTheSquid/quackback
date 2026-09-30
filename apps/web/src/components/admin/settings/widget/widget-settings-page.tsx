@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState, useTransition, useMemo, type ReactNode } from 'react'
 import { useTheme } from 'next-themes'
 import {
-  ChatBubbleLeftRightIcon,
   SparklesIcon,
   SunIcon,
   MoonIcon,
@@ -121,7 +120,6 @@ function WidgetSettingsPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={ChatBubbleLeftRightIcon}
         title="Widget"
         description="Embed the messenger widget in your product — feedback, conversations, help, and updates"
       />

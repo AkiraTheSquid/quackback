@@ -4,7 +4,6 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import type { UserId } from '@quackback/ids'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { getEmailChangeStateFn } from '@/lib/server/functions/contact-email'
-import { UserIcon } from '@heroicons/react/24/solid'
 import { PageHeader } from '@/components/shared/page-header'
 import { ProfileForm } from '@/components/settings/profile-form'
 import { TwoFactorSection } from '@/components/settings/two-factor-section'
@@ -52,7 +51,6 @@ function ProfilePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={UserIcon}
         title={intl.formatMessage({
           id: 'portal.settings.profile.title',
           defaultMessage: 'Profile',
@@ -61,7 +59,6 @@ function ProfilePage() {
           id: 'portal.settings.profile.description',
           defaultMessage: 'Manage your personal information',
         })}
-        animate
       />
 
       <div

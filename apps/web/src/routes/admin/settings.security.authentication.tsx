@@ -5,7 +5,6 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { adminQueries } from '@/lib/client/queries/admin'
-import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { AuthSettings, type AuthTab } from '@/components/admin/settings/security/auth-settings'
@@ -82,7 +81,6 @@ function AuthenticationPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={ShieldCheckIcon}
         title="Access & Security"
         description="Who can reach the portal, how everyone signs in, and what admins changed."
       />

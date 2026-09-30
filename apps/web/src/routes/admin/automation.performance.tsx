@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { ChartBarIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { CopilotUsageCard } from '@/components/admin/automation/copilot-usage-card'
@@ -43,7 +42,6 @@ function AutomationPerformancePage() {
         </BackLink>
       </div>
       <PageHeader
-        icon={ChartBarIcon}
         title={intl.formatMessage({
           id: 'automation.performance.title',
           defaultMessage: 'AI performance',

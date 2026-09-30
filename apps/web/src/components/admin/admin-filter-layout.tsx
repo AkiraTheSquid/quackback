@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from 'react'
+import { useState } from 'react'
 import { FunnelIcon } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -11,9 +11,8 @@ interface AdminFilterLayoutProps {
   hasActiveFilters?: boolean
   /** Whether main content area scrolls internally (default true). Set false for pages that manage their own scrolling. */
   scrollContent?: boolean
-  /** Optional icon+title heading at the top of the filter pane, matching the
+  /** Optional title heading at the top of the filter pane, matching the
    *  other admin left panes (no separator). */
-  headerIcon?: ComponentType<{ className?: string }>
   headerTitle?: string
 }
 
@@ -22,7 +21,6 @@ export function AdminFilterLayout({
   children,
   hasActiveFilters,
   scrollContent = true,
-  headerIcon,
   headerTitle,
 }: AdminFilterLayoutProps) {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
@@ -37,7 +35,7 @@ export function AdminFilterLayout({
         {headerTitle ? (
           <>
             <div className="shrink-0 px-4 py-3.5">
-              <PageHeader icon={headerIcon} title={headerTitle} />
+              <PageHeader title={headerTitle} />
             </div>
             <ScrollArea className="min-h-0 flex-1">
               <div className="px-5 pb-5">{filters}</div>

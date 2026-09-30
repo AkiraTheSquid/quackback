@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { UsersIcon } from '@heroicons/react/24/solid'
 import type { UserId, PrincipalId } from '@quackback/ids'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
@@ -64,7 +63,6 @@ function MembersPage() {
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
       <PageHeader
-        icon={UsersIcon}
         title="Members & Teams"
         description="Manage who has access to your workspace, organize them into teams, and control what they can do."
       />

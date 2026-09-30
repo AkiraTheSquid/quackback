@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { TicketIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { TicketTypesManager } from '@/components/admin/settings/tickets/ticket-types-manager'
@@ -28,7 +27,6 @@ function TicketTypesPage() {
         <BackLink to="/admin/settings/support">Support</BackLink>
       </div>
       <PageHeader
-        icon={TicketIcon}
         title="Ticket types"
         description="Types define the fields a ticket captures. Each type belongs to a category — customer, back-office or tracker — which drives its behavior."
       />

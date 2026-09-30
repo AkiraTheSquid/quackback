@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { adminQueries } from '@/lib/client/queries/admin'
-import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusList } from '@/components/admin/settings/statuses/status-list'
@@ -37,7 +36,6 @@ function StatusesPage() {
         <BackLink to="/admin/settings/feedback">Feedback & Roadmaps</BackLink>
       </div>
       <PageHeader
-        icon={Cog6ToothIcon}
         title="Public Statuses"
         description="Customize the statuses available for feedback posts"
       />

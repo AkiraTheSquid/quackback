@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ChatBubbleLeftRightIcon,
   InboxIcon,
   AtSymbolIcon,
   InboxArrowDownIcon,
@@ -522,7 +521,7 @@ export const InboxNavSidebar = memo(function InboxNavSidebar({
       className="hidden w-64 shrink-0 flex-col overflow-hidden border-r border-border/50 bg-card/30 lg:flex xl:w-72"
     >
       <div className="px-4 py-3.5">
-        <PageHeader icon={ChatBubbleLeftRightIcon} title="Inbox" />
+        <PageHeader title="Inbox" />
       </div>
       {/* Search sits at the top of the pane, directly under the header. */}
       <div className="px-4 pb-3">

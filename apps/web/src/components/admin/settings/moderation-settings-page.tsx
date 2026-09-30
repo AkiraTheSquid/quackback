@@ -3,7 +3,7 @@ import { useRouter } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { useUpdateModerationDefault } from '@/lib/client/mutations/settings'
-import { ShieldCheckIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
+import { ArrowPathIcon } from '@heroicons/react/24/solid'
 import { BackLink } from '@/components/ui/back-link'
 import { PageHeader } from '@/components/shared/page-header'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
@@ -107,7 +107,6 @@ export function ModerationPage() {
         <BackLink to="/admin/settings/feedback">Feedback & Roadmaps</BackLink>
       </div>
       <PageHeader
-        icon={ShieldCheckIcon}
         title="Moderation"
         description="Approval rules and content review for incoming posts and comments."
       />

@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { SparklesIcon } from '@heroicons/react/24/solid'
 import { AutomationNav } from '@/components/admin/automation/automation-nav'
 import { PageHeader } from '@/components/shared/page-header'
 import { useMediaQuery } from '@/lib/client/hooks/use-media-query'
@@ -64,7 +63,6 @@ function AutomationIndexPage() {
   return (
     <div className="lg:hidden">
       <PageHeader
-        icon={SparklesIcon}
         title={intl.formatMessage({
           id: 'automation.nav.label',
           defaultMessage: 'AI & Automation',

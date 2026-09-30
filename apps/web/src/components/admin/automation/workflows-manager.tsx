@@ -411,7 +411,6 @@ export function WorkflowsManager({
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={BoltIcon}
         title={intl.formatMessage({
           id: 'automation.workflows.title',
           defaultMessage: 'Workflows',
@@ -421,7 +420,7 @@ export function WorkflowsManager({
           defaultMessage:
             'Automate routing, replies, and housekeeping on top of your conversations.',
         })}
-        action={newWorkflowMenu}
+        actions={newWorkflowMenu}
       />
 
       {children}

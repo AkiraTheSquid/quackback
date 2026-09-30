@@ -96,7 +96,6 @@ function ModerationPage() {
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-border/50">
         <PageHeader
-          icon={ShieldCheckIcon}
           title="Moderation Queue"
           description={
             total === 0

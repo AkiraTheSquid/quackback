@@ -138,11 +138,7 @@ function HelpCenterSettingsPage() {
       <div className="lg:hidden">
         <BackLink to="/admin/settings">Settings</BackLink>
       </div>
-      <PageHeader
-        icon={BookOpenIcon}
-        title="Help Center"
-        description="Configure your help center knowledge base"
-      />
+      <PageHeader title="Help Center" description="Configure your help center knowledge base" />
 
       <Tabs
         value={tab}
