@@ -20,6 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
+import { Switch } from '@/components/ui/switch'
 import { RowActions, RowDot, RowIcon, SettingsList, SettingsListRow } from '../settings-list'
 
 afterEach(cleanup)
@@ -57,7 +58,9 @@ describe('SettingsListRow', () => {
   it('a row with `to` is a whole-row link with a chevron and no menu', () => {
     render(
       <SettingsList>
-        <SettingsListRow title="Email" to="/admin/settings/email" actions={[]} />
+        <SettingsListRow title="Email" to="/admin/settings/email"
+          actions={[{ label: 'Edit', onSelect: () => {} }]}
+        />
       </SettingsList>
     )
     const link = screen.getByRole('link', { name: /Email/ })
@@ -75,6 +78,47 @@ describe('SettingsListRow', () => {
     )
     fireEvent.click(screen.getByText('Pick me'))
     expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('a clickable row is a button', () => {
+    render(
+      <SettingsList>
+        <SettingsListRow title="Pick me" onClick={() => {}} />
+      </SettingsList>
+    )
+    expect(screen.getByRole('button', { name: 'Pick me' })).toBeTruthy()
+  })
+
+  it('clicks inside leading, grip and trailing do not trigger the row onClick', () => {
+    const onClick = vi.fn()
+    const onToggle = vi.fn()
+    render(
+      <SettingsList>
+        <SettingsListRow
+          title="Row"
+          onClick={onClick}
+          leading={<span>lead</span>}
+          grip={<span>grip</span>}
+          trailing={<Switch aria-label="Enabled" onCheckedChange={onToggle} />}
+        />
+      </SettingsList>
+    )
+    fireEvent.click(screen.getByRole('switch', { name: 'Enabled' }))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByText('lead'))
+    fireEvent.click(screen.getByText('grip'))
+    expect(onClick).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Row'))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to a plain Actions label when the title is not a string', () => {
+    render(
+      <SettingsList>
+        <SettingsListRow title={<b>Bold</b>} actions={[{ label: 'Edit', onSelect: () => {} }]} />
+      </SettingsList>
+    )
+    expect(screen.getByRole('button', { name: 'Actions' })).toBeTruthy()
   })
 
   it('renders leading and grip slots', () => {

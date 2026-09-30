@@ -25,6 +25,18 @@ describe('AdminListHeader', () => {
     expect(wrap?.className).toContain('max-w-[360px]')
   })
 
+  it('renders no sort control for an empty option list', () => {
+    render(
+      <AdminListHeader
+        searchValue=""
+        onSearchChange={() => {}}
+        sortOptions={[]}
+        onSortChange={() => {}}
+      />
+    )
+    expect(screen.queryByRole('button', { name: /Sort/ })).toBeNull()
+  })
+
   it('renders sort as a menu, not inline pills', async () => {
     const user = userEvent.setup()
     const onSortChange = vi.fn()

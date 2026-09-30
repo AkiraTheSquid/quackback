@@ -54,7 +54,7 @@ interface RowActionItem {
  * The row's overflow menu. On hover-capable devices the trigger shows on row
  * hover or focus within (the row is a `group`); on touch it is always visible.
  */
-export function RowActions({ label, items }: { label: string; items: RowActionItem[] }) {
+export function RowActions({ label, items }: { label?: string; items: RowActionItem[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -62,7 +62,7 @@ export function RowActions({ label, items }: { label: string; items: RowActionIt
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Actions for ${label}`}
+            aria-label={label ? `Actions for ${label}` : 'Actions'}
             className="size-7 text-muted-foreground [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100 focus-visible:opacity-100"
           />
         }
@@ -119,10 +119,19 @@ export function SettingsListRow({
   onClick,
 }: SettingsListRowProps) {
   const height = meta ? 'min-h-[52px]' : 'min-h-[44px]'
+  // Controls inside a clickable row (a switch, a drag handle) act on their own.
+  const own = (node: ReactNode) =>
+    onClick && node ? (
+      <div className="contents" onClick={(e) => e.stopPropagation()}>
+        {node}
+      </div>
+    ) : (
+      node
+    )
   const body = (
     <>
-      {grip}
-      {leading}
+      {own(grip)}
+      {own(leading)}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{title}</span>
@@ -131,7 +140,10 @@ export function SettingsListRow({
         {meta && <div className="mt-px truncate text-[13px] text-muted-foreground">{meta}</div>}
       </div>
       {trailing && (
-        <div className="flex shrink-0 items-center gap-2.5 text-[13px] text-muted-foreground tabular-nums">
+        <div
+          onClick={onClick ? (e) => e.stopPropagation() : undefined}
+          className="flex shrink-0 items-center gap-2.5 text-[13px] text-muted-foreground tabular-nums"
+        >
           {trailing}
         </div>
       )}
@@ -155,7 +167,7 @@ export function SettingsListRow({
     )
   }
 
-  const menuLabel = actionsLabel ?? (typeof title === 'string' ? title : 'row')
+  const menuLabel = actionsLabel ?? (typeof title === 'string' ? title : undefined)
   return (
     <div
       data-slot="settings-list-row"
@@ -171,6 +183,7 @@ export function SettingsListRow({
             }
           : undefined
       }
+      role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
       {body}

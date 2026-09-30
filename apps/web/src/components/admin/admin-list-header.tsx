@@ -43,7 +43,7 @@ export function AdminListHeader({
             data-search-input
           />
         </div>
-        {sortOptions && onSortChange && (
+        {sortOptions && sortOptions.length > 0 && onSortChange && (
           <SortMenu
             options={sortOptions}
             value={activeSort ?? sortOptions[0].value}
