@@ -20,6 +20,8 @@ const badgeVariants = cva(
           'border-transparent bg-destructive/20 text-destructive [a&]:hover:bg-destructive/30',
         outline: 'border-border/50 text-muted-foreground bg-transparent [a&]:hover:bg-muted/50',
         subtle: 'border-transparent bg-muted/40 text-muted-foreground/90 [a&]:hover:bg-muted/60',
+        success: 'border-transparent bg-success/15 text-success [a&]:hover:bg-success/25',
+        warning: 'border-transparent bg-warning/15 text-warning [a&]:hover:bg-warning/25',
         ghost: 'border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground',
       },
       size: {
