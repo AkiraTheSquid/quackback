@@ -2,8 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { CheckoutBuilder } from '@/components/admin/settings/billing/checkout-builder'
 import { billingQueries } from '@/lib/client/queries/billing'
 import { parseCheckoutSearch, type CheckoutSearch } from '@/lib/shared/billing/checkout-path'
@@ -41,17 +40,18 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <BackLink
-        to="/admin/settings/billing"
-        search={{ checkout: undefined, billing_error: undefined }}
-      >
-        Plans &amp; billing
-      </BackLink>
-      <PageHeader
-        title="Configure your plan"
-        description="Choose a plan and billing cycle. Payment happens on the next step."
-      />
+    <SettingsPage
+      title="Configure your plan"
+      description="Choose a plan and billing cycle. Payment happens on the next step."
+      width="wide"
+      crumbs={[
+        {
+          label: 'Plan & billing',
+          to: '/admin/settings/billing',
+          search: { checkout: undefined, billing_error: undefined },
+        },
+      ]}
+    >
       {!billingEnabled || !overview ? (
         <p className="text-sm text-muted-foreground">
           Plan and billing is available only in a Quackback Cloud workspace.
@@ -79,6 +79,6 @@ function CheckoutPage() {
           }
         />
       )}
-    </div>
+    </SettingsPage>
   )
 }

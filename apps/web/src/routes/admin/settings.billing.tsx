@@ -4,8 +4,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { BillingSettings } from '@/components/admin/settings/billing/billing-settings'
 import { billingQueries } from '@/lib/client/queries/billing'
@@ -79,14 +78,7 @@ function BillingPage() {
   }, [search.checkout, navigate])
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="lg:hidden">
-        <BackLink to="/admin/settings">Settings</BackLink>
-      </div>
-      <PageHeader
-        title="Plans & billing"
-        description="Manage your plan and billing history here."
-      />
+    <SettingsPage page="/admin/settings/billing" width="wide">
       {search.checkout === 'success' ? (
         <CheckoutSuccessFlash
           onDismiss={() => navigate({ search: clearBillingFlash, replace: true })}
@@ -110,7 +102,7 @@ function BillingPage() {
           Plan and billing is available only in a Quackback Cloud workspace.
         </p>
       )}
-    </div>
+    </SettingsPage>
   )
 }
 
@@ -134,9 +126,7 @@ function BillingFlash(props: {
   return (
     <Alert
       variant={props.tone === 'error' ? 'destructive' : 'default'}
-      className={cn(
-        props.tone === 'success' && 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
-      )}
+      className={cn(props.tone === 'success' && 'border-success/30 bg-success/10 text-foreground')}
     >
       <AlertTitle>{props.title}</AlertTitle>
       <AlertDescription>{props.body}</AlertDescription>
