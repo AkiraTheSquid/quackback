@@ -4,8 +4,6 @@ import { useState, useTransition, useMemo, type ReactNode } from 'react'
 import { useTheme } from 'next-themes'
 import {
   SparklesIcon,
-  SunIcon,
-  MoonIcon,
   TrashIcon,
   ArrowRightIcon,
   PhotoIcon,
@@ -197,13 +195,11 @@ function WidgetPreviewColumn({
           <PreviewToggleButton
             active={previewTheme === 'light'}
             onClick={() => setPreviewThemeOverride('light')}
-            icon={SunIcon}
             label="Light"
           />
           <PreviewToggleButton
             active={previewTheme === 'dark'}
             onClick={() => setPreviewThemeOverride('dark')}
-            icon={MoonIcon}
             label="Dark"
           />
         </div>

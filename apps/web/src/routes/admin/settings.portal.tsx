@@ -6,8 +6,6 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import {
-  SunIcon,
-  MoonIcon,
   ComputerDesktopIcon,
   DevicePhoneMobileIcon,
   ArrowTopRightOnSquareIcon,
@@ -251,7 +249,7 @@ function PortalPage() {
   return (
     <SettingsPage page="/admin/settings/portal" width="wide">
       {/* Controls left, live portal preview right (sticky). */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(360px,460px)_minmax(0,1fr)] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] gap-6 items-start">
         <div className="space-y-4 min-w-0">
           <SettingsCard
             title="Appearance"
@@ -386,14 +384,12 @@ function PortalPage() {
                   active={state.previewMode === 'light'}
                   disabled={state.previewModeDisabled === 'light'}
                   onClick={() => state.setPreviewMode('light')}
-                  icon={SunIcon}
                   label="Light"
                 />
                 <PreviewToggleButton
                   active={state.previewMode === 'dark'}
                   disabled={state.previewModeDisabled === 'dark'}
                   onClick={() => state.setPreviewMode('dark')}
-                  icon={MoonIcon}
                   label="Dark"
                 />
               </div>
