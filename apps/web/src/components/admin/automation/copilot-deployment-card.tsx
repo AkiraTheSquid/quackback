@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { assistantQueries } from '@/lib/client/queries/assistant'
 import { useUpdateAssistantCopilotCapabilities } from '@/lib/client/mutations/assistant'
 import { isAssistantFieldManaged, ManagedSettingHint } from './assistant-form'
+import { useAssistantSave } from './assistant-save-queue'
 
 /**
  * Copilot's on/off master, driven by `agents.copilot.capabilities` rather than
@@ -42,6 +43,7 @@ export function CopilotPauseControl({ available = true }: { available?: boolean 
   const intl = useIntl()
   const settingsQuery = useQuery(assistantQueries.settings())
   const update = useUpdateAssistantCopilotCapabilities()
+  const saveQueued = useAssistantSave()
   const [confirmingEnabled, setConfirmingEnabled] = useState<boolean | null>(null)
 
   const revision = settingsQuery.data?.revision
@@ -52,12 +54,14 @@ export function CopilotPauseControl({ available = true }: { available?: boolean 
   )
 
   async function confirmChange() {
-    if (confirmingEnabled === null || revision === undefined) return
+    if (confirmingEnabled === null) return
     try {
-      await update.mutateAsync({
-        expectedRevision: revision,
-        capabilities: { qa: confirmingEnabled },
-      })
+      await saveQueued((latest) =>
+        update.mutateAsync({
+          expectedRevision: latest.revision,
+          capabilities: { qa: confirmingEnabled },
+        })
+      )
     } catch {
       // The autosave handler shows the failure toast; the dialog stays open to retry.
       return

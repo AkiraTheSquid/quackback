@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
@@ -17,8 +17,8 @@ import {
   type AssistantAgentKnowledge,
   type AssistantCopilotKnowledge,
 } from '@/lib/shared/assistant/config'
-import { isRevisionConflict } from '@/lib/client/autosave'
-import { isAssistantFieldManaged } from './assistant-form'
+import { isAssistantFieldManaged, useUnsavedChanges } from './assistant-form'
+import { useAssistantSave } from './assistant-save-queue'
 
 /**
  * Every knowledge source's admin label, help text, and readiness live in one
@@ -218,20 +218,23 @@ function KnowledgeError({ onRetry }: { onRetry: () => void }) {
 
 export function AgentKnowledgeCard() {
   const settingsQuery = useQuery(assistantQueries.settings())
+  const queryClient = useQueryClient()
+  const saveQueued = useAssistantSave()
   const update = useUpdateAssistantAgentKnowledge()
+  const [pending, setPending] = useState(0)
+  useUnsavedChanges(pending > 0, 'knowledge')
   const [knowledge, setKnowledge] = useState<AssistantAgentKnowledge | null>(null)
 
   useEffect(() => {
-    if (settingsQuery.data && !update.isPending) {
+    if (settingsQuery.data && pending === 0) {
       setKnowledge(settingsQuery.data.config.agents.agent.knowledge)
     }
-  }, [settingsQuery.data, update.isPending])
+  }, [settingsQuery.data, pending])
 
   if (settingsQuery.isError) return <KnowledgeError onRetry={() => void settingsQuery.refetch()} />
   if (!knowledge || settingsQuery.isPending) return <KnowledgeLoading />
 
   const managedPaths = settingsQuery.data.managedFieldPaths
-  const revision = settingsQuery.data.revision
   const rows: KnowledgeRow[] = ASSISTANT_AGENT_KNOWLEDGE_SOURCES.map((source) => ({
     source,
     enabled: knowledge[source],
@@ -241,17 +244,29 @@ export function AgentKnowledgeCard() {
 
   async function toggle(source: string, next: boolean) {
     const key = source as keyof AssistantAgentKnowledge
-    const previous = knowledge
     // A computed-key spread widens the known keys to optional, so re-assert the
     // exact source shape (every field is a boolean the schema re-validates).
-    const optimistic = { ...knowledge, [key]: next } as AssistantAgentKnowledge
-    setKnowledge(optimistic)
+    setKnowledge((current) => current && ({ ...current, [key]: next } as AssistantAgentKnowledge))
+    setPending((count) => count + 1)
     try {
-      await update.mutateAsync({ expectedRevision: revision, knowledge: optimistic })
-    } catch (error) {
-      // The autosave handler shows the failure toast; a stale revision is refreshed so the next try can succeed.
-      setKnowledge(previous)
-      if (isRevisionConflict(error)) void settingsQuery.refetch()
+      // Built on the latest saved knowledge, so toggles and other saves made
+      // before this one runs are kept.
+      await saveQueued((latest) =>
+        update.mutateAsync({
+          expectedRevision: latest.revision,
+          knowledge: {
+            ...latest.config.agents.agent.knowledge,
+            [key]: next,
+          } as AssistantAgentKnowledge,
+        })
+      )
+    } catch {
+      // The autosave handler shows the failure toast and a stale revision is
+      // refetched by the queue; show what is actually saved.
+      const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
+      if (latest) setKnowledge(latest.config.agents.agent.knowledge)
+    } finally {
+      setPending((count) => count - 1)
     }
   }
 
@@ -262,20 +277,23 @@ export function AgentKnowledgeCard() {
 
 export function CopilotKnowledgeCard() {
   const settingsQuery = useQuery(assistantQueries.settings())
+  const queryClient = useQueryClient()
+  const saveQueued = useAssistantSave()
   const update = useUpdateAssistantCopilotKnowledge()
+  const [pending, setPending] = useState(0)
+  useUnsavedChanges(pending > 0, 'knowledge')
   const [knowledge, setKnowledge] = useState<AssistantCopilotKnowledge | null>(null)
 
   useEffect(() => {
-    if (settingsQuery.data && !update.isPending) {
+    if (settingsQuery.data && pending === 0) {
       setKnowledge(settingsQuery.data.config.agents.copilot.knowledge)
     }
-  }, [settingsQuery.data, update.isPending])
+  }, [settingsQuery.data, pending])
 
   if (settingsQuery.isError) return <KnowledgeError onRetry={() => void settingsQuery.refetch()} />
   if (!knowledge || settingsQuery.isPending) return <KnowledgeLoading />
 
   const managedPaths = settingsQuery.data.managedFieldPaths
-  const revision = settingsQuery.data.revision
   const rows: KnowledgeRow[] = ASSISTANT_COPILOT_KNOWLEDGE_SOURCES.map((source) => ({
     source,
     enabled: knowledge[source],
@@ -284,17 +302,29 @@ export function CopilotKnowledgeCard() {
 
   async function toggle(source: string, next: boolean) {
     const key = source as keyof AssistantCopilotKnowledge
-    const previous = knowledge
     // A computed-key spread widens the known keys to optional, so re-assert the
     // exact source shape (every field is a boolean the schema re-validates).
-    const optimistic = { ...knowledge, [key]: next } as AssistantCopilotKnowledge
-    setKnowledge(optimistic)
+    setKnowledge((current) => current && ({ ...current, [key]: next } as AssistantCopilotKnowledge))
+    setPending((count) => count + 1)
     try {
-      await update.mutateAsync({ expectedRevision: revision, knowledge: optimistic })
-    } catch (error) {
-      // The autosave handler shows the failure toast; a stale revision is refreshed so the next try can succeed.
-      setKnowledge(previous)
-      if (isRevisionConflict(error)) void settingsQuery.refetch()
+      // Built on the latest saved knowledge, so toggles and other saves made
+      // before this one runs are kept.
+      await saveQueued((latest) =>
+        update.mutateAsync({
+          expectedRevision: latest.revision,
+          knowledge: {
+            ...latest.config.agents.copilot.knowledge,
+            [key]: next,
+          } as AssistantCopilotKnowledge,
+        })
+      )
+    } catch {
+      // The autosave handler shows the failure toast and a stale revision is
+      // refetched by the queue; show what is actually saved.
+      const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
+      if (latest) setKnowledge(latest.config.agents.copilot.knowledge)
+    } finally {
+      setPending((count) => count - 1)
     }
   }
 

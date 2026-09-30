@@ -19,6 +19,8 @@ import { SegmentedControl } from '@/components/shared/segmented-control'
 import { PolicyDial } from '@/components/admin/automation/connectors/policy-dial'
 import { assistantQueries } from '@/lib/client/queries/assistant'
 import { useUpdateAssistantToolRules } from '@/lib/client/mutations/assistant'
+import { useUnsavedChanges } from './assistant-form'
+import { useAssistantSave } from './assistant-save-queue'
 import type { ConnectorToolPolicy } from '@/lib/shared/assistant/connectors'
 import type { AssistantAgentKind, AssistantToolRule } from '@/lib/shared/assistant/config'
 
@@ -51,7 +53,10 @@ export function BuiltInToolsCard() {
   const settingsQuery = useQuery(assistantQueries.settings())
   const toolsQuery = useQuery(assistantQueries.tools())
   const update = useUpdateAssistantToolRules()
+  const saveQueued = useAssistantSave()
   const [agent, setAgent] = useState<TenantEditableAgent>('agent')
+  const [pending, setPending] = useState(0)
+  useUnsavedChanges(pending > 0)
   const title = intl.formatMessage({
     id: 'automation.builtinTools.title',
     defaultMessage: 'Built-in actions',
@@ -71,13 +76,26 @@ export function BuiltInToolsCard() {
   }
   if (settingsQuery.isPending || toolsQuery.isPending) return null
 
-  const revision = settingsQuery.data.revision
   const rules = settingsQuery.data.config.agents[agent].toolRules
   const writeTools = toolsQuery.data.filter((tool) => tool.risk === 'write')
   const hasExplicitRules = Object.keys(rules).length > 0
 
-  function save(toolRules: Record<string, AssistantToolRule>) {
-    update.mutate({ expectedRevision: revision, agent, toolRules })
+  // `change` builds the next rules from the latest saved ones, so a pick made
+  // before an earlier save finishes does not drop that save's rule.
+  function save(
+    change: (current: Record<string, AssistantToolRule>) => Record<string, AssistantToolRule>
+  ) {
+    setPending((count) => count + 1)
+    void saveQueued((latest) =>
+      update.mutateAsync({
+        expectedRevision: latest.revision,
+        agent,
+        toolRules: change(latest.config.agents[agent].toolRules),
+      })
+    )
+      // The autosave handler shows the failure toast.
+      .catch(() => {})
+      .finally(() => setPending((count) => count - 1))
   }
 
   return (
@@ -91,7 +109,7 @@ export function BuiltInToolsCard() {
               size="sm"
               variant="ghost"
               disabled={update.isPending}
-              onClick={() => save({})}
+              onClick={() => save(() => ({}))}
             >
               {intl.formatMessage({
                 id: 'automation.builtinTools.reset',
@@ -123,7 +141,9 @@ export function BuiltInToolsCard() {
                 <PolicyDial
                   value={RULE_TO_DIAL[effective]}
                   labelledBy={tool.label}
-                  onChange={(next) => save({ ...rules, [tool.name]: DIAL_TO_RULE[next] })}
+                  onChange={(next) =>
+                    save((current) => ({ ...current, [tool.name]: DIAL_TO_RULE[next] }))
+                  }
                 />
               }
             />
