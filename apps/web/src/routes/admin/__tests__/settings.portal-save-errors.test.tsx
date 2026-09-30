@@ -4,7 +4,7 @@
  * autosave handler. The page adds no toast of its own, and no success toast.
  */
 import { act, type ComponentType, type ReactNode } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { IntlProvider } from 'react-intl'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -133,7 +133,9 @@ describe('portal save feedback', () => {
     renderPage()
     await saveWelcomeEdit()
     expect(toast.error).toHaveBeenCalledTimes(1)
-    expect(toast.error).toHaveBeenCalledWith("Couldn't save. Link URLs need a full https:// address.")
+    expect(toast.error).toHaveBeenCalledWith(
+      "Couldn't save. Link URLs need a full https:// address."
+    )
   })
 
   it('leaves a plan refusal to the upgrade dialog, with no toast', async () => {

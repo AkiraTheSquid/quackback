@@ -101,7 +101,10 @@ function PortalPage() {
   const portalConfigQuery = useSuspenseQuery(settingsQueries.portalConfig())
   const config = portalConfigQuery.data as PortalConfig
 
-  const updatePortalConfig = useUpdatePortalConfig({ showServerMessage: true, ownsError: isPlanRefusal })
+  const updatePortalConfig = useUpdatePortalConfig({
+    showServerMessage: true,
+    ownsError: isPlanRefusal,
+  })
 
   // ============================================
   // Draft state. Everything below commits through the contextual save bar;
