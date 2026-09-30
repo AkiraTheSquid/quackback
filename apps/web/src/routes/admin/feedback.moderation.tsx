@@ -21,11 +21,15 @@ import { useInboxFilters } from '@/components/admin/feedback/use-inbox-filters'
 import { useSegments } from '@/lib/client/hooks/use-segments-queries'
 import { CommentContent } from '@/components/public/comment-content'
 import type { TiptapContent } from '@/lib/shared/db-types'
+import { PERMISSIONS } from '@/lib/shared/permissions'
+import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { warmQuery } from '@/lib/client/queries/warm-query'
 
 export const Route = createFileRoute('/admin/feedback/moderation')({
-  // Auth is enforced by the parent `/admin` guard (admin/member wall) plus each
-  // moderation server function's own authz — no per-route RPC guard needed.
+  // The parent `/admin` guard admits team members; the queue needs the
+  // permission its server functions check, so a teammate without it is turned
+  // away instead of seeing an empty queue.
+  beforeLoad: ({ context }) => assertRoutePermission(context.permissions, PERMISSIONS.POST_APPROVE),
   // The queue arrives with the page; a failed read is left to the page's own
   // query.
   loader: async ({ context }) => {

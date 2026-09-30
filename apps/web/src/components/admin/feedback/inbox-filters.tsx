@@ -14,6 +14,8 @@ import { toggleItem } from '@/components/shared/filter-utils'
 import { FilterSection } from '@/components/shared/filter-section'
 import { MENU_ICON, MENU_ROW } from '@/components/ui/menu'
 import { cn } from '@/lib/shared/utils'
+import { usePermission } from '@/lib/client/hooks/use-permission'
+import { PERMISSIONS } from '@/lib/shared/permissions'
 import { useInboxFacetCounts } from '@/lib/client/hooks/use-inbox-query'
 import type { InboxFilters } from '@/components/admin/feedback/use-inbox-filters'
 import type { InboxFilterCounts } from '@/lib/shared/types'
@@ -51,6 +53,8 @@ export const InboxFiltersPanel = memo(function InboxFiltersPanel({
   moderationActive,
 }: InboxFiltersProps) {
   const { data: facetCounts } = useInboxFacetCounts(filters)
+  // The queue and its count are read with post.approve.
+  const canModerate = usePermission(PERMISSIONS.POST_APPROVE)
 
   // Handle filter selection with multi-select support
   // - Regular click: select only this item (replace), or clear if already the only one selected
@@ -89,9 +93,11 @@ export const InboxFiltersPanel = memo(function InboxFiltersPanel({
 
   return (
     <div className="space-y-0">
-      <FilterSection title="Review">
-        <ModerationRow active={moderationActive} />
-      </FilterSection>
+      {canModerate && (
+        <FilterSection title="Review">
+          <ModerationRow active={moderationActive} />
+        </FilterSection>
+      )}
 
       {/* Status Filter */}
       <FilterSection title="Status">
