@@ -130,9 +130,10 @@ function OfficeHoursPage() {
   }, [schedule.timezone])
 
   const isBusy = mutation.isPending
-  const [pendingRemoval, setPendingRemoval] = useState<
-    { kind: 'window' | 'holiday'; index: number } | null
-  >(null)
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    kind: 'window' | 'holiday'
+    index: number
+  } | null>(null)
 
   function onToggleEnabled(checked: boolean) {
     apply({

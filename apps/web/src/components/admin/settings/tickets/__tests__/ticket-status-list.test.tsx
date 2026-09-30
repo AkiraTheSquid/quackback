@@ -176,9 +176,9 @@ describe('TicketStatusList', () => {
     await vi.waitFor(() => expect(updateTicketStatusFn).toHaveBeenCalledTimes(2))
     failFirst(new Error('boom'))
     await vi.waitFor(() =>
-      expect(screen.getByRole('combobox', { name: 'Customer stage for Escalated' })).toHaveTextContent(
-        'In progress'
-      )
+      expect(
+        screen.getByRole('combobox', { name: 'Customer stage for Escalated' })
+      ).toHaveTextContent('In progress')
     )
     expect(screen.getByRole('combobox', { name: 'Customer stage for Done' })).toHaveTextContent(
       'In progress'

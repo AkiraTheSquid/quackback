@@ -58,7 +58,9 @@ describe('SettingsListRow', () => {
   it('a row with `to` is a whole-row link with a chevron and no menu', () => {
     render(
       <SettingsList>
-        <SettingsListRow title="Email" to="/admin/settings/email"
+        <SettingsListRow
+          title="Email"
+          to="/admin/settings/email"
           actions={[{ label: 'Edit', onSelect: () => {} }]}
         />
       </SettingsList>
