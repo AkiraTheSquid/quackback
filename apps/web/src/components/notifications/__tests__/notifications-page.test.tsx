@@ -8,8 +8,7 @@ let search: { filter?: 'unread' } = {}
 const markAll = vi.fn()
 
 vi.mock('@tanstack/react-router', () => ({
-  createFileRoute: () => (options: Record<string, unknown>) => ({
-    ...options,
+  getRouteApi: () => ({
     useNavigate: () => navigate,
     useSearch: () => search,
   }),
@@ -54,7 +53,7 @@ vi.mock('@/components/notifications/notification-item', () => ({
   ),
 }))
 
-const { NotificationsPage } = await import('../notifications')
+const { NotificationsPage } = await import('../notifications-page')
 
 beforeEach(() => {
   navigate.mockClear()
@@ -88,11 +87,33 @@ describe('notifications page', () => {
   it('switches to the Unread filter through line tabs under the header', () => {
     render(<NotificationsPage />)
     const header = document.querySelector('[data-page-header]')!
-    const tab = screen.getByRole('tab', { name: 'Unread' })
+    const tab = screen.getByRole('tab', { name: /^Unread/ })
     expect(header.compareDocumentPosition(tab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'All' }).closest('[data-variant="line"]')).not.toBeNull()
     fireEvent.click(tab)
-    expect(navigate).toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledTimes(1)
+    const { search: update, replace } = navigate.mock.calls[0][0]
+    expect(replace).toBe(true)
+    expect(update({})).toEqual({ filter: 'unread' })
+  })
+
+  it('returns to the default tab by dropping the filter', () => {
+    search = { filter: 'unread' }
+    render(<NotificationsPage />)
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }))
+    const { search: update } = navigate.mock.calls[0][0]
+    expect(update({ filter: 'unread' })).toEqual({ filter: undefined })
+  })
+
+  it('shows the unread count on the Unread tab', () => {
+    render(<NotificationsPage />)
+    expect(screen.getByRole('tab', { name: 'Unread 2' })).toBeInTheDocument()
+  })
+
+  it('shows no count on the Unread tab when nothing is unread', () => {
+    pageData = { ...page, unreadCount: 0 }
+    render(<NotificationsPage />)
+    expect(screen.getByRole('tab', { name: 'Unread' })).toBeInTheDocument()
   })
 
   it('labels the date group in sentence case and keeps the list form width', () => {
