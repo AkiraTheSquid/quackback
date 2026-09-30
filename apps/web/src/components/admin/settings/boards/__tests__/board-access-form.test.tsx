@@ -451,6 +451,81 @@ describe('<BoardAccessForm> autosave', () => {
     })
   })
 
+  it('does not save when a change is undone before the pause ends', () => {
+    renderForm(PUBLIC_ACCESS)
+    clickTierCell('Comment', 'Team only')
+    clickTierCell('Comment', 'Signed-in')
+    flushAutosave()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('does not save when a segment is ticked and unticked before the pause ends', () => {
+    renderForm({
+      ...PUBLIC_ACCESS,
+      vote: 'segments',
+      segments: { view: [], vote: ['seg_alpha'], comment: [], submit: [] },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Vote: Segments' }))
+    const beta = () => screen.getByText('Beta').closest('button') as HTMLButtonElement
+    fireEvent.click(beta())
+    fireEvent.click(beta())
+    flushAutosave()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('does not save just because the board was opened with a workspace ceiling', async () => {
+    vi.useRealTimers()
+    setWsFlags({ allowAnonymous: false })
+    renderForm({
+      ...PUBLIC_ACCESS,
+      vote: 'anonymous',
+      comment: 'anonymous',
+      submit: 'anonymous',
+    })
+    await waitFor(() => {
+      expect(isCellSelected('Vote', 'Signed-in')).toBe(true)
+    })
+    await new Promise((r) => setTimeout(r, 800))
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('keeps the bumped value in the next saved payload', async () => {
+    vi.useRealTimers()
+    setWsFlags({ allowAnonymous: false })
+    renderForm({
+      ...PUBLIC_ACCESS,
+      vote: 'anonymous',
+      comment: 'anonymous',
+      submit: 'anonymous',
+    })
+    await waitFor(() => {
+      expect(isCellSelected('Vote', 'Signed-in')).toBe(true)
+    })
+    clickTierCell('Comment', 'Team only')
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+    expect(mutate.mock.calls[0][0].access).toMatchObject({
+      vote: 'authenticated',
+      comment: 'team',
+      submit: 'authenticated',
+    })
+  })
+
+  it('keeps a queued edit when an older refetch lands before the save fires', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const ui = (access: BoardAccess) => (
+      <QueryClientProvider client={client}>
+        <BoardAccessForm board={{ id: BOARD_ID, access }} />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(ui(PUBLIC_ACCESS))
+    clickTierCell('Comment', 'Team only')
+    rerender(ui({ ...PUBLIC_ACCESS, submit: 'team' }))
+    expect(isCellSelected('Comment', 'Team only')).toBe(true)
+    flushAutosave()
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(mutate.mock.calls[0][0].access).toMatchObject({ comment: 'team' })
+  })
+
   it('raising view to team clears stale segment lists on cascaded actions', () => {
     renderForm(PUBLIC_ACCESS)
     // 1. set Submit posts -> Segments; the empty-list picker opens.

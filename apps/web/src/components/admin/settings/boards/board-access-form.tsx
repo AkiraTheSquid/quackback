@@ -232,33 +232,47 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
 
   const [openPicker, setOpenPicker] = useState<ActionId | null>(null)
 
-  // Sync form state when the server-side board.access changes (e.g. after a
-  // successful save invalidates the boards query).
-  const accessKey = JSON.stringify(board.access)
-  useEffect(() => {
-    const next = board.access ?? DEFAULT_BOARD_ACCESS
+  // Changes are sent once, after a short pause. The form re-baselines on the
+  // value it sends, so undoing an edit after it was sent counts as a new edit.
+  const { queue, cancel, hasPending } = useDebouncedSave<FormShape>((next) => {
+    mutation.mutate({ boardId: board.id, access: next })
     form.reset(next)
-    setOpenPicker(null)
-  }, [accessKey, board.access, form])
+  }, AUTOSAVE_DELAY_MS)
 
-  const values = form.watch()
-
-  // Auto-bump: when the workspace `allowAnonymous` master switch flips
-  // off, any of vote/comment/submit currently set to 'anonymous' gets
-  // bumped to 'authenticated' together. The bumped form is dirty so it
-  // saves like any other change. We read the
-  // current tier via `form.getValues()` so the effect doesn't have to
-  // depend on `values` (which would re-fire on every keystroke / cell
-  // click).
-  useEffect(() => {
+  // Workspace ceiling: when `allowAnonymous` is off, vote/comment/submit cannot
+  // sit on 'anonymous', so the form shows them as 'authenticated'. The shown
+  // value is not marked dirty: opening the page saves nothing, and the next
+  // edit carries the bumped values with it. `form.getValues()` is read so the
+  // callback does not depend on `values`.
+  const applyCeiling = useCallback(() => {
     if (wsAllowAnonymous) return
     ANON_CEILING_ACTIONS.forEach((id) => {
       if (form.getValues(id) === 'anonymous') {
-        form.setValue(id, 'authenticated', { shouldDirty: true })
-        form.setValue(`segments.${id}`, [], { shouldDirty: true })
+        form.setValue(id, 'authenticated')
+        form.setValue(`segments.${id}`, [])
       }
     })
   }, [wsAllowAnonymous, form])
+
+  // Sync form state when the server-side board.access changes (e.g. after a
+  // successful save invalidates the boards query). A refetch never replaces
+  // edits that are unsaved, queued or in flight.
+  const accessKey = JSON.stringify(board.access)
+  const saving = mutation.isPending
+  useEffect(() => {
+    const next = board.access ?? DEFAULT_BOARD_ACCESS
+    const matches = JSON.stringify(form.getValues()) === JSON.stringify(next)
+    if (!matches && (form.formState.isDirty || hasPending() || saving)) return
+    form.reset(next)
+    applyCeiling()
+    setOpenPicker(null)
+  }, [accessKey, board.access, form, saving, hasPending, applyCeiling])
+
+  useEffect(() => {
+    applyCeiling()
+  }, [applyCeiling])
+
+  const values = form.watch()
 
   const activePreset = useMemo(() => deriveActivePreset(values), [values])
 
@@ -358,16 +372,14 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
     [form]
   )
 
-  const { queue } = useDebouncedSave<FormShape>(
-    (next) => mutation.mutate({ boardId: board.id, access: next }),
-    AUTOSAVE_DELAY_MS
-  )
-
   // Changes save after a short pause, once every Segments tier has a segment.
+  // Returning to the saved values leaves nothing to save, so a queued save for
+  // the undone edit is dropped.
   const valuesKey = JSON.stringify(values)
   useEffect(() => {
-    if (dirty && !segsError) queue(form.getValues())
-  }, [valuesKey, dirty, segsError, form, queue])
+    if (!dirty) cancel()
+    else if (!segsError) queue(form.getValues())
+  }, [valuesKey, dirty, segsError, form, queue, cancel])
 
   return (
     <form onSubmit={(e) => e.preventDefault()} className="space-y-6">

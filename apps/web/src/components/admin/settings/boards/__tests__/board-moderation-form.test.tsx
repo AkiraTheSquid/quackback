@@ -260,6 +260,16 @@ describe('<BoardModerationForm> autosave', () => {
     })
   })
 
+  it('does not save when a rule is set and set back before the pause ends', () => {
+    renderForm(PUBLIC_ACCESS)
+    fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: On` }))
+    fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: Inherit` }))
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
   it('shows the Override badge as soon as a rule is set', () => {
     renderForm(PUBLIC_ACCESS)
     fireEvent.click(screen.getByRole('radio', { name: `${MOD_RULE_LABELS.anonPosts}: On` }))

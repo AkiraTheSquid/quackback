@@ -119,15 +119,18 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
 
   // Only touch the moderation slice; preserve the rest of access so a
   // concurrent edit on the Access page isn't zeroed out.
-  const { queue } = useDebouncedSave<ModerationShape>(
+  const { queue, cancel } = useDebouncedSave<ModerationShape>(
     (next) => mutation.mutate({ boardId: board.id, access: { ...board.access, moderation: next } }),
     AUTOSAVE_DELAY_MS
   )
 
+  // Returning every rule to its saved value leaves nothing to save, so a
+  // save queued for the undone edit is dropped.
   const valuesKey = JSON.stringify(values)
   useEffect(() => {
     if (dirty) queue(form.getValues())
-  }, [valuesKey, dirty, form, queue])
+    else cancel()
+  }, [valuesKey, dirty, form, queue, cancel])
 
   const anyOverridden = MOD_RULES.some((r) => values[r.id] !== 'inherit')
 
