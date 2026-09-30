@@ -6,10 +6,8 @@ import {
   InboxArrowDownIcon,
   ChevronDownIcon,
   UserIcon,
-  MagnifyingGlassIcon,
   BookmarkIcon,
   FunnelIcon,
-  PlusIcon,
   EllipsisHorizontalIcon,
   StarIcon,
   SparklesIcon,
@@ -42,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/shared/page-header'
 import { FilterSection } from '@/components/shared/filter-section'
+import { PaneAddButton } from '@/components/shared/pane-add-button'
 import { MENU_ROW } from '@/components/ui/menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/shared/utils'
@@ -372,23 +371,9 @@ function ViewsFilterSection({
   return (
     <FilterSection
       title="Saved views"
-      action={
-        onCreateView ? (
-          <button
-            type="button"
-            onClick={onCreateView}
-            title="Create view"
-            aria-label="Create view"
-            className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <PlusIcon className="h-3 w-3" />
-          </button>
-        ) : undefined
-      }
+      action={onCreateView ? <PaneAddButton label="New view" onClick={onCreateView} /> : undefined}
     >
-      {views.length === 0 ? (
-        <p className="px-2.5 text-[11px] text-muted-foreground/60">No saved views yet</p>
-      ) : (
+      {views.length > 0 && (
         <div className="space-y-1">
           {views.map((v) => {
             const item: InboxNavItem = { kind: 'custom', viewId: v.id }
@@ -492,15 +477,11 @@ function countForTicketView(
 export const InboxNavSidebar = memo(function InboxNavSidebar({
   nav,
   onSelect,
-  search,
-  onSearch,
   onCreateView,
   onEditView,
 }: {
   nav: InboxNavItem
   onSelect: (item: InboxNavItem) => void
-  search: string
-  onSearch: (value: string) => void
   onCreateView?: () => void
   onEditView?: (view: ConversationViewDTO) => void
 }) {
@@ -521,21 +502,7 @@ export const InboxNavSidebar = memo(function InboxNavSidebar({
       className="hidden w-64 shrink-0 flex-col overflow-hidden border-r border-border/50 bg-card/30 lg:flex xl:w-72"
     >
       <div className="px-4 py-3.5">
-        <PageHeader title="Inbox" />
-      </div>
-      {/* Search sits at the top of the pane, directly under the header. */}
-      <div className="px-4 pb-3">
-        <div className="relative">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search inbox…"
-            aria-label="Search inbox"
-            className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-2.5 text-xs outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
+        <PageHeader title="Support" />
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <div className="px-5 pb-5">
@@ -558,6 +525,15 @@ export const InboxNavSidebar = memo(function InboxNavSidebar({
                   </button>
                 )
               })}
+              <button
+                type="button"
+                onClick={() => onSelect(quinnItem)}
+                data-active={quinnActive || undefined}
+                className={itemClass(quinnActive)}
+              >
+                <QUINN_VIEW.Icon className={cn('size-4 shrink-0', quinnActive && 'text-primary')} />
+                <span className="min-w-0 flex-1 truncate text-left">{QUINN_VIEW.label}</span>
+              </button>
             </div>
           </FilterSection>
 
@@ -585,18 +561,6 @@ export const InboxNavSidebar = memo(function InboxNavSidebar({
               </div>
             </FilterSection>
           )}
-
-          <FilterSection title="AI">
-            <button
-              type="button"
-              onClick={() => onSelect(quinnItem)}
-              data-active={quinnActive || undefined}
-              className={itemClass(quinnActive)}
-            >
-              <QUINN_VIEW.Icon className={cn('size-4 shrink-0', quinnActive && 'text-primary')} />
-              {QUINN_VIEW.label}
-            </button>
-          </FilterSection>
 
           <ScopeFilterSection
             title="Teams"

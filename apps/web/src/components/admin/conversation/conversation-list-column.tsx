@@ -7,50 +7,38 @@ import type {
   ConversationPriority,
   Channel,
 } from '@/lib/shared/conversation/types'
-import { listChannelDescriptors } from '@/lib/shared/channels'
 import { CONVERSATION_SPAM_FILED_BY_LABELS } from '@/lib/shared/conversation/types'
 import {
   inboxItemRefFromId,
   type InboxItemDTO,
   type InboxTriageFacet,
 } from '@/lib/shared/inbox/items'
-import { ChevronDownIcon, PencilSquareIcon, BarsArrowDownIcon } from '@heroicons/react/24/solid'
 import { TicketIcon, BuildingOffice2Icon, RectangleStackIcon } from '@heroicons/react/24/outline'
-import {
-  CONVERSATION_SORTS,
-  TERMLESS_CONVERSATION_SORTS,
-  CONVERSATION_SORT_LABELS,
-  defaultConversationSort,
-  type ConversationSort,
-} from '@/lib/shared/conversation/views'
+import type { ConversationSort } from '@/lib/shared/conversation/views'
 import type { TicketType } from '@/lib/shared/db-types'
 import { NewConversationDialog } from '@/components/admin/conversation/new-conversation-dialog'
 import { SearchSnippet } from '@/components/admin/conversation/search-snippet'
-import { priorityMeta } from '@/lib/shared/conversation/priority-meta'
-import { PriorityDot, PriorityMenuItems } from '@/components/admin/conversation/priority-control'
 import {
   InboxScopeMenu,
   type InboxNavItem,
 } from '@/components/admin/conversation/inbox-nav-sidebar'
 import { TicketStatusChip, TICKET_TYPE_CLASS } from '@/components/admin/inbox/ticket-chips'
+import { NewButton } from '@/components/shared/new-button'
+import { SearchInput } from '@/components/shared/search-input'
+import {
+  ConversationListToolbar,
+  type CompanyFilter,
+} from '@/components/admin/conversation/conversation-list-toolbar'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/shared/utils'
 import { useActivationAction } from '@/lib/client/hooks/use-activation-action'
 import { ActivationActionButton } from '@/components/admin/activation-action-button'
 import { FormattedMessage, useIntl } from 'react-intl'
 import { useUserRole } from '@/lib/client/hooks/use-root-context'
-
-const TRIAGE_FACETS: readonly InboxTriageFacet[] = ['open', 'waiting', 'closed']
 
 /** Ignore scroll-by hovers; only warm a thread the pointer actually rests on. */
 const PREFETCH_DELAY_MS = 120
@@ -183,6 +171,8 @@ interface ConversationListColumnProps {
   ticketTypeOptions?: Array<{ id: string; name: string; icon: string | null; color: string }>
   channelFilter?: Channel
   onChannelFilter?: (value: Channel | undefined) => void
+  /** The company refinement; offered only when the workspace has companies. */
+  companyFilter?: CompanyFilter
   sort: ConversationSort
   onSort: (value: ConversationSort) => void
   loading: boolean
@@ -216,6 +206,7 @@ export function ConversationListColumn({
   ticketTypeOptions,
   channelFilter,
   onChannelFilter,
+  companyFilter,
   sort,
   onSort,
   loading,
@@ -250,7 +241,7 @@ export function ConversationListColumn({
   return (
     <div
       className={cn(
-        'flex min-h-0 w-full shrink-0 flex-col border-r border-border/50 md:w-80',
+        'flex min-h-0 w-full shrink-0 flex-col border-r border-border/50 md:w-[22.5rem]',
         // On mobile the list and thread are one column: hide the list while an
         // item is open (a back button returns to it).
         selectedId && 'hidden md:flex'
@@ -273,6 +264,7 @@ export function ConversationListColumn({
         ticketTypeOptions={ticketTypeOptions}
         channelFilter={channelFilter}
         onChannelFilter={onChannelFilter}
+        companyFilter={companyFilter}
         sort={sort}
         onSort={onSort}
       />
@@ -347,16 +339,15 @@ const ConversationListHeader = memo(function ConversationListHeader({
   ticketTypeOptions,
   channelFilter,
   onChannelFilter,
+  companyFilter,
   sort,
   onSort,
 }: ConversationListHeaderProps) {
   const [composeOpen, setComposeOpen] = useState(false)
-  // Whether the list is a search, which decides both the implicit sort and
-  // whether the term-scored sort is offered at all.
   const searching = searchInput.trim().length > 0
   return (
     <>
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-4 py-[0.85rem]">
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-4 py-3">
         {/* At lg+ the nav sidebar owns scope selection, so the header is a
             plain label. Below lg the sidebar is hidden, so offer a dropdown. */}
         <h2 className="hidden min-w-0 truncate text-sm font-semibold leading-tight lg:block">
@@ -365,206 +356,34 @@ const ConversationListHeader = memo(function ConversationListHeader({
         <div className="min-w-0 lg:hidden">
           <InboxScopeMenu nav={nav} onSelect={onSelectNav} />
         </div>
-        <button
-          type="button"
-          onClick={() => setComposeOpen(true)}
-          title="New conversation"
-          aria-label="New conversation"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <PencilSquareIcon className="size-4" />
-        </button>
+        <NewButton noun="conversation" onClick={() => setComposeOpen(true)} className="shrink-0" />
       </div>
       {headerSlot}
       <NewConversationDialog open={composeOpen} onOpenChange={setComposeOpen} />
-      {/* Search is owned by the nav pane at lg+; the list keeps a copy for the
-          sub-lg layout where that pane is hidden. */}
-      <div className="px-3 pt-2 lg:hidden">
-        <input
-          type="search"
+      <div className="px-3 pt-2">
+        <SearchInput
           value={searchInput}
-          onChange={(e) => onSearchInput(e.target.value)}
-          placeholder="Search…"
-          aria-label="Search the inbox"
-          className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+          onChange={onSearchInput}
+          placeholder="Search conversations…"
+          data-search-input
         />
       </div>
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none px-3 py-2">
-        {/* Sort applies to every scope (including Mentions + custom views). Best
-            match ranks a searched list by default and is offered only while a
-            term is active — the rest of the list stays selectable, so the
-            matches can also be scanned chronologically. */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label="Sort the inbox"
-              className={cn(
-                'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-                sort !== defaultConversationSort(searching)
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <BarsArrowDownIcon className="size-4" />
-              {CONVERSATION_SORT_LABELS[sort]}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {(searching ? CONVERSATION_SORTS : TERMLESS_CONVERSATION_SORTS).map((s) => (
-              <DropdownMenuItem
-                key={s}
-                onClick={() => onSort(s)}
-                className={cn(s === sort && 'text-primary')}
-              >
-                {CONVERSATION_SORT_LABELS[s]}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {showRefinements && (
-          <>
-            {/* Triage facet — a removable filter chip (mirrors the feedback
-                inbox), replacing the old per-status filter (UNIFIED-INBOX-SPEC.md
-                §2.1: Open/Waiting/Closed/All). 'all' = no facet filter. */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-                    facet !== 'all'
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted'
-                  )}
-                >
-                  <span className="capitalize">{facet === 'all' ? 'Status' : facet}</span>
-                  <ChevronDownIcon className="size-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => onFacet('all')}>All</DropdownMenuItem>
-                {TRIAGE_FACETS.map((f) => (
-                  <DropdownMenuItem key={f} onClick={() => onFacet(f)} className="capitalize">
-                    {f}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Filter by priority"
-                  className={cn(
-                    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-                    priorityFilter !== 'all'
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted'
-                  )}
-                >
-                  <PriorityDot priority={priorityFilter === 'all' ? 'none' : priorityFilter} />
-                  {priorityFilter === 'all' ? 'Priority' : priorityMeta(priorityFilter).label}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onPriorityFilter('all')}>
-                  All priorities
-                </DropdownMenuItem>
-                <PriorityMenuItems
-                  selected={priorityFilter === 'all' ? undefined : priorityFilter}
-                  onSelect={onPriorityFilter}
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Registry-type filter (Phase 4) — the Tickets-section scopes
-                only; the route scopes the options to the view's category. */}
-            {onChannelFilter && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Filter by channel"
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-                      channelFilter
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted'
-                    )}
-                  >
-                    {channelFilter
-                      ? (listChannelDescriptors().find((d) => d.id === channelFilter)?.label ??
-                        'Channel')
-                      : 'Channel'}
-                    <ChevronDownIcon className="size-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => onChannelFilter(undefined)}>
-                    Any channel
-                  </DropdownMenuItem>
-                  {listChannelDescriptors().map((d) => (
-                    <DropdownMenuItem
-                      key={d.id}
-                      onClick={() => onChannelFilter(d.id)}
-                      className={cn(d.id === channelFilter && 'text-primary')}
-                    >
-                      {d.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {ticketTypeOptions && onTicketTypeFilter && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Filter by ticket type"
-                    className={cn(
-                      'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-                      ticketTypeFilter
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted'
-                    )}
-                  >
-                    {(() => {
-                      const active = ticketTypeOptions.find((t) => t.id === ticketTypeFilter)
-                      return active ? (
-                        <>
-                          <span aria-hidden>{active.icon}</span>
-                          {active.name}
-                        </>
-                      ) : (
-                        'Type'
-                      )
-                    })()}
-                    <ChevronDownIcon className="size-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => onTicketTypeFilter(undefined)}>
-                    All types
-                  </DropdownMenuItem>
-                  {ticketTypeOptions.map((t) => (
-                    <DropdownMenuItem
-                      key={t.id}
-                      onClick={() => onTicketTypeFilter(t.id)}
-                      className={cn(t.id === ticketTypeFilter && 'text-primary')}
-                    >
-                      <span aria-hidden>{t.icon}</span> {t.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </>
-        )}
-      </div>
+      <ConversationListToolbar
+        searching={searching}
+        showRefinements={showRefinements}
+        facet={facet}
+        onFacet={onFacet}
+        priorityFilter={priorityFilter}
+        onPriorityFilter={onPriorityFilter}
+        ticketTypeFilter={ticketTypeFilter}
+        onTicketTypeFilter={onTicketTypeFilter}
+        ticketTypeOptions={ticketTypeOptions}
+        channelFilter={channelFilter}
+        onChannelFilter={onChannelFilter}
+        companyFilter={companyFilter}
+        sort={sort}
+        onSort={onSort}
+      />
     </>
   )
 })

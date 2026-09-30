@@ -2,8 +2,7 @@ import { createFileRoute, Navigate, redirect } from '@tanstack/react-router'
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ChatBubbleLeftRightIcon, ChevronDownIcon, TicketIcon } from '@heroicons/react/24/solid'
-import { BuildingOffice2Icon } from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon, TicketIcon } from '@heroicons/react/24/solid'
 import { isValidTypeId } from '@quackback/ids'
 import type {
   ConversationId,
@@ -116,12 +115,6 @@ import { useInboxListSource } from '@/lib/client/hooks/use-inbox-list-source'
 import { useMediaQuery } from '@/lib/client/hooks/use-media-query'
 import { useCopilotTabGate } from '@/lib/client/hooks/use-copilot-tab-gate'
 import { EmptyState } from '@/components/shared/empty-state'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/shared/utils'
 import {
   getFirstEnabledAdminProductPath,
@@ -1499,10 +1492,9 @@ function InboxPage() {
     onOpenHelp: () => setHelpOpen(true),
   })
 
-  // The list header's slot. Quinn view: the outcome sub-filter chips
-  // (Resolved/Escalated/Pending). Otherwise the company picker, shown only when
-  // the workspace has companies to filter by. Memoized so opening an item
-  // leaves the (memoized) list header as it was.
+  // The list header's slot: the Quinn view's outcome sub-filter chips
+  // (Resolved/Escalated/Pending). Memoized so opening an item leaves the
+  // (memoized) list header as it was.
   const listHeaderSlot = useMemo(
     () =>
       isQuinnView ? (
@@ -1511,14 +1503,23 @@ function InboxPage() {
           counts={assistantCounts}
           onChange={(ai) => updateSearch({ ai, i: undefined, m: undefined })}
         />
-      ) : companies && companies.length > 0 ? (
-        <CompanyInboxFilter
-          companies={companies}
-          value={urlCompany}
-          onChange={(id) => updateSearch({ company: id, i: undefined, m: undefined })}
-        />
       ) : undefined,
-    [isQuinnView, urlAi, assistantCounts, companies, urlCompany, updateSearch]
+    [isQuinnView, urlAi, assistantCounts, updateSearch]
+  )
+
+  // The company refinement, offered only when the workspace has companies.
+  // Memoized for the same reason as the header slot.
+  const companyFilter = useMemo(
+    () =>
+      companies && companies.length > 0
+        ? {
+            companies,
+            value: urlCompany,
+            onChange: (id: string | undefined) =>
+              updateSearch({ company: id, i: undefined, m: undefined }),
+          }
+        : undefined,
+    [companies, urlCompany, updateSearch]
   )
 
   // The floating bar shows for a real multi-selection, or when a value menu was
@@ -1530,8 +1531,6 @@ function InboxPage() {
       <InboxNavSidebar
         nav={nav}
         onSelect={setNav}
-        search={searchInput}
-        onSearch={setSearchInput}
         onCreateView={openCreateView}
         onEditView={openEditView}
       />
@@ -1560,6 +1559,7 @@ function InboxPage() {
           scopeLabel={scopeLabel}
           showRefinements={showRefinements}
           headerSlot={listHeaderSlot}
+          companyFilter={companyFilter}
           searchInput={searchInput}
           onSearchInput={setSearchInput}
           facet={facet}
@@ -1669,50 +1669,6 @@ function InboxPage() {
         onOpenChange={setHelpOpen}
         copilotAvailable={copilotAvailable}
       />
-    </div>
-  )
-}
-
-/**
- * Compact company filter for the inbox list header: a dropdown over the
- * workspace companies. "All companies" clears the refinement.
- */
-function CompanyInboxFilter({
-  companies,
-  value,
-  onChange,
-}: {
-  companies: { id: string; name: string }[]
-  value: string | undefined
-  onChange: (companyId: string | undefined) => void
-}) {
-  const active = companies.find((co) => co.id === value)
-  return (
-    <div className="flex items-center gap-1.5 border-b border-border/50 px-3 py-2">
-      <BuildingOffice2Icon className="size-3.5 shrink-0 text-muted-foreground" />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label="Filter by company"
-            className={cn(
-              'inline-flex min-w-0 shrink items-center gap-1 rounded-md px-2 py-1 text-[13px] font-medium transition-colors',
-              value ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
-            )}
-          >
-            <span className="truncate">{active?.name ?? 'All companies'}</span>
-            <ChevronDownIcon className="size-3.5 shrink-0" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-          <DropdownMenuItem onClick={() => onChange(undefined)}>All companies</DropdownMenuItem>
-          {companies.map((co) => (
-            <DropdownMenuItem key={co.id} onClick={() => onChange(co.id)}>
-              {co.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   )
 }
