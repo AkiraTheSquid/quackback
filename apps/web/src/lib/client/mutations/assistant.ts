@@ -21,7 +21,6 @@ import {
 import { AUTOSAVE } from '@/lib/client/autosave'
 import { assistantKeys } from '@/lib/client/queries/assistant'
 import { settingsQueries } from '@/lib/client/queries/settings'
-import { AUTOSAVE } from '@/lib/client/autosave'
 
 export interface GuidanceRuleInput {
   name: string
