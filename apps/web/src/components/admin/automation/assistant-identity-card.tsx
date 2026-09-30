@@ -37,7 +37,9 @@ export function AssistantIdentityCard() {
   const settingsQuery = useQuery(assistantQueries.settings())
   const updateIdentity = useUpdateAssistantIdentity()
   const [draft, setDraft] = useState<AssistantIdentity | null>(null)
+  // The last identity the server is known to hold.
   const [saved, setSaved] = useState<AssistantIdentity | null>(null)
+  const [nameFocused, setNameFocused] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [showCropper, setShowCropper] = useState(false)
@@ -47,7 +49,7 @@ export function AssistantIdentityCard() {
   const editKind = useRef<'name' | 'avatar'>('name')
   const dirty = Boolean(draft && saved && !identityEquals(draft, saved))
   const nameValid = Boolean(draft && draft.name.trim() && draft.name.length <= 80)
-  useUnsavedChanges(dirty)
+  useUnsavedChanges(dirty, 'basics')
 
   async function save() {
     const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
@@ -65,11 +67,15 @@ export function AssistantIdentityCard() {
     save,
   })
 
+  // The draft is what the person typed. The server's identity replaces it only
+  // when it changed elsewhere and the person has nothing pending or in hand.
   useEffect(() => {
-    if (!settingsQuery.data || dirty) return
-    setDraft(settingsQuery.data.config.identity)
-    setSaved(settingsQuery.data.config.identity)
-  }, [settingsQuery.data, dirty])
+    if (!settingsQuery.data || dirty || nameFocused) return
+    const identity = settingsQuery.data.config.identity
+    if (draft && identityEquals(identity, saved)) return
+    setDraft(identity)
+    setSaved(identity)
+  }, [settingsQuery.data, dirty, nameFocused, draft, saved])
 
   if (settingsQuery.isError) {
     return (
@@ -284,6 +290,8 @@ export function AssistantIdentityCard() {
             aria-invalid={Boolean(nameError)}
             aria-describedby={nameError ? 'assistant-name-error' : undefined}
             disabled={nameManaged}
+            onFocus={() => setNameFocused(true)}
+            onBlur={() => setNameFocused(false)}
             onChange={(event) => {
               editKind.current = 'name'
               setDraft({ ...draft, name: event.target.value })

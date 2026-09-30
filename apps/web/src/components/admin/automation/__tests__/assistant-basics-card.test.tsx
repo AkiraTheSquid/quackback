@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAutosaveMutationCache } from '@/lib/client/autosave'
 import { IntlProvider } from 'react-intl'
+import { ASSISTANT_REVISION_CONFLICT_MESSAGE } from '@/lib/shared/assistant/config'
 
 const updateVoice = vi.fn()
 const toastError = vi.hoisted(() => vi.fn())
@@ -121,10 +122,20 @@ describe('AssistantVoiceCard', () => {
     expect(updateVoice).toHaveBeenCalledTimes(1)
   })
 
+  it('sends the same choice again when it is picked again after a failed save', async () => {
+    updateVoice.mockRejectedValueOnce(new Error('boom')).mockResolvedValue(savedAs('professional', 3))
+    renderCard()
+    fireEvent.click(await screen.findByRole('radio', { name: /Professional/ }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    expect(updateVoice).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByText('Polished and more formal.'))
+    await waitFor(() => expect(updateVoice).toHaveBeenCalledTimes(2))
+    expect(updateVoice.mock.calls[1]![0]).toEqual(updateVoice.mock.calls[0]![0])
+  })
+
   it('surfaces a conflict without overwriting, then reloads the latest settings', async () => {
-    updateVoice.mockRejectedValue(
-      Object.assign(new Error('changed in another session'), { statusCode: 409 })
-    )
+    // A failing server function reaches the client as a plain Error with the server's message.
+    updateVoice.mockRejectedValue(new Error(ASSISTANT_REVISION_CONFLICT_MESSAGE))
     renderCard()
     fireEvent.click(await screen.findByRole('radio', { name: /Professional/ }))
     const alert = await screen.findByRole('alert')

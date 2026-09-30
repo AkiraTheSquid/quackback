@@ -24,11 +24,12 @@ export function AdditionalInstructionsCard() {
   const settingsQuery = useQuery(assistantQueries.settings())
   const updateVoice = useUpdateAssistantVoice()
   const [draft, setDraft] = useState<string | null>(null)
+  // The last text the server is known to hold. It is trimmed, so a trailing space is not an unsaved change.
   const [saved, setSaved] = useState<string | null>(null)
-  // Saved text is trimmed, so a trailing space is not an unsaved change.
+  const [focused, setFocused] = useState(false)
   const dirty = draft !== null && saved !== null && draft.trim() !== saved
   const tooLong = draft !== null && draft.length > MAX_INSTRUCTIONS
-  useUnsavedChanges(dirty)
+  useUnsavedChanges(dirty, 'basics')
 
   async function save() {
     const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
@@ -49,12 +50,15 @@ export function AdditionalInstructionsCard() {
     save,
   })
 
+  // The draft is what the person typed. The server's text replaces it only when
+  // it changed elsewhere and the person has nothing pending or in hand.
   useEffect(() => {
-    if (!settingsQuery.data || dirty) return
+    if (!settingsQuery.data || dirty || focused) return
     const instructions = settingsQuery.data.config.agents.agent.voice.additionalInstructions
+    if (draft !== null && instructions === saved) return
     setDraft(instructions)
     setSaved(instructions)
-  }, [settingsQuery.data, dirty])
+  }, [settingsQuery.data, dirty, focused, draft, saved])
 
   if (settingsQuery.isError) {
     return (
@@ -137,6 +141,8 @@ export function AdditionalInstructionsCard() {
             defaultMessage:
               'For example: Call customers “members”, use UK English, and avoid exclamation marks.',
           })}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           onChange={(event) => {
             setDraft(event.target.value)
           }}

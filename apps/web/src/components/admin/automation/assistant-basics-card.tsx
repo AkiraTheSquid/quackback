@@ -62,7 +62,7 @@ export function AssistantVoiceCard() {
   const dirty = Boolean(
     tone && responseLength && (tone !== savedTone || responseLength !== savedLength)
   )
-  useUnsavedChanges(dirty)
+  useUnsavedChanges(dirty, 'basics')
 
   async function save() {
     const latest = queryClient.getQueryData(assistantQueries.settings().queryKey)
@@ -81,7 +81,7 @@ export function AssistantVoiceCard() {
     setSavedLength(sentLength)
   }
 
-  const { conflict, clearConflict } = useAssistantAutosave({
+  const { conflict, clearConflict, touch } = useAssistantAutosave({
     dirty,
     signature: `${tone}|${responseLength}`,
     delayMs: 0,
@@ -179,6 +179,7 @@ export function AssistantVoiceCard() {
               return (
                 <label
                   key={value}
+                  onClick={touch}
                   className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border/60 p-3 has-[[data-checked]]:border-primary has-[[data-checked]]:bg-primary/5"
                 >
                   <RadioGroupItem
@@ -228,6 +229,7 @@ export function AssistantVoiceCard() {
               return (
                 <label
                   key={value}
+                  onClick={touch}
                   className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border/60 p-3 has-[[data-checked]]:border-primary has-[[data-checked]]:bg-primary/5"
                 >
                   <RadioGroupItem
