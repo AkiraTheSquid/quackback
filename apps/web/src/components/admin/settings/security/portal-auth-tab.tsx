@@ -495,7 +495,6 @@ export function PortalAuthTab({ portalConfig, teamOpenSignup }: PortalAuthTabPro
                     applyAccess(visibilityRef.current, allowedDomainsRef.current, checked)
                   }}
                   disabled={isAccessBusy}
-                  aria-label="Allow widget-authenticated users to access the portal"
                 />
               }
             />

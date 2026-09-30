@@ -131,3 +131,15 @@ describe('PortalAuthTab: visibility and autosave', () => {
     expect(updatePortalAccessFn).not.toHaveBeenCalled()
   })
 })
+
+describe('PortalAuthTab: widget sign-in', () => {
+  it('names the switch by its visible label', () => {
+    render(
+      <PortalAuthTab
+        portalConfig={{ ...portal, access: { visibility: 'private' } } as PortalConfig}
+        teamOpenSignup
+      />
+    )
+    expect(screen.getByRole('switch', { name: 'Widget sign-in' })).toBeInTheDocument()
+  })
+})
