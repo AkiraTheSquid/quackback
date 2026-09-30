@@ -132,29 +132,32 @@ export function TicketStatusList({
     const reordered = arrayMove(group, oldIndex, newIndex)
     const others = statuses.filter((s) => s.category !== activeStatus.category)
     writeCache([...others, ...reordered.map((s, i) => ({ ...s, position: i }))])
-    reorderMutation.mutate(
-      reordered.map((s) => s.id),
-      { onError: () => writeCache(statuses) }
-    )
+    reorderMutation.mutateAsync(reordered.map((s) => s.id)).catch(() => writeCache(statuses))
   }
 
   function setPublicStage(status: TicketStatusEntity, value: string) {
     const publicStage = value === HIDDEN ? null : (value as TicketStage)
     setPendingId(status.id)
     writeCache(statuses.map((s) => (s.id === status.id ? { ...s, publicStage } : s)))
-    stageMutation.mutate(
-      { id: status.id, publicStage },
-      {
-        onSuccess: (saved) =>
-          writeCache(
-            (qc.getQueryData<TicketStatusEntity[]>(KEY) ?? statuses).map((s) =>
-              s.id === status.id ? saved : s
-            )
-          ),
-        onError: () => writeCache(statuses),
-        onSettled: () => setPendingId(null),
-      }
-    )
+    // Per-call rollback: each save restores only its own status, so overlapping
+    // saves on the shared mutation cannot drop one another's rollback.
+    stageMutation
+      .mutateAsync({ id: status.id, publicStage })
+      .then((saved) =>
+        writeCache(
+          (qc.getQueryData<TicketStatusEntity[]>(KEY) ?? statuses).map((s) =>
+            s.id === status.id ? saved : s
+          )
+        )
+      )
+      .catch(() =>
+        writeCache(
+          (qc.getQueryData<TicketStatusEntity[]>(KEY) ?? statuses).map((s) =>
+            s.id === status.id ? { ...s, publicStage: status.publicStage } : s
+          )
+        )
+      )
+      .finally(() => setPendingId((id) => (id === status.id ? null : id)))
   }
 
   async function handleSubmit(draft: StatusDraft) {
@@ -207,7 +210,8 @@ export function TicketStatusList({
                       key={status.id}
                       status={status}
                       stageLabels={stageLabels}
-                      canDelete={!status.isDefault && group.length > 1}
+                      canDelete={!status.isDefault}
+                      lastInCategory={group.length === 1}
                       busy={pendingId === status.id}
                       onStageChange={(v) => setPublicStage(status, v)}
                       onEdit={() => setEditing(status)}
@@ -251,6 +255,7 @@ interface StatusRowProps {
   status: TicketStatusEntity
   stageLabels: Record<TicketStage, string>
   canDelete: boolean
+  lastInCategory: boolean
   busy: boolean
   onStageChange: (value: string) => void
   onEdit: () => void
@@ -261,6 +266,7 @@ function StatusRow({
   status,
   stageLabels,
   canDelete,
+  lastInCategory,
   busy,
   onStageChange,
   onEdit,
@@ -300,7 +306,7 @@ function StatusRow({
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Default status for new tickets and cannot be removed</p>
+                    <p>The default status for new tickets. It can't be deleted.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -333,7 +339,17 @@ function StatusRow({
         }
         actions={[
           { label: 'Edit', onSelect: onEdit },
-          ...(canDelete ? [{ label: 'Delete', destructive: true, onSelect: onDelete }] : []),
+          ...(canDelete
+            ? [
+                {
+                  label: 'Delete',
+                  destructive: true,
+                  onSelect: onDelete,
+                  disabled: lastInCategory,
+                  hint: lastInCategory ? 'Keep at least one status in each category' : undefined,
+                },
+              ]
+            : []),
         ]}
       />
     </div>

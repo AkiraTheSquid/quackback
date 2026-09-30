@@ -38,17 +38,16 @@ export function StageLabelsCard() {
       return
     }
     setSavingStage(stage)
-    saveMutation.mutate(
-      { stage, value },
-      {
-        onSuccess: (merged) => {
-          qc.setQueryData(KEY, merged)
-          setDrafts(merged)
-        },
-        onError: () => setDrafts((d) => ({ ...d, [stage]: labels[stage] })),
-        onSettled: () => setSavingStage(null),
-      }
-    )
+    // Per-call rollback: each save restores only its own field, so overlapping
+    // saves on the shared mutation cannot drop one another's rollback.
+    saveMutation
+      .mutateAsync({ stage, value })
+      .then((merged) => {
+        qc.setQueryData(KEY, merged)
+        setDrafts(merged)
+      })
+      .catch(() => setDrafts((d) => ({ ...d, [stage]: labels[stage] })))
+      .finally(() => setSavingStage((s) => (s === stage ? null : s)))
   }
 
   return (

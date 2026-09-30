@@ -189,6 +189,21 @@ describe('RowActions', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+  it('shows the reason under a disabled item', async () => {
+    const user = userEvent.setup()
+    render(
+      <RowActions
+        label="Bug"
+        items={[{ label: 'Delete', onSelect: () => {}, disabled: true, hint: 'Keep one status' }]}
+      />
+    )
+    await user.click(screen.getByRole('button', { name: 'Actions for Bug' }))
+    expect(screen.getByRole('menuitem', { name: /Delete/ }).getAttribute('aria-disabled')).toBe(
+      'true'
+    )
+    expect(screen.getByText('Keep one status')).toBeTruthy()
+  })
+
   it('a row with actions renders the menu trigger', () => {
     render(
       <SettingsList>

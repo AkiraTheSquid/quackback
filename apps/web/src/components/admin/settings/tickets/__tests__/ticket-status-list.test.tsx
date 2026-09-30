@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest'
 import type { ReactElement } from 'react'
 import { Suspense } from 'react'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -67,7 +67,7 @@ vi.mock('@/lib/server/functions/tickets', () => ({
   setTicketStageLabelsFn: vi.fn(),
 }))
 
-import { updateTicketStatusFn } from '@/lib/server/functions/tickets'
+import { updateTicketStatusFn, setTicketStageLabelsFn } from '@/lib/server/functions/tickets'
 import { TicketStatusList } from '../ticket-status-list'
 import { StageLabelsCard } from '../stage-labels-card'
 
@@ -128,6 +128,17 @@ describe('TicketStatusList', () => {
     expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull()
   })
 
+  it('shows Delete disabled with the reason for the last status in a category', async () => {
+    const user = userEvent.setup()
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await user.click(await screen.findByRole('button', { name: 'Actions for Done' }))
+    expect(await screen.findByRole('menuitem', { name: /Delete/ })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    )
+    expect(screen.getByText('Keep at least one status in each category')).toBeInTheDocument()
+  })
+
   it('saves a customer stage change as an autosave mutation', async () => {
     const user = userEvent.setup()
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -147,6 +158,33 @@ describe('TicketStatusList', () => {
     expect(queryClient.getMutationCache().getAll()[0]?.options.meta).toEqual({ autosave: true })
   })
 
+  it('rolls back the first stage change when it fails while a second save is in flight', async () => {
+    const user = userEvent.setup()
+    let failFirst!: (e: Error) => void
+    vi.mocked(updateTicketStatusFn)
+      .mockReset()
+      .mockImplementationOnce(() => new Promise((_, reject) => (failFirst = reject)) as never)
+      .mockImplementationOnce((async ({ data }: { data: { id: string } }) => ({
+        ...FIXTURE_STATUSES.find((x) => x.id === data.id)!,
+        publicStage: 'in_progress',
+      })) as never)
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await user.click(await screen.findByRole('combobox', { name: 'Customer stage for Escalated' }))
+    await user.click(await screen.findByRole('option', { name: 'Received' }))
+    await user.click(screen.getByRole('combobox', { name: 'Customer stage for Done' }))
+    await user.click(await screen.findByRole('option', { name: 'In progress' }))
+    await vi.waitFor(() => expect(updateTicketStatusFn).toHaveBeenCalledTimes(2))
+    failFirst(new Error('boom'))
+    await vi.waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Customer stage for Escalated' })).toHaveTextContent(
+        'In progress'
+      )
+    )
+    expect(screen.getByRole('combobox', { name: 'Customer stage for Done' })).toHaveTextContent(
+      'In progress'
+    )
+  })
+
   it('opens the create dialog when the page asks for a new status', async () => {
     renderWithClient(<TicketStatusList creating onCreatingChange={noop} />)
     expect(await screen.findByRole('heading', { name: 'New status' })).toBeInTheDocument()
@@ -158,5 +196,26 @@ describe('StageLabelsCard', () => {
     renderWithClient(<StageLabelsCard />)
     const received = await screen.findByLabelText('Just submitted, not picked up yet')
     expect(received).toHaveValue('Received')
+  })
+
+  it('reverts every label whose save failed, even with another save in flight', async () => {
+    const rejects: Array<(e: Error) => void> = []
+    vi.mocked(setTicketStageLabelsFn)
+      .mockReset()
+      .mockImplementation(() => new Promise((_, reject) => rejects.push(reject)) as never)
+    renderWithClient(<StageLabelsCard />)
+    const received = await screen.findByLabelText('Just submitted, not picked up yet')
+    const resolved = screen.getByLabelText('Marked done')
+    fireEvent.change(received, { target: { value: 'Got it' } })
+    fireEvent.blur(received)
+    fireEvent.change(resolved, { target: { value: 'Finished' } })
+    fireEvent.blur(resolved)
+    await vi.waitFor(() => expect(rejects).toHaveLength(2))
+    rejects[0](new Error('boom'))
+    await vi.waitFor(() => expect(received).toHaveValue('Received'))
+    expect(received).not.toBeDisabled()
+    rejects[1](new Error('boom'))
+    await vi.waitFor(() => expect(resolved).toHaveValue('Resolved'))
+    expect(resolved).not.toBeDisabled()
   })
 })

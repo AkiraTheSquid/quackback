@@ -48,6 +48,8 @@ interface RowActionItem {
   onSelect: () => void
   destructive?: boolean
   disabled?: boolean
+  /** Why the item is unavailable, shown under a disabled item's label. */
+  hint?: string
 }
 
 /**
@@ -77,7 +79,14 @@ export function RowActions({ label, items }: { label?: string; items: RowActionI
             disabled={item.disabled}
             onClick={item.onSelect}
           >
-            {item.label}
+            {item.hint ? (
+              <span className="flex flex-col">
+                {item.label}
+                <span className="text-xs font-normal text-muted-foreground">{item.hint}</span>
+              </span>
+            ) : (
+              item.label
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
