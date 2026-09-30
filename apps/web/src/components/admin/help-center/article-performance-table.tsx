@@ -104,7 +104,7 @@ export function ArticlePerformanceTable() {
                 },
                 {
                   label: 'Overall helpful rate',
-                  value: summary.overallRate === null ? '—' : `${summary.overallRate}%`,
+                  value: summary.overallRate === null ? '-' : `${summary.overallRate}%`,
                 },
               ]}
             />
@@ -225,7 +225,7 @@ export function ArticlePerformanceTable() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {rate === null ? '—' : `${rate}%`}
+                      {rate === null ? '-' : `${rate}%`}
                     </TableCell>
                   </TableRow>
                 )

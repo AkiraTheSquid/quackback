@@ -10,7 +10,8 @@ import { useCreateArticle } from '@/lib/client/mutations/help-center'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { PlusIcon, Cog6ToothIcon } from '@heroicons/react/24/solid'
+import { NewButton } from '@/components/shared/new-button'
+import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 import { Form } from '@/components/ui/form'
 import { HelpCenterFormFields } from './help-center-form-fields'
 import {
@@ -107,10 +108,7 @@ export function CreateArticleDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <Button size="sm">
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            New Article
-          </Button>
+          <NewButton noun="article" />
         </DialogTrigger>
       )}
       <DialogContent

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import { CategoryIcon } from '@/components/help-center/category-icon'
-import { PlusIcon, PencilIcon, TrashIcon, FolderPlusIcon } from '@heroicons/react/16/solid'
+import { PencilIcon, TrashIcon, FolderPlusIcon } from '@heroicons/react/16/solid'
 import { MENU_ROW } from '@/components/ui/menu'
 import { cn } from '@/lib/shared/utils'
 import { buildAncestorChain, MAX_CATEGORY_DEPTH } from '@/lib/shared/help-center-tree'
@@ -128,17 +128,6 @@ export function HelpCenterCategoryTree({
       <div role="tree" aria-label="Help center categories" className="space-y-0.5">
         {tree.map(renderNode)}
       </div>
-      <button
-        type="button"
-        onClick={() => actions.onNew(null)}
-        className={cn(
-          MENU_ROW,
-          'mt-1 w-full text-muted-foreground hover:text-foreground hover:bg-muted/50'
-        )}
-      >
-        <PlusIcon className="h-3 w-3 shrink-0" />
-        New category
-      </button>
     </div>
   )
 }

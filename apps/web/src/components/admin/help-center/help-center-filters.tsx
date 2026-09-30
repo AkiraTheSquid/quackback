@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { PaneAddButton } from '@/components/shared/pane-add-button'
 import { FilterSection } from '@/components/shared/filter-section'
 import { FilterList } from '@/components/admin/feedback/single-select-filter-list'
 import { HelpCenterCategoryTree, type CategoryActions } from './help-center-category-tree'
@@ -59,7 +60,10 @@ export function HelpCenterFiltersPanel({
         />
       </FilterSection>
 
-      <FilterSection title="Categories">
+      <FilterSection
+        title="Categories"
+        action={<PaneAddButton label="New category" onClick={() => categoryActions.onNew(null)} />}
+      >
         <HelpCenterCategoryTree
           categories={categories}
           selectedId={selectedCategoryId}

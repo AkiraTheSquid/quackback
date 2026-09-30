@@ -36,6 +36,10 @@ export const Route = createFileRoute('/admin/feedback/moderation')({
     await Promise.all([
       warmQuery(queryClient, moderationQueueQueries.posts()),
       warmQuery(queryClient, moderationQueueQueries.comments()),
+      // The Feedback pane beside the queue.
+      warmQuery(queryClient, adminQueries.boards()),
+      warmQuery(queryClient, adminQueries.tags()),
+      warmQuery(queryClient, adminQueries.statuses()),
     ])
   },
   component: ModerationPage,

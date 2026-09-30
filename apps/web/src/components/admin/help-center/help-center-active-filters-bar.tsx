@@ -56,12 +56,10 @@ export function HelpCenterActiveFiltersBar({
   const hasStatusFilter = status !== 'all'
   const hasCategoryFilter = !!categoryName
 
-  const canAddStatus = !hasStatusFilter
-  const canAddCategory = !hasCategoryFilter
-  const canAddAny = canAddStatus || canAddCategory
-
   const activeCount =
     (hasStatusFilter ? 1 : 0) + (hasCategoryFilter ? 1 : 0) + (showDeleted ? 1 : 0)
+
+  if (activeCount === 0) return null
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -99,16 +97,6 @@ export function HelpCenterActiveFiltersBar({
         />
       )}
 
-      {canAddAny && (
-        <AddFilterButton
-          canAddStatus={canAddStatus}
-          canAddCategory={canAddCategory}
-          categories={categories}
-          onSetStatus={onSetStatus}
-          onSetCategory={onSetCategory}
-        />
-      )}
-
       {activeCount > 1 && (
         <button
           type="button"
@@ -123,10 +111,10 @@ export function HelpCenterActiveFiltersBar({
 }
 
 // ---------------------------------------------------------------------------
-// Add filter popover
+// Filter popover
 // ---------------------------------------------------------------------------
 
-interface AddFilterButtonProps {
+interface HelpCenterFilterButtonProps {
   canAddStatus: boolean
   canAddCategory: boolean
   categories: ReadonlyArray<Category>
@@ -134,13 +122,14 @@ interface AddFilterButtonProps {
   onSetCategory: (categoryId: string) => void
 }
 
-function AddFilterButton({
+/** The Filter control that opens the status and category menu; lives in the list toolbar. */
+export function HelpCenterFilterButton({
   canAddStatus,
   canAddCategory,
   categories,
   onSetStatus,
   onSetCategory,
-}: AddFilterButtonProps) {
+}: HelpCenterFilterButtonProps) {
   const [open, setOpen] = useState(false)
   const [activeMenu, setActiveMenu] = useState<null | 'status' | 'category'>(null)
 
@@ -164,7 +153,7 @@ function AddFilterButton({
           )}
         >
           <PlusIcon className="h-3 w-3" />
-          Add filter
+          Filter
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-44 p-0">

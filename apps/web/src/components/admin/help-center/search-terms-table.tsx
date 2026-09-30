@@ -92,7 +92,7 @@ export function SearchTermsTable() {
                   >
                     {row.zeroResultSearches > 0
                       ? numberFormatter.format(row.zeroResultSearches)
-                      : '—'}
+                      : '-'}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     <TimeAgo date={row.lastSearchedAt} />

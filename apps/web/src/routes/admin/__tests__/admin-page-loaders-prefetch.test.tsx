@@ -25,6 +25,13 @@ vi.mock('@/lib/server/functions/moderation', async (importOriginal) => ({
   listPendingPostsFn: stub('pendingPosts', { posts: [] }),
   listPendingCommentsFn: stub('pendingComments', { comments: [] }),
 }))
+vi.mock('@/lib/client/queries/admin', () => ({
+  adminQueries: {
+    boards: () => ({ queryKey: ['admin', 'boards'], queryFn: stub('boards', []) }),
+    tags: () => ({ queryKey: ['admin', 'tags'], queryFn: stub('tags', []) }),
+    statuses: () => ({ queryKey: ['admin', 'statuses'], queryFn: stub('statuses', []) }),
+  },
+}))
 vi.mock('@/lib/server/functions/help-center', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/server/functions/help-center')>()),
   listCategoriesFn: stub('categories', []),
@@ -32,6 +39,7 @@ vi.mock('@/lib/server/functions/help-center', async (importOriginal) => ({
 }))
 
 const { moderationQueueQueries } = await import('@/lib/client/queries/moderation')
+const { adminQueries } = await import('@/lib/client/queries/admin')
 const { helpCenterQueries } = await import('@/lib/client/queries/help-center')
 
 type Loader = (ctx: {
@@ -69,13 +77,16 @@ async function fetchesAfterLoader(
 }
 
 describe('admin list loaders', () => {
-  it('/admin/feedback/moderation warms the pending posts and comments', async () => {
+  it('/admin/feedback/moderation warms the queue and the feedback pane', async () => {
     const { warmed, afterMount } = await fetchesAfterLoader('@/routes/admin/feedback.moderation', {}, () => {
       useQuery(moderationQueueQueries.posts())
       useQuery(moderationQueueQueries.comments())
+      useQuery(adminQueries.boards())
+      useQuery(adminQueries.tags())
+      useQuery(adminQueries.statuses())
     })
     expect(afterMount).toEqual([])
-    expect(warmed).toEqual(['pendingComments', 'pendingPosts'])
+    expect(warmed).toEqual(['boards', 'pendingComments', 'pendingPosts', 'statuses', 'tags'])
   })
 
   it('/admin/help-center warms the article list the finder reads', async () => {

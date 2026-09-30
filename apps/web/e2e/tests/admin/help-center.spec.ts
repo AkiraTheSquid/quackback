@@ -59,11 +59,9 @@ async function createAndOpenArticle(
   await page.goto('/admin/help-center')
   await page.waitForLoadState('networkidle')
 
-  const newButton = page.getByRole('button', { name: /^New$/i })
+  const newButton = page.getByRole('button', { name: 'New article' })
   if ((await newButton.count()) === 0) return null
   await newButton.click()
-
-  await page.getByRole('menuitem', { name: 'New article' }).click()
 
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
@@ -106,7 +104,7 @@ test.describe('Help Center admin navigation', () => {
 
     const content = page
       .getByText('No articles yet')
-      .or(page.getByText('Recent articles'))
+      .or(page.getByText(/\d+ articles?/))
       .or(page.getByText(/article/i).first())
 
     await expect(content).toBeVisible({ timeout: 10000 })
@@ -124,23 +122,15 @@ test.describe('Help Center category management', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('can open New dropdown and choose New category', async ({ page }) => {
-    const newButton = page.getByRole('button', { name: /^New$/i })
-    await expect(newButton).toBeVisible({ timeout: 10000 })
-    await newButton.click()
-
-    await expect(page.getByRole('menuitem', { name: 'New article' })).toBeVisible()
-    await expect(page.getByRole('menuitem', { name: 'New category' })).toBeVisible()
-
-    await page.keyboard.press('Escape')
+  test('offers New article in the header and New category in the pane', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'New article' })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: 'New category' })).toBeVisible()
   })
 
   test('can create a new top-level category', async ({ page }) => {
-    const newButton = page.getByRole('button', { name: /^New$/i })
-    await expect(newButton).toBeVisible({ timeout: 10000 })
-    await newButton.click()
-
-    await page.getByRole('menuitem', { name: 'New category' }).click()
+    const newCategory = page.getByRole('button', { name: 'New category' })
+    await expect(newCategory).toBeVisible({ timeout: 10000 })
+    await newCategory.click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -165,12 +155,10 @@ test.describe('Help Center article creation', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('can open create article dialog from New dropdown', async ({ page }) => {
-    const newButton = page.getByRole('button', { name: /^New$/i })
+  test('can open create article dialog from the New article button', async ({ page }) => {
+    const newButton = page.getByRole('button', { name: 'New article' })
     await expect(newButton).toBeVisible({ timeout: 10000 })
     await newButton.click()
-
-    await page.getByRole('menuitem', { name: 'New article' }).click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 5000 })
@@ -187,11 +175,9 @@ test.describe('Help Center article creation', () => {
   })
 
   test('create article dialog can be dismissed with Escape', async ({ page }) => {
-    const newButton = page.getByRole('button', { name: /^New$/i })
+    const newButton = page.getByRole('button', { name: 'New article' })
     await expect(newButton).toBeVisible({ timeout: 10000 })
     await newButton.click()
-
-    await page.getByRole('menuitem', { name: 'New article' }).click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()
@@ -539,10 +525,10 @@ test.describe('Help Center article list filtering - status', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('"Add filter" button opens filter popover with Status and Category options', async ({
+  test('"Filter" button opens filter popover with Status and Category options', async ({
     page,
   }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -552,7 +538,7 @@ test.describe('Help Center article list filtering - status', () => {
   })
 
   test('can apply Draft status filter', async ({ page }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -568,7 +554,7 @@ test.describe('Help Center article list filtering - status', () => {
   })
 
   test('can apply Published status filter', async ({ page }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -583,7 +569,7 @@ test.describe('Help Center article list filtering - status', () => {
 
   test('status filter chip can be removed', async ({ page }) => {
     // Apply a Draft filter
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()

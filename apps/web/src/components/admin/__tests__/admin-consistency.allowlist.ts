@@ -35,7 +35,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     '/admin/settings/support',
   ],
   'create-labels': [
-    'components/admin/help-center/create-article-dialog.tsx',
     'components/admin/segments/segment-form.tsx',
   ],
   'no-dashes': [
@@ -61,9 +60,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/conversation/conversation-tags-editor.tsx',
     'components/admin/conversation/convert-to-post-dialog.tsx',
     'components/admin/conversation/saved-messages-column.tsx',
-    'components/admin/feedback/voters-modal.tsx',
-    'components/admin/help-center/article-performance-table.tsx',
-    'components/admin/help-center/search-terms-table.tsx',
     'components/admin/inbox/create-ticket-dialog.tsx',
     'components/admin/inbox/ticket-activity-timeline.tsx',
     'components/admin/settings/portal-auth/auth-provider-credentials-form.tsx',
