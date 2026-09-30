@@ -280,7 +280,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Asana to create tasks from feedback and review incoming status changes.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Asana</span> to authorize Quackback
           to create tasks in your Asana workspace.
         </p>,
         <p key="2">Select which project new feedback tasks should be created in.</p>,
@@ -357,7 +357,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect ClickUp to turn feedback into tasks and track progress directly from your workspace.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect ClickUp</span> to authorize Quackback
           to create tasks in your ClickUp workspace.
         </p>,
         <p key="2">Select a space and list where new feedback tasks should be created.</p>,
@@ -387,7 +387,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Discord to receive notifications when users submit feedback, when statuses change, and when comments are added.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to add the Quackback
+          Click <span className="font-medium text-foreground">Connect Discord</span> to add the Quackback
           bot to your Discord server.
         </p>,
         <p key="2">
@@ -450,7 +450,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect GitHub to automatically create issues from user feedback and sync statuses when issues are closed or reopened.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect GitHub</span> to authorize Quackback
           to create issues in your GitHub repositories.
         </p>,
         <p key="2">Select which repository new feedback issues should be created in.</p>,
@@ -488,7 +488,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
           redirect URI shown in the credentials form on your GitLab OAuth application.
         </p>,
         <p key="2">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect GitLab</span> to authorize Quackback
           with your GitLab account. You will be sent to GitLab.com or your instance, depending on
           the URL you configured.
         </p>,
@@ -566,7 +566,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Jira to create issues from feedback and review incoming status changes.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Jira</span> to authorize Quackback
           to create issues in your Jira instance.
         </p>,
         <p key="2">Select which project and issue type to use for new feedback issues.</p>,
@@ -596,7 +596,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Linear to create issues from feedback and receive verified status updates on linked items.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Linear</span> to authorize Quackback
           to create issues in your Linear workspace.
         </p>,
         <p key="2">Select which team new feedback issues should be created in.</p>,
@@ -664,7 +664,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
           settings.
         </p>,
         <p key="2">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Monday.com</span> to authorize Quackback
           with your Monday.com workspace.
         </p>,
         <p key="3">
@@ -727,7 +727,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Notion to automatically create database items when users submit feedback. Link feedback to your product roadmap in Notion.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Notion</span> to authorize Quackback
           with your Notion workspace.
         </p>,
         <p key="2">
@@ -800,7 +800,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
           platform settings.
         </p>,
         <p key="2">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Salesforce</span> to authorize Quackback
           with your Salesforce org.
         </p>,
         <p key="3">Customer details are looked up by email when you open customer context.</p>,
@@ -881,7 +881,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         'Connect Slack to receive notifications when users submit feedback, when statuses change, and when comments are added.',
       steps: [
         <p key="1">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Slack</span> to authorize Quackback
           to post messages to your Slack workspace.
         </p>,
         <p key="2">
@@ -948,7 +948,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
           Register Quackback in your Azure AD workspace and add the Teams bot permissions.
         </p>,
         <p key="2">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Teams</span> to authorize Quackback
           to post to your Teams channels.
         </p>,
         <p key="3">
@@ -979,7 +979,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
           Create a Trello Power-Up in your workspace (optional, only needed for custom branding).
         </p>,
         <p key="2">
-          Click <span className="font-medium text-foreground">Connect</span> to authorize Quackback
+          Click <span className="font-medium text-foreground">Connect Trello</span> to authorize Quackback
           to access your Trello workspace.
         </p>,
         <p key="3">Select which board and list new feedback cards should be created in.</p>,
