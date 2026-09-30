@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import { SettingRow } from '@/components/admin/settings/setting-row'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import type { BoardId } from '@quackback/ids'
 
 interface Board {
@@ -49,21 +49,23 @@ export function DeleteBoardForm({ board }: DeleteBoardFormProps) {
 
   return (
     <>
-      <SettingRow
-        label="Delete this board"
-        description="Removes the board and its posts, votes and comments."
-        control={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setOpen(true)}
-          >
-            Delete board
-          </Button>
-        }
-      />
+      <SettingRows>
+        <SettingRow
+          label="Delete this board"
+          description="Removes the board and its posts, votes and comments."
+          control={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setOpen(true)}
+            >
+              Delete board
+            </Button>
+          }
+        />
+      </SettingRows>
       <ConfirmDialog
         open={open}
         onOpenChange={handleOpenChange}

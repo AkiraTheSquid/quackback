@@ -336,7 +336,7 @@ function SortableStatusItem({
             <PopoverTrigger asChild>
               <button
                 aria-label={`Change colour of ${status.name}`}
-                className="cursor-pointer rounded-full hover:ring-2 hover:ring-muted-foreground/40 hover:ring-offset-1"
+                className="flex cursor-pointer rounded-full hover:ring-2 hover:ring-muted-foreground/40 hover:ring-offset-1"
               >
                 <RowDot color={status.color} />
               </button>

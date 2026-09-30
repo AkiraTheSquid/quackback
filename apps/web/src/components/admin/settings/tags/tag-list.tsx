@@ -370,7 +370,7 @@ export function TagsSettingsPage({ initialTags, boards }: TagsSettingsPageProps)
                       <button
                         type="button"
                         aria-label={`Change colour of ${tag.name}`}
-                        className="cursor-pointer rounded-full hover:ring-2 hover:ring-muted-foreground/40 hover:ring-offset-1"
+                        className="flex cursor-pointer rounded-full hover:ring-2 hover:ring-muted-foreground/40 hover:ring-offset-1"
                       >
                         <RowDot color={tag.color} />
                       </button>
