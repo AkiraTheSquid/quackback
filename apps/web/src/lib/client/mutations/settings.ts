@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AUTOSAVE } from '@/lib/client/autosave'
+import { isPlanRefusal } from '@/lib/shared/describe-upgrade'
 import {
   deleteLogoFn,
   deleteHeaderLogoFn,
@@ -264,11 +265,17 @@ export function useUpdateHeaderDisplayName() {
 // in-flight refetch would re-read the still-stale cache via `ensureQueryData`.
 // ============================================================================
 
-export function useUpdatePortalConfig() {
+/**
+ * `meta` overrides let a page that reports some failures itself (an upgrade
+ * prompt) keep the shared toast for the rest.
+ */
+export function useUpdatePortalConfig(
+  meta: { showServerMessage?: boolean; ownsError?: (error: unknown) => boolean } = {}
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    meta: AUTOSAVE,
+    meta: { ...AUTOSAVE, ...meta },
     mutationFn: (data: Parameters<typeof updatePortalConfigFn>[0]['data']) =>
       updatePortalConfigFn({ data }),
     onSuccess: () =>
@@ -489,7 +496,9 @@ export function useSaveBrandingTheme() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    meta: AUTOSAVE,
+    // A plan refusal opens the page's upgrade dialog; other refusals (a rejected
+    // stylesheet) are written for the admin, so the toast names them.
+    meta: { ...AUTOSAVE, showServerMessage: true, ownsError: isPlanRefusal },
     mutationFn: async (input: {
       brandingConfig: Record<string, unknown>
       customCss: string

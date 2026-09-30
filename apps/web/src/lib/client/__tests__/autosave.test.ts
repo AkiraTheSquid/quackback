@@ -69,7 +69,6 @@ describe('settings autosave hooks', () => {
   }
 
   it.each([
-    'useUpdatePortalConfig',
     'useUpdateModerationDefault',
     'useUpdateWidgetConfig',
     'useUpdateHelpCenterConfig',
@@ -78,9 +77,16 @@ describe('settings autosave hooks', () => {
     'useUpdateWorkflowCloseSpam',
     'useUpdateDefaultSlaPolicy',
     'useSetWorkspaceExperimentEnabled',
-    'useSaveBrandingTheme',
   ])('%s is tagged as an autosave', (hook) => {
     expect(body(hook)).toContain('meta: AUTOSAVE')
+  })
+
+  it('tags the portal config save as an autosave a page can extend', () => {
+    expect(body('useUpdatePortalConfig')).toContain('...AUTOSAVE')
+  })
+
+  it('tags the branding theme save as an autosave that names server reasons', () => {
+    expect(body('useSaveBrandingTheme')).toContain('...AUTOSAVE')
   })
 
   it('leaves explicit actions untagged', () => {

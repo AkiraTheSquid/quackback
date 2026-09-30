@@ -6,16 +6,17 @@
 import { act, type ComponentType, type ReactNode } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { IntlProvider } from 'react-intl'
-import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { toast, rootContext, saveFails } = vi.hoisted(() => ({
+const { toast, rootContext, saveFails, saveError } = vi.hoisted(() => ({
   toast: { error: vi.fn(), success: vi.fn() },
   rootContext: {
     settings: { name: 'Acme', featureFlags: { feedback: true, changelog: true } },
     session: null,
   },
   saveFails: { value: true },
+  saveError: { value: new Error('nope') as Error },
 }))
 
 vi.mock('sonner', () => ({ toast }))
@@ -35,19 +36,19 @@ vi.mock('@tanstack/react-router', async () => {
   }
 })
 
-vi.mock('@/lib/client/mutations/settings', async () => {
-  const { AUTOSAVE } = await import('@/lib/client/autosave')
-  return {
-    useUpdatePortalConfig: () =>
-      useMutation({
-        meta: AUTOSAVE,
-        mutationFn: async () => {
-          if (saveFails.value) throw new Error('nope')
-        },
-      }),
-    useSaveBrandingTheme: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  }
-})
+// The real portal-config hook runs against a failing server function, so its own
+// `meta` decides what the shared handler shows.
+vi.mock('@/lib/server/functions/settings', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/server/functions/settings')>()),
+  updatePortalConfigFn: vi.fn(async () => {
+    if (saveFails.value) throw saveError.value
+  }),
+}))
+
+vi.mock('@/lib/client/mutations/settings', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/client/mutations/settings')>()),
+  useSaveBrandingTheme: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}))
 
 vi.mock('@/lib/client/hooks/use-image-upload', () => ({
   useImageUpload: () => ({ upload: vi.fn() }),
@@ -73,7 +74,9 @@ vi.mock('@/components/ui/rich-text-editor', () => ({
   ),
 }))
 
-vi.mock('@/components/admin/upgrade', () => ({ UpgradeModal: () => null }))
+vi.mock('@/components/admin/upgrade', () => ({
+  UpgradeModal: ({ open }: { open: boolean }) => (open ? <div role="dialog">Upgrade</div> : null),
+}))
 
 const { createAutosaveMutationCache } = await import('@/lib/client/autosave')
 const { Route } = await import('@/routes/admin/settings.portal')
@@ -101,19 +104,46 @@ afterEach(() => {
   toast.error.mockClear()
   toast.success.mockClear()
   saveFails.value = true
+  saveError.value = new Error('nope')
 })
+
+async function saveWelcomeEdit() {
+  act(() => {
+    fireEvent.click(screen.getByTestId('rich-text-editor'))
+  })
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+  })
+  // Let every queued handler run before counting toasts.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  })
+}
 
 describe('portal save feedback', () => {
   it('shows exactly one error toast when the save fails', async () => {
     renderPage()
-    act(() => {
-      fireEvent.click(screen.getByTestId('rich-text-editor'))
+    await saveWelcomeEdit()
+    expect(toast.error).toHaveBeenCalledTimes(1)
+    expect(toast.error).toHaveBeenCalledWith("Couldn't save. nope")
+  })
+
+  it('names the reason when the server rejects the content', async () => {
+    saveError.value = new Error('Link URLs need a full https:// address.')
+    renderPage()
+    await saveWelcomeEdit()
+    expect(toast.error).toHaveBeenCalledTimes(1)
+    expect(toast.error).toHaveBeenCalledWith("Couldn't save. Link URLs need a full https:// address.")
+  })
+
+  it('leaves a plan refusal to the upgrade dialog, with no toast', async () => {
+    saveError.value = Object.assign(new Error('Upgrade to Business to enable it.'), {
+      statusCode: 402,
     })
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    })
-    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1))
-    expect(toast.error).toHaveBeenCalledWith("Couldn't save. Try again.")
+    renderPage()
+    await saveWelcomeEdit()
+    expect(screen.getByRole('dialog').textContent).toBe('Upgrade')
+    expect(toast.error).not.toHaveBeenCalled()
   })
 
   it('shows no success toast when the save works', async () => {
@@ -124,6 +154,9 @@ describe('portal save feedback', () => {
     })
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    })
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50))
     })
     expect(toast.success).not.toHaveBeenCalled()
     expect(toast.error).not.toHaveBeenCalled()

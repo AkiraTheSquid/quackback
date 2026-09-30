@@ -144,7 +144,7 @@ function NavRow({
   const defaultLabel = isLink
     ? 'Link'
     : builtInNavDefinition(item.type as PortalBuiltInNavType).defaultMessage
-  // Only flag once something was typed, a fresh empty row isn't an error yet.
+  // Only flag once something was typed: a fresh empty row isn't an error yet.
   const urlInvalid = isLink && !!item.url && !isValidNavLinkUrl(item.url)
 
   return (

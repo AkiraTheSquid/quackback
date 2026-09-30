@@ -101,7 +101,7 @@ function PortalPage() {
   const portalConfigQuery = useSuspenseQuery(settingsQueries.portalConfig())
   const config = portalConfigQuery.data as PortalConfig
 
-  const updatePortalConfig = useUpdatePortalConfig()
+  const updatePortalConfig = useUpdatePortalConfig({ showServerMessage: true, ownsError: isPlanRefusal })
 
   // ============================================
   // Draft state. Everything below commits through the contextual save bar;
@@ -183,7 +183,7 @@ function PortalPage() {
 
       startTransition(() => router.invalidate())
     } catch (error) {
-      // A plan refusal opens the upgrade dialog. Any failure also raises the
+      // A plan refusal opens the upgrade dialog; any other failure raises the
       // shared "Couldn't save" toast from the autosave mutations.
       if (isPlanRefusal(error)) {
         setUpgrade(
@@ -210,8 +210,8 @@ function PortalPage() {
   // ============================================
   const [viewport, setViewport] = useState<'desktop' | 'mobile'>('desktop')
 
-  // Which built-in tabs are currently unavailable (product/tab off), the
-  // editor keeps their rows but renders them inert. Mirrors portal-header.
+  // Built-in tabs that are currently unavailable (product or tab off) keep
+  // their rows in the editor but render inert. Mirrors portal-header.
   const gatedTypes = useMemo(() => {
     const flags = settings?.featureFlags
     const statusAudience = settings?.statusConfig?.audience ?? 'public'
@@ -303,7 +303,7 @@ function PortalPage() {
                   }}
                   onOpenChange={(open) => {
                     // Every option previews its own name in its own font, all
-                    // rendered at once, load every family the first time the
+                    // rendered at once. Load every family the first time the
                     // menu opens rather than trying to lazily match hover.
                     if (open) {
                       for (const f of FONT_OPTIONS) loadBrandingFont(f.id)
