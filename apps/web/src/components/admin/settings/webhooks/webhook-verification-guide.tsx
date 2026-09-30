@@ -200,10 +200,10 @@ const FRAMEWORK_ICONS: Record<string, (props: { className?: string }) => React.R
 }
 
 const WEBHOOK_EVENTS = [
-  { id: 'post.created', label: 'New Post' },
-  { id: 'post.status_changed', label: 'Status Changed' },
-  { id: 'comment.created', label: 'New Comment' },
-  { id: 'changelog.published', label: 'Changelog Published' },
+  { id: 'post.created', label: 'New post' },
+  { id: 'post.status_changed', label: 'Status changed' },
+  { id: 'comment.created', label: 'New comment' },
+  { id: 'changelog.published', label: 'Changelog published' },
 ] as const
 
 const WEBHOOK_HEADERS = [
@@ -238,7 +238,7 @@ export function WebhookVerificationGuide() {
         <div className="flex flex-col border-b lg:border-b-0 lg:border-r border-border divide-y divide-border">
           {/* Header */}
           <div className="p-5">
-            <h3 className="text-sm font-semibold text-foreground">Signature Verification</h3>
+            <h3 className="text-sm font-semibold text-foreground">Signature verification</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Verify webhook deliveries are authentic
             </p>
@@ -361,8 +361,8 @@ export function WebhookVerificationGuide() {
             >
               {copiedCode ? (
                 <>
-                  <CheckIcon className="h-3 w-3 text-green-400" />
-                  <span className="text-green-400">Copied</span>
+                  <CheckIcon className="h-3 w-3 text-success" />
+                  <span className="text-success">Copied</span>
                 </>
               ) : (
                 <>

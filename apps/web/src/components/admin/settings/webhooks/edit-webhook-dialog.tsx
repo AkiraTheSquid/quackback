@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
+import { SettingRow } from '@/components/admin/settings/setting-row'
 import {
   Dialog,
   DialogContent,
@@ -101,7 +102,7 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Webhook</DialogTitle>
+            <DialogTitle>Edit webhook</DialogTitle>
             <DialogDescription>Update webhook configuration.</DialogDescription>
           </DialogHeader>
 
@@ -145,25 +146,24 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <Label htmlFor="webhook-enabled" className="text-sm font-medium">
-                    Webhook Enabled
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {wasAutoDisabled
-                      ? 'Re-enabling will reset the failure count'
-                      : 'Disabled webhooks will not receive events'}
-                  </p>
-                </div>
-                <Switch
-                  id="webhook-enabled"
-                  checked={isEnabled}
-                  onCheckedChange={setIsEnabled}
-                  disabled={isPending}
-                  aria-label="Toggle webhook enabled"
-                />
-              </div>
+              <SettingRow
+                label="Send events"
+                htmlFor="webhook-enabled"
+                description={
+                  wasAutoDisabled
+                    ? 'Turning this on resets the failure count'
+                    : 'When off, the webhook receives no events'
+                }
+                control={
+                  <Switch
+                    id="webhook-enabled"
+                    checked={isEnabled}
+                    onCheckedChange={setIsEnabled}
+                    disabled={isPending}
+                    aria-label="Toggle webhook enabled"
+                  />
+                }
+              />
 
               {wasAutoDisabled && (
                 <WarningBox
@@ -175,10 +175,10 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
 
               {/* Rotate Secret Section */}
               <div className="space-y-2">
-                <Label>Signing Secret</Label>
+                <Label>Signing secret</Label>
                 {newSecret ? (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 p-3">
+                    <div className="flex items-center gap-2 rounded-lg bg-success/10 border border-success/20 p-3">
                       <code className="flex-1 text-sm font-mono break-all">{newSecret}</code>
                       <CopyButton
                         value={newSecret}

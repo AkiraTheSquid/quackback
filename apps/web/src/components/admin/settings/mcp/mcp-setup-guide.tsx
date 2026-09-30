@@ -335,7 +335,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
                 </code>
                 <span className="shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
                   {copiedEndpoint ? (
-                    <CheckIcon className="h-3.5 w-3.5 text-green-500" />
+                    <CheckIcon className="h-3.5 w-3.5 text-success" />
                   ) : (
                     <ClipboardDocumentIcon className="h-3.5 w-3.5" />
                   )}
@@ -475,8 +475,8 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
             >
               {copiedCode ? (
                 <>
-                  <CheckIcon className="h-3 w-3 text-green-400" />
-                  <span className="text-green-400">Copied</span>
+                  <CheckIcon className="h-3 w-3 text-success" />
+                  <span className="text-success">Copied</span>
                 </>
               ) : (
                 <>
