@@ -10,8 +10,13 @@ describe('ApiReferenceCard', () => {
   it('shows the base URL and links to the API reference', () => {
     render(<ApiReferenceCard apiBaseUrl="https://feedback.acme.test/api/v1" />)
     expect(screen.getByText('https://feedback.acme.test/api/v1')).toBeInTheDocument()
-    const link = screen.getByRole('link', { name: /Open/ })
+    const link = screen.getByRole('link', { name: 'Open API reference' })
     expect(link.getAttribute('href')).toBe('/api/v1/docs')
+  })
+
+  it('truncates a long base URL at phone width instead of overflowing', () => {
+    render(<ApiReferenceCard apiBaseUrl="https://feedback.acme.test/api/v1" />)
+    expect(screen.getByText('https://feedback.acme.test/api/v1').className).toMatch(/truncate/)
   })
 
   it('copies the base URL', async () => {

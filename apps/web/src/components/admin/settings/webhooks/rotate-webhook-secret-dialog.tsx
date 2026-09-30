@@ -90,7 +90,7 @@ export function RotateWebhookSecretDialog({
             Cancel
           </Button>
           <Button onClick={handleRotate} disabled={isPending}>
-            {isPending ? 'Rotating...' : 'Rotate Secret'}
+            {isPending ? 'Rotating...' : 'Rotate secret'}
           </Button>
         </DialogFooter>
       </DialogContent>

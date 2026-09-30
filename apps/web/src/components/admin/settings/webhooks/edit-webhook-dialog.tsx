@@ -160,7 +160,6 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
                     checked={isEnabled}
                     onCheckedChange={setIsEnabled}
                     disabled={isPending}
-                    aria-label="Toggle webhook enabled"
                   />
                 }
               />
@@ -173,7 +172,7 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
                 />
               )}
 
-              {/* Rotate Secret Section */}
+              {/* Rotate secret section */}
               <div className="space-y-2">
                 <Label>Signing secret</Label>
                 {newSecret ? (
@@ -202,10 +201,9 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
                       size="sm"
                       onClick={() => setRotateDialogOpen(true)}
                       disabled={isPending}
-                      aria-label="Rotate signing secret"
                     >
                       <ArrowPathIcon className="h-4 w-4 mr-1.5" />
-                      Rotate Secret
+                      Rotate secret
                     </Button>
                   </div>
                 )}
@@ -224,7 +222,7 @@ export function EditWebhookDialog({ webhook, open, onOpenChange }: EditWebhookDi
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending || !url || selectedEvents.length === 0}>
-                {isPending ? 'Saving...' : 'Save Changes'}
+                {isPending ? 'Saving...' : 'Save changes'}
               </Button>
             </DialogFooter>
           </form>

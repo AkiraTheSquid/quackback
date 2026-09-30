@@ -207,7 +207,7 @@ export function rowsToCsv(rows: AuditEventRow[]): string {
 
 function ActorCell({ row }: { row: AuditEventRow }) {
   // Anonymous + service principals don't have an email, fall back to
-  // actorType so the row isn't a bare em-dash. This is the in-table
+  // actorType so the row is never blank. This is the in-table
   // surface for the 0070_audit_log_observability migration's
   // actorType + authMethod columns; request_id stays in the CSV.
   const primary = row.actorEmail ?? (row.actorType ? `(${row.actorType})` : null)

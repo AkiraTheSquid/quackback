@@ -9,22 +9,19 @@ test.describe('Admin MCP Settings', () => {
   test('legacy /admin/settings/mcp URL lands on the developers MCP tab', async ({ page }) => {
     await page.goto('/admin/settings/mcp')
     await page.waitForURL(/\/admin\/settings\/developers\?tab=mcp/)
-    await expect(page.getByText('MCP Server').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: 'MCP server' })).toBeVisible({ timeout: 10000 })
   })
 
-  test('page loads and shows MCP Server heading', async ({ page }) => {
-    await expect(page.getByText('MCP Server').first()).toBeVisible({ timeout: 10000 })
-    await expect(
-      page.getByText('Enable or disable the MCP endpoint for AI integrations.')
-    ).toBeVisible({ timeout: 10000 })
+  test('page loads and shows the MCP server card', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'MCP server' })).toBeVisible({ timeout: 10000 })
   })
 
-  test('shows Enable MCP Server toggle', async ({ page }) => {
-    await expect(page.getByText('Enable MCP Server').first()).toBeVisible({ timeout: 10000 })
+  test('shows the MCP server toggle with its description', async ({ page }) => {
+    await expect(page.getByText('MCP server', { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    })
     await expect(
-      page.getByText(
-        'Allow AI tools like Claude Code to interact with your feedback data via the MCP protocol'
-      )
+      page.getByText('Let AI coding tools work with your feedback over MCP.')
     ).toBeVisible()
   })
 
@@ -62,8 +59,8 @@ test.describe('Admin MCP Settings', () => {
     expect(await mcpToggle.isChecked()).toBe(wasChecked)
   })
 
-  test('shows Setup Guide section heading', async ({ page }) => {
-    await expect(page.getByText('Setup Guide').first()).toBeVisible({ timeout: 10000 })
+  test('shows Setup guide section heading', async ({ page }) => {
+    await expect(page.getByText('Setup guide').first()).toBeVisible({ timeout: 10000 })
     await expect(page.getByText('Connect an AI tool to your MCP server').first()).toBeVisible()
   })
 

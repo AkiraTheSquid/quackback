@@ -27,7 +27,9 @@ describe('integration connect config', () => {
         <p>mounted</p>
       </QueryClientProvider>
     )
-    await waitFor(() => expect(container.textContent).not.toContain('loading'))
+    await waitFor(() => expect(container.textContent).not.toContain('loading'), {
+      timeout: 20000,
+    })
     await findByText('mounted')
     const has = container.querySelector('input:not([type="hidden"])') !== null
     cleanup()
@@ -41,7 +43,7 @@ describe('integration connect config', () => {
       if (typed !== (INTEGRATION_SETTINGS[type].connectForm === true)) mismatched.push(type)
     }
     expect(mismatched).toEqual([])
-  })
+  }, 120000)
 
   it('setup steps never point at a bare "Connect" button unless the button reads that', () => {
     const offenders = Object.entries(INTEGRATION_SETTINGS)

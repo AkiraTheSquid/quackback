@@ -16,7 +16,12 @@ export function ApiReferenceCard({ apiBaseUrl }: { apiBaseUrl: string }) {
           label="Base URL"
           control={
             <>
-              <code className="font-mono text-xs text-muted-foreground">{apiBaseUrl}</code>
+              <code
+                className="max-w-[55vw] truncate font-mono text-xs text-muted-foreground sm:max-w-none"
+                title={apiBaseUrl}
+              >
+                {apiBaseUrl}
+              </code>
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -38,7 +43,7 @@ export function ApiReferenceCard({ apiBaseUrl }: { apiBaseUrl: string }) {
           control={
             <Button variant="outline" size="sm" asChild>
               <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer">
-                Open
+                Open<span className="sr-only"> API reference</span>
                 <ArrowTopRightOnSquareIcon className="size-4" />
               </a>
             </Button>

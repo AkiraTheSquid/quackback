@@ -84,7 +84,7 @@ export function McpServerSettings({
         <SettingRow
           label="MCP server"
           htmlFor="mcp-toggle"
-          description="Let AI tools like Claude Code work with your feedback over MCP."
+          description="Let AI coding tools work with your feedback over MCP."
           control={
             <BusySwitch
               id="mcp-toggle"

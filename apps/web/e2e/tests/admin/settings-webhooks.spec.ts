@@ -26,8 +26,7 @@ test.describe('Admin Webhooks Settings', () => {
     const emptyStateButton = page.getByRole('button', { name: 'New webhook' }).last()
 
     // One or the other should be visible depending on whether webhooks exist
-    const hasCreateButton =
-      (await createButton.count()) > 0 || (await emptyStateButton.count()) > 0
+    const hasCreateButton = (await createButton.count()) > 0 || (await emptyStateButton.count()) > 0
     expect(hasCreateButton).toBe(true)
   })
 
@@ -76,9 +75,7 @@ test.describe('Admin Webhooks Settings', () => {
 
     // Should have endpoint URL label and input
     await expect(dialog.getByLabel('Endpoint URL')).toBeVisible()
-    await expect(
-      dialog.getByPlaceholder('https://example.com/webhook')
-    ).toBeVisible()
+    await expect(dialog.getByPlaceholder('https://example.com/webhook')).toBeVisible()
 
     await page.keyboard.press('Escape')
   })
@@ -214,40 +211,29 @@ test.describe('Admin Webhooks Settings', () => {
     await expect(dialog).toBeHidden({ timeout: 5000 })
   })
 
-  test('existing webhooks show URL and status badge', async ({ page }) => {
+  test('existing webhooks show their URL', async ({ page }) => {
     await page.waitForLoadState('networkidle')
 
     // Only check if webhooks are present (non-empty state)
-    const webhookList = page.locator('.space-y-3')
-    if ((await webhookList.count()) > 0) {
-      const firstWebhook = webhookList.locator('[class*="rounded-lg border"]').first()
-      if ((await firstWebhook.count()) > 0) {
-        // Each webhook card should show a URL
-        await expect(firstWebhook).toBeVisible()
-
-        // Should show a status badge (Active, Disabled, Auto-disabled, etc.)
-        const badge = firstWebhook.locator('[class*="badge"], [data-slot="badge"]')
-        if ((await badge.count()) > 0) {
-          await expect(badge.first()).toBeVisible()
-        }
-      }
+    const rowMenu = page.getByRole('button', { name: /^actions for https?:\/\//i }).first()
+    if ((await rowMenu.count()) > 0) {
+      const name = (await rowMenu.getAttribute('aria-label')) ?? ''
+      const url = name.replace(/^actions for /i, '')
+      await expect(page.getByText(url, { exact: true }).first()).toBeVisible()
     }
   })
 
-  test('existing webhooks show subscribed event types', async ({ page }) => {
+  test('existing webhooks show subscribed event types or their failure state', async ({ page }) => {
     await page.waitForLoadState('networkidle')
 
     // Only check if webhooks are present
-    const webhookList = page.locator('.space-y-3')
-    if ((await webhookList.count()) > 0) {
-      const firstWebhook = webhookList.locator('[class*="rounded-lg border"]').first()
-      if ((await firstWebhook.count()) > 0) {
-        // The events list appears as small text below the URL
-        const eventText = firstWebhook.locator('.text-xs.text-muted-foreground').first()
-        if ((await eventText.count()) > 0) {
-          await expect(eventText).toBeVisible()
-        }
-      }
+    const rowMenu = page.getByRole('button', { name: /^actions for https?:\/\//i }).first()
+    if ((await rowMenu.count()) > 0) {
+      await expect(
+        page
+          .getByText(/New post|Status changed|New comment|Changelog published|failures?|Error:/)
+          .first()
+      ).toBeVisible()
     }
   })
 

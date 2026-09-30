@@ -110,7 +110,7 @@ function vscodeConfig(url: string) {
         {
           type: 'promptString',
           id: 'quackback-api-key',
-          description: 'Quackback API Key (qb_...)',
+          description: 'Quackback API key (qb_...)',
           password: true,
         },
       ],
@@ -198,7 +198,7 @@ const CLIENTS: ClientDef[] = [
     note: 'Add to your project root.',
     variants: [
       { id: 'oauth', label: 'OAuth (recommended)', code: claudeCodeOAuthConfig },
-      { id: 'api-key', label: 'API Key', code: claudeCodeApiKeyConfig },
+      { id: 'api-key', label: 'API key', code: claudeCodeApiKeyConfig },
     ],
   },
   {
@@ -233,7 +233,7 @@ const CLIENTS: ClientDef[] = [
     note: 'Requires mcp-remote bridge (Node.js must be installed).',
     variants: [
       { id: 'oauth', label: 'OAuth (recommended)', code: claudeDesktopOAuthConfig },
-      { id: 'api-key', label: 'API Key', code: claudeDesktopApiKeyConfig },
+      { id: 'api-key', label: 'API key', code: claudeDesktopApiKeyConfig },
     ],
   },
 ]
@@ -310,7 +310,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
         <div className="flex flex-col border-b lg:border-b-0 lg:border-r border-border divide-y divide-border">
           {/* Header */}
           <div className="p-5">
-            <h3 className="text-sm font-semibold text-foreground">Setup Guide</h3>
+            <h3 className="text-sm font-semibold text-foreground">Setup guide</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Connect an AI tool to your MCP server
             </p>
@@ -401,7 +401,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
                 })}
               </div>
 
-              {/* Variant selector (OAuth / API Key) */}
+              {/* Variant selector (OAuth / API key) */}
               {client.variants && (
                 <div className="flex gap-1">
                   {client.variants.map((v) => (
