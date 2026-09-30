@@ -98,7 +98,7 @@ export function PortalNavEditor({ items, onChange, gatedTypes, onReset }: Portal
 
   return (
     <TooltipProvider delay={200}>
-      <div className="space-y-1.5">
+      <div className="divide-y divide-border/50">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {items.map((item) => (
@@ -152,9 +152,8 @@ function NavRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'flex items-center gap-2 rounded-lg border border-border/60 bg-background px-2 py-1.5',
-        isDragging && 'opacity-50 shadow-md',
-        gated && 'bg-muted/40'
+        'flex items-center gap-2 bg-background py-2',
+        isDragging && 'relative z-10 opacity-50 shadow-md'
       )}
     >
       <button
@@ -235,7 +234,7 @@ function NavRow({
       )}
 
       {item.type === 'feedback' ? (
-        <Badge variant="outline">Always on</Badge>
+        <Badge variant="secondary">Always on</Badge>
       ) : (
         <Switch
           checked={item.enabled !== false}
