@@ -47,7 +47,7 @@ export function SettingRow({
   )
 }
 
-/** Stacks SettingRows with hairline dividers. */
+/** Stacks SettingRows with hairline dividers, flush with the card padding above and below. */
 export function SettingRows({
   children,
   className,
@@ -56,7 +56,13 @@ export function SettingRows({
   className?: string
 }) {
   return (
-    <div data-slot="setting-rows" className={cn('divide-y divide-border/50', className)}>
+    <div
+      data-slot="setting-rows"
+      className={cn(
+        'divide-y divide-border/50 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0',
+        className
+      )}
+    >
       {children}
     </div>
   )
