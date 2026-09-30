@@ -3,9 +3,10 @@ import { useRouter, Link } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { useUpdatePortalConfig, useUpdateWidgetConfig } from '@/lib/client/mutations/settings'
-import { ChannelSettingsCrumb } from '@/components/admin/settings/channel-settings-crumb'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
+import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,14 +23,16 @@ export function MessengerChannelPage() {
   const portalConfigQuery = useSuspenseQuery(settingsQueries.portalConfig())
   const config = widgetConfigQuery.data
   const messengerConfig = config.messenger
+  const assistant = messengerConfig?.assistant
   const [isPending, startTransition] = useTransition()
   const [savingField, setSavingField] = useState<string | null>(null)
   const [widgetMessenger, setWidgetMessenger] = useState(config.tabs?.messenger ?? true)
   const [portalSupportEnabled, setPortalSupportEnabled] = useState(
     portalConfigQuery.data?.support?.enabled ?? true
   )
-  const [preventRepliesWhenClosed, setPreventRepliesWhenClosed] = useState(
-    messengerConfig?.preventRepliesWhenClosed ?? false
+  // The stored flag is the opposite of the switch: reopening is allowed unless replies are prevented.
+  const [reopenOnReply, setReopenOnReply] = useState(
+    !(messengerConfig?.preventRepliesWhenClosed ?? false)
   )
   const [welcomeMessage, setWelcomeMessage] = useState(messengerConfig?.welcomeMessage ?? '')
   const [offlineMessage, setOfflineMessage] = useState(messengerConfig?.offlineMessage ?? '')
@@ -56,63 +59,56 @@ export function MessengerChannelPage() {
   const isBusy = savingField !== null || isPending
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="space-y-1.5">
-        <ChannelSettingsCrumb page="Messenger" />
-        <PageHeader title="Messenger" description="Live chat in the widget and on the portal." />
-      </div>
-
+    <SettingsPage
+      page="/admin/settings/channels/messenger"
+      description="Live chat in the widget and on the portal."
+      crumbs={[{ label: 'Support' }, { label: 'Channels', to: '/admin/settings/channels' }]}
+    >
       <SettingsCard title="Surfaces" description="Where customers can start conversations.">
-        <div className="flex items-center justify-between py-1">
-          <div className="pr-4">
-            <Label htmlFor="widget-messenger-tab" className="text-sm font-medium cursor-pointer">
-              Widget
-            </Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Show the Messages tab in the widget.
-            </p>
-          </div>
-          <Switch
-            id="widget-messenger-tab"
-            checked={widgetMessenger}
-            onCheckedChange={(checked) => {
-              setWidgetMessenger(checked)
-              persist('widgetMessenger', { tabs: { messenger: checked } }, () =>
-                setWidgetMessenger(!checked)
-              )
-            }}
-            disabled={isBusy}
-            aria-label="Widget"
+        <SettingRows>
+          <SettingRow
+            label="Widget"
+            description="Show the Messages tab in the widget."
+            htmlFor="widget-messenger-tab"
+            control={
+              <Switch
+                id="widget-messenger-tab"
+                checked={widgetMessenger}
+                onCheckedChange={(checked) => {
+                  setWidgetMessenger(checked)
+                  persist('widgetMessenger', { tabs: { messenger: checked } }, () =>
+                    setWidgetMessenger(!checked)
+                  )
+                }}
+                disabled={isBusy}
+              />
+            }
           />
-        </div>
-        <div className="mt-4 flex items-center justify-between border-t border-border/40 py-1 pt-4">
-          <div className="pr-4">
-            <Label htmlFor="portal-support-enabled" className="text-sm font-medium cursor-pointer">
-              Portal chats
-            </Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Let signed-in customers start new conversations from the portal&apos;s Support tab.
-            </p>
-          </div>
-          <Switch
-            id="portal-support-enabled"
-            checked={portalSupportEnabled}
-            onCheckedChange={async (checked) => {
-              setPortalSupportEnabled(checked)
-              setSavingField('portalSupport')
-              try {
-                await updatePortalConfig.mutateAsync({ support: { enabled: checked } })
-                startTransition(() => router.invalidate())
-              } catch {
-                setPortalSupportEnabled(!checked)
-              } finally {
-                setSavingField(null)
-              }
-            }}
-            disabled={isBusy}
-            aria-label="Portal chats"
+          <SettingRow
+            label="Portal chats"
+            description="Let signed-in customers start new conversations from the portal's Support tab."
+            htmlFor="portal-support-enabled"
+            control={
+              <Switch
+                id="portal-support-enabled"
+                checked={portalSupportEnabled}
+                onCheckedChange={async (checked) => {
+                  setPortalSupportEnabled(checked)
+                  setSavingField('portalSupport')
+                  try {
+                    await updatePortalConfig.mutateAsync({ support: { enabled: checked } })
+                    startTransition(() => router.invalidate())
+                  } catch {
+                    setPortalSupportEnabled(!checked)
+                  } finally {
+                    setSavingField(null)
+                  }
+                }}
+                disabled={isBusy}
+              />
+            }
           />
-        </div>
+        </SettingRows>
       </SettingsCard>
 
       <SettingsCard title="Messaging" description="Greeting and team name shown to visitors.">
@@ -188,48 +184,47 @@ export function MessengerChannelPage() {
         </div>
       </SettingsCard>
 
-      <SettingsCard
-        title="Reopen on reply"
-        description="When a visitor replies to a closed Messenger conversation."
-      >
-        <div className="flex items-center justify-between py-1">
-          <div className="pr-4">
-            <Label htmlFor="prevent-replies-closed" className="text-sm font-medium cursor-pointer">
-              Prevent replies to closed conversations
-            </Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Visitors start a new conversation instead of reopening. Email replies always reopen.
-            </p>
-          </div>
-          <Switch
-            id="prevent-replies-closed"
-            checked={preventRepliesWhenClosed}
-            onCheckedChange={(checked) => {
-              setPreventRepliesWhenClosed(checked)
-              persist('preventClosed', { messenger: { preventRepliesWhenClosed: checked } }, () =>
-                setPreventRepliesWhenClosed(!checked)
-              )
-            }}
-            disabled={isBusy}
+      <SettingsCard title="Closed conversations">
+        <SettingRows>
+          <SettingRow
+            label="Reopen when a visitor replies"
+            description="Off starts a new conversation instead. Email replies always reopen."
+            htmlFor="reopen-on-reply"
+            control={
+              <Switch
+                id="reopen-on-reply"
+                checked={reopenOnReply}
+                onCheckedChange={(checked) => {
+                  setReopenOnReply(checked)
+                  persist(
+                    'reopenOnReply',
+                    { messenger: { preventRepliesWhenClosed: !checked } },
+                    () => setReopenOnReply(!checked)
+                  )
+                }}
+                disabled={isBusy}
+              />
+            }
           />
-        </div>
+        </SettingRows>
       </SettingsCard>
 
-      <SettingsCard title="Quinn" description="Assistant identity is configured in Automation.">
-        <div className="flex items-center justify-between py-1">
-          <p className="text-sm text-muted-foreground">
-            {messengerConfig?.assistant?.enabled === false
-              ? 'Off'
-              : messengerConfig?.assistant?.respond
-                ? 'Fronting conversations · answering on'
-                : 'Fronting conversations · answering off'}
-          </p>
-          <Link to="/admin/automation/assistant" className="text-sm font-medium text-primary">
-            Configure in Automation
-          </Link>
-        </div>
+      <SettingsCard title="Quinn">
+        <SettingRows>
+          <SettingRow
+            label={assistant?.enabled === false ? 'Quinn is off' : 'Quinn answers first'}
+            description={
+              assistant?.enabled !== false && !assistant?.respond ? 'Answering is off.' : undefined
+            }
+            control={
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/automation/assistant">Configure</Link>
+              </Button>
+            }
+          />
+        </SettingRows>
       </SettingsCard>
-    </div>
+    </SettingsPage>
   )
 }
 
@@ -275,7 +270,7 @@ function MessengerTranslations({
             className={cn(
               'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
               selectedLocale === locale
-                ? 'border-primary/40 bg-primary/5 text-foreground'
+                ? 'border-primary bg-primary/10 text-foreground'
                 : 'border-border/50 text-muted-foreground hover:text-foreground'
             )}
           >
