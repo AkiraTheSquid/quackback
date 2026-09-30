@@ -102,8 +102,10 @@ export function SignInProvidersTab({
   // ---------- Save ----------
   // Every toggle is one autosave mutation against authConfig: the header shows
   // its status and a failure runs the caller's revert and shows the one toast.
+  // The server's refusals (last sign-in method, recovery codes required) are rules
+  // the admin can act on, so the toast names them.
   const persist = useMutation({
-    meta: AUTOSAVE,
+    meta: { ...AUTOSAVE, showServerMessage: true },
     mutationFn: ({ patch }: { patch: AuthConfigPatch; revert: () => void }) =>
       updateAuthConfigFn({ data: patch }),
     onSuccess: (updated) => {
