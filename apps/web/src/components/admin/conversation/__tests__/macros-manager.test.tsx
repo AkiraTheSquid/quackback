@@ -65,6 +65,25 @@ describe('MacrosManager', () => {
     expect(screen.queryByRole('button', { name: /add macro/i })).toBeNull()
   })
 
+  it('offers a New macro button in the empty state that starts creating', async () => {
+    listMacros.mockResolvedValue({ macros: [] })
+    const onCreatingChange = vi.fn()
+    renderManager({ onCreatingChange })
+    await screen.findByText('No macros yet')
+    fireEvent.click(screen.getByRole('button', { name: 'New macro' }))
+    expect(onCreatingChange).toHaveBeenCalledWith(true)
+  })
+
+  it('does not nest the actions menu inside a button row; Edit opens the dialog', async () => {
+    listMacros.mockResolvedValue({ macros: [MACRO] })
+    const user = userEvent.setup()
+    const { container } = renderManager()
+    await user.click(await screen.findByRole('button', { name: 'Actions for Password reset' }))
+    expect(container.querySelector('[role="button"] button')).toBeNull()
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    expect(await screen.findByRole('heading', { name: 'Edit macro' })).toBeTruthy()
+  })
+
   it('opens the create dialog when the page asks for a new macro', async () => {
     listMacros.mockResolvedValue({ macros: [] })
     renderManager({ creating: true })
@@ -82,5 +101,6 @@ describe('MacrosManager', () => {
     expect(await screen.findByText('Delete macro?')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Delete macro' }))
     await waitFor(() => expect(deleteMacro).toHaveBeenCalledTimes(1))
+    expect(deleteMacro).toHaveBeenCalledWith({ data: { id: 'macro_1' } })
   })
 })
