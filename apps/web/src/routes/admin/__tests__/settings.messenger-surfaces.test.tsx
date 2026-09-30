@@ -155,6 +155,17 @@ describe('Quinn row', () => {
     )
     expect(screen.queryByText(/Fronting conversations/)).toBeNull()
   })
+
+  it('reads "Quinn is off" when answering is off or unset', () => {
+    for (const value of [{ enabled: true, respond: false }, { enabled: true }]) {
+      assistant = value
+      const { unmount } = renderPage()
+      expect(screen.getByText('Quinn is off')).toBeInTheDocument()
+      expect(screen.queryByText('Quinn answers first')).toBeNull()
+      expect(screen.queryByText('Answering is off.')).toBeNull()
+      unmount()
+    }
+  })
 })
 
 describe('Translation chips', () => {

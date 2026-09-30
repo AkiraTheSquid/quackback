@@ -85,11 +85,19 @@ describe('GitHubChannelPage', () => {
     expect(screen.queryByText(/Workflows that reply automatically/)).toBeNull()
   })
 
+  it('warns that replies post as public comments', () => {
+    renderPage(CONNECTED)
+    expect(screen.getByText(/Replies post as public comments on the issue/)).toBeInTheDocument()
+  })
+
   it('autosaves the inbox switch', async () => {
     renderPage(CONNECTED)
     fireEvent.click(screen.getByRole('switch', { name: 'Open issues and comments in the inbox' }))
     await waitFor(() => expect(setInbox).toHaveBeenCalledWith({ data: { enabled: false } }))
-    expect(client.getMutationCache().getAll()[0].meta).toEqual({ autosave: true })
+    expect(client.getMutationCache().getAll()[0].meta).toEqual({
+      autosave: true,
+      showServerMessage: true,
+    })
   })
 
   it('shows sync times in a Sync card instead of a Health panel', () => {

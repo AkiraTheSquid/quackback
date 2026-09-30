@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { TimeAgo } from '@/components/ui/time-ago'
 import { GitHubConnectionActions } from '@/integrations/github/ui/github-connection-actions'
 import { githubChannelStatusQuery } from '@/integrations/github/ui/github-channel-status-query'
-import { useSetGitHubInbox } from '@/lib/client/mutations/channel-settings'
+import { useSetGitHubInbox } from '@/integrations/github/ui/use-github-inbox'
 
 export function GitHubChannelPage() {
   const query = useQuery(githubChannelStatusQuery())
@@ -93,7 +93,7 @@ export function GitHubChannelPage() {
             <SettingRows>
               <SettingRow
                 label="Open issues and comments in the inbox"
-                description="New issues start conversations; public replies post as comments."
+                description="New issues start conversations. Replies post as public comments on the issue."
                 htmlFor="github-inbox"
                 control={
                   <Switch

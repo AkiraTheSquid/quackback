@@ -5,16 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const routing = vi.fn().mockResolvedValue({})
 const ack = vi.fn().mockResolvedValue({})
-const inbox = vi.fn().mockResolvedValue({ ok: true })
 vi.mock('@/lib/server/functions/settings', () => ({
   updateConversationRoutingFn: (...a: unknown[]) => routing(...a),
   updateEmailAutoAckFn: (...a: unknown[]) => ack(...a),
 }))
-vi.mock('@/integrations/github/server/functions', () => ({
-  setGitHubInboxEnabledFn: (...a: unknown[]) => inbox(...a),
-}))
 
-const { useUpdateConversationRouting, useUpdateEmailAutoAck, useSetGitHubInbox } =
+const { useUpdateConversationRouting, useUpdateEmailAutoAck } =
   await import('@/lib/client/mutations/channel-settings')
 
 function setup<T>(hook: () => T) {
@@ -39,13 +35,6 @@ describe('channel settings mutations', () => {
     const { result, client } = setup(useUpdateEmailAutoAck)
     await act(() => result.current.mutateAsync(false))
     expect(ack).toHaveBeenCalledWith({ data: { enabled: false } })
-    expect(client.getMutationCache().getAll()[0].meta).toEqual({ autosave: true })
-  })
-
-  it('the GitHub inbox switch autosaves', async () => {
-    const { result, client } = setup(useSetGitHubInbox)
-    await act(() => result.current.mutateAsync(true))
-    expect(inbox).toHaveBeenCalledWith({ data: { enabled: true } })
     expect(client.getMutationCache().getAll()[0].meta).toEqual({ autosave: true })
   })
 })
