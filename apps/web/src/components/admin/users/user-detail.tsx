@@ -63,7 +63,7 @@ import type { PrincipalId } from '@quackback/ids'
 import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
 
 const EXTERNAL_ID_KEY = '_externalUserId'
-const EM_DASH = '—'
+const NO_VALUE = '-'
 
 function parseUserMetadata(metadata: string | null): {
   attributes: [string, unknown][]
@@ -804,13 +804,13 @@ export function UserDetail({
           <FactCell value={user.commentCount} label="Comments" numeric />
           <FactCell value={user.voteCount} label="Votes" numeric />
           <FactCell
-            value={user.lastSeenAt ? <TimeAgo date={user.lastSeenAt} /> : EM_DASH}
+            value={user.lastSeenAt ? <TimeAgo date={user.lastSeenAt} /> : NO_VALUE}
             label="Last seen"
             muted={!user.lastSeenAt}
           />
           <FactCell value={formatDate(user.joinedAt)} label="Joined" />
           <FactCell
-            value={user.country ? countryName(user.country) : EM_DASH}
+            value={user.country ? countryName(user.country) : NO_VALUE}
             label="Country"
             muted={!user.country}
           />
@@ -890,7 +890,7 @@ export function UserDetail({
             <RailCard title="Account">
               <KvRow label="Account created">{formatDate(user.createdAt)}</KvRow>
               <KvRow label="External ID">
-                {externalId ? <span className="font-mono text-[11px]">{externalId}</span> : EM_DASH}
+                {externalId ? <span className="font-mono text-[11px]">{externalId}</span> : NO_VALUE}
               </KvRow>
               {canManageUsers && (
                 <ChangelogSubscriptionControl principalId={user.principalId as PrincipalId} />
