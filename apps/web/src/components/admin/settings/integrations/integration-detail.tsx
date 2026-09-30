@@ -1,4 +1,5 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { IntegrationSetupCard } from './integration-setup-card'
@@ -9,6 +10,7 @@ import type {
   IntegrationSettingsEntry,
 } from './integration-settings-registry'
 import { IntegrationSyncHistory } from './integration-sync-history'
+import { StateBadge } from '@/components/shared/state-badge'
 import { Button } from '@/components/ui/button'
 import { DocsLink } from '@/components/ui/docs-link'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -75,6 +77,13 @@ export function IntegrationDetail({
 
   const { catalog, Icon, ConnectionActions, setup } = entry
   const status = integration?.status ?? null
+  // A connect that finishes here swaps the setup card for the connected
+  // panels, so the form that ran it unmounts before it can report success.
+  const hadIntegration = useRef(integration !== null)
+  useEffect(() => {
+    if (!hadIntegration.current && status === 'active') toast.success('Connected successfully')
+    hadIntegration.current = integration !== null
+  }, [integration, status])
   const isConnected = status === 'active'
   const isPaused = status === 'paused'
   const hasCredentials = platformCredentialFields.length > 0
@@ -102,9 +111,7 @@ export function IntegrationDetail({
     : emptyHealth
 
   const description =
-    [isPaused ? 'Paused' : null, workspaceName ? `Connected to ${workspaceName}` : null]
-      .filter(Boolean)
-      .join('. ') || catalog.description
+    (workspaceName ? `Connected to ${workspaceName}` : null) || catalog.description
 
   const connection = (
     <Suspense fallback={null}>
@@ -126,6 +133,7 @@ export function IntegrationDetail({
       }
       actions={
         <div className="flex flex-wrap items-center justify-end gap-3">
+          {isPaused && <StateBadge state="off" />}
           {catalog.docsUrl && (
             <DocsLink href={catalog.docsUrl} className="text-[13px] text-muted-foreground">
               Learn how to set up {catalog.name}
@@ -144,7 +152,7 @@ export function IntegrationDetail({
         </div>
       }
     >
-      {integration && (
+      {integration && status !== 'pending' && (
         <SettingsCard>
           <IntegrationHealthPanel
             embedded

@@ -13,12 +13,17 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
 }))
+const toastSuccess = vi.fn()
+vi.mock('sonner', () => ({ toast: { success: (m: string) => toastSuccess(m), error: vi.fn() } }))
 vi.mock('../platform-credentials-dialog', () => ({ PlatformCredentialsDialog: () => null }))
 vi.mock('../integration-sync-history', () => ({ IntegrationSyncHistory: () => null }))
 
 const { IntegrationDetail } = await import('../integration-detail')
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  toastSuccess.mockClear()
+})
 
 function makeEntry(over: Partial<IntegrationSettingsEntry> = {}): IntegrationSettingsEntry {
   return {
@@ -153,5 +158,43 @@ describe('IntegrationDetail once connected', () => {
   it('names the workspace in the description', () => {
     renderDetail({ data: { ...baseData, integration: connected } })
     expect(screen.getByText('Connected to Acme')).toBeInTheDocument()
+  })
+})
+
+describe('IntegrationDetail states', () => {
+  it('hides Health while the integration is pending', () => {
+    renderDetail({ data: { ...baseData, integration: { ...connected, status: 'pending' } } })
+    expect(screen.queryByText('Health')).toBeNull()
+  })
+
+  it('shows a paused integration as "Off", the same as the index', () => {
+    renderDetail({ data: { ...baseData, integration: { ...connected, status: 'paused' } } })
+    expect(screen.getByText('Off')).toBeInTheDocument()
+    expect(screen.queryByText(/Paused/)).toBeNull()
+    expect(screen.getByText('Health')).toBeInTheDocument()
+  })
+
+  it('confirms a connect that finishes on this page, even though the setup card unmounts', () => {
+    const view = renderDetail({ entry: makeEntry({ connectForm: true }) })
+    expect(toastSuccess).not.toHaveBeenCalled()
+    view.rerender(
+      <IntlProvider locale="en" defaultLocale="en">
+        <QueryClientProvider client={new QueryClient()}>
+          <IntegrationDetail
+            type="slack"
+            entry={makeEntry({ connectForm: true })}
+            data={{ ...baseData, integration: connected }}
+            historyRequested={false}
+            onHistoryHandled={() => {}}
+          />
+        </QueryClientProvider>
+      </IntlProvider>
+    )
+    expect(toastSuccess).toHaveBeenCalledWith('Connected successfully')
+  })
+
+  it('does not announce a connect when the page simply loads connected', () => {
+    renderDetail({ data: { ...baseData, integration: connected } })
+    expect(toastSuccess).not.toHaveBeenCalled()
   })
 })
