@@ -59,6 +59,43 @@ describe('autosave mutation errors', () => {
   })
 })
 
+describe('autosave revision conflicts', () => {
+  function conflictError() {
+    return Object.assign(new Error('changed in another session'), { statusCode: 409 })
+  }
+
+  it('leaves a conflict to the page when the mutation asks to handle it', async () => {
+    const client = clientWithHandler()
+    const mutation = client.getMutationCache().build(client, {
+      meta: { ...AUTOSAVE, onConflict: true },
+      mutationFn: async () => Promise.reject(conflictError()),
+    })
+    await expect(mutation.execute(undefined)).rejects.toThrow('changed in another session')
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(toastError).not.toHaveBeenCalled()
+  })
+
+  it('still toasts other failures of a mutation that handles conflicts', async () => {
+    const client = clientWithHandler()
+    const mutation = client.getMutationCache().build(client, {
+      meta: { ...AUTOSAVE, onConflict: true },
+      mutationFn: async () => Promise.reject(new Error('nope')),
+    })
+    await expect(mutation.execute(undefined)).rejects.toThrow('nope')
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+  })
+
+  it('toasts a conflict when the mutation does not handle it', async () => {
+    const client = clientWithHandler()
+    const mutation = client.getMutationCache().build(client, {
+      meta: AUTOSAVE,
+      mutationFn: async () => Promise.reject(conflictError()),
+    })
+    await expect(mutation.execute(undefined)).rejects.toThrow()
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+  })
+})
+
 describe('settings autosave hooks', () => {
   const source = readFileSync(new URL('../mutations/settings.ts', import.meta.url), 'utf8')
   const body = (hook: string) => {
@@ -135,4 +172,30 @@ describe('autosave error ownership', () => {
     await expect(other.execute(undefined)).rejects.toThrow()
     await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
   })
+})
+
+describe('assistant settings hooks', () => {
+  const source = readFileSync(new URL('../mutations/assistant.ts', import.meta.url), 'utf8')
+  const body = (hook: string) => {
+    const start = source.indexOf(`export function ${hook}(`)
+    expect(start, hook).toBeGreaterThan(-1)
+    const end = source.indexOf('\nexport function', start + 1)
+    return source.slice(start, end === -1 ? undefined : end)
+  }
+
+  it.each([
+    'useUpdateAssistantAgentKnowledge',
+    'useUpdateAssistantCopilotKnowledge',
+    'useUpdateAssistantCopilotCapabilities',
+    'useUpdateWidgetAssistantDeployment',
+  ])('%s is tagged as an autosave', (hook) => {
+    expect(body(hook)).toContain('meta: AUTOSAVE')
+  })
+
+  it.each(['useUpdateAssistantIdentity', 'useUpdateAssistantVoice'])(
+    '%s is an autosave that handles revision conflicts',
+    (hook) => {
+      expect(body(hook)).toContain('meta: { ...AUTOSAVE, onConflict: true }')
+    }
+  )
 })

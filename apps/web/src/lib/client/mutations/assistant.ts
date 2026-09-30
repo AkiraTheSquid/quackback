@@ -18,6 +18,7 @@ import {
   updateAssistantCopilotCapabilitiesFn,
   updateWidgetAssistantDeploymentFn,
 } from '@/lib/server/functions/assistant-settings'
+import { AUTOSAVE } from '@/lib/client/autosave'
 import { assistantKeys } from '@/lib/client/queries/assistant'
 import { settingsQueries } from '@/lib/client/queries/settings'
 
@@ -86,6 +87,7 @@ export function useReorderGuidanceRules() {
 export function useUpdateAssistantIdentity() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { ...AUTOSAVE, onConflict: true },
     mutationFn: (data: Parameters<typeof updateAssistantIdentityFn>[0]['data']) =>
       updateAssistantIdentityFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -95,6 +97,7 @@ export function useUpdateAssistantIdentity() {
 export function useUpdateAssistantVoice() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { ...AUTOSAVE, onConflict: true },
     mutationFn: (data: Parameters<typeof updateAssistantVoiceFn>[0]['data']) =>
       updateAssistantVoiceFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -104,6 +107,7 @@ export function useUpdateAssistantVoice() {
 export function useUpdateAssistantAgentKnowledge() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateAssistantAgentKnowledgeFn>[0]['data']) =>
       updateAssistantAgentKnowledgeFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -122,6 +126,7 @@ export function useUpdateAssistantToolRules() {
 export function useUpdateAssistantCopilotKnowledge() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateAssistantCopilotKnowledgeFn>[0]['data']) =>
       updateAssistantCopilotKnowledgeFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -131,6 +136,7 @@ export function useUpdateAssistantCopilotKnowledge() {
 export function useUpdateAssistantCopilotCapabilities() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateAssistantCopilotCapabilitiesFn>[0]['data']) =>
       updateAssistantCopilotCapabilitiesFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -140,6 +146,7 @@ export function useUpdateAssistantCopilotCapabilities() {
 export function useUpdateWidgetAssistantDeployment() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateWidgetAssistantDeploymentFn>[0]['data']) =>
       updateWidgetAssistantDeploymentFn({ data }),
     onSuccess: () => {
