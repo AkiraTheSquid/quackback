@@ -42,6 +42,11 @@ describe('SettingsPage', () => {
     expect(screen.getByText('One board')).toBeInTheDocument()
   })
 
+  it('passes a logo through to the header', () => {
+    renderPage(<SettingsPage title="Slack" logo={<svg data-testid="logo" />} />)
+    expect(screen.getByTestId('logo')).toBeInTheDocument()
+  })
+
   it('rejects giving both or neither of page and title', () => {
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {})
     // @ts-expect-error both given

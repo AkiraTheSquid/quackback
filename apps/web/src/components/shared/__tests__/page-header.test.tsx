@@ -33,6 +33,12 @@ describe('PageHeader', () => {
     expect(screen.queryByTestId('tile')).toBeNull()
   })
 
+  it('renders a logo left of the title and keeps it out of the heading text', () => {
+    render(<PageHeader title="Slack" logo={<svg data-testid="logo" />} />)
+    expect(screen.getByTestId('logo')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Slack' })).toBeInTheDocument()
+  })
+
   it('renders no breadcrumb row without crumbs', () => {
     render(<PageHeader title="General" />)
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull()

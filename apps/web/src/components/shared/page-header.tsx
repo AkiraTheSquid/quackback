@@ -17,6 +17,8 @@ interface PageHeaderProps {
   badge?: React.ReactNode
   /** The parents of the current page, nearest to the root first. */
   crumbs?: PageCrumb[]
+  /** A small brand logo shown left of the title (integration pages). Not an icon tile. */
+  logo?: React.ReactNode
   /** Save feedback, rendered left of `actions`. */
   status?: React.ReactNode
   actions?: React.ReactNode
@@ -28,6 +30,7 @@ export function PageHeader({
   description,
   badge,
   crumbs,
+  logo,
   status,
   actions,
   className,
@@ -62,8 +65,9 @@ export function PageHeader({
       )}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          {badge ? (
-            <div className="flex items-center gap-2">
+          {logo || badge ? (
+            <div className="flex items-center gap-2.5">
+              {logo}
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
               {badge}
             </div>
