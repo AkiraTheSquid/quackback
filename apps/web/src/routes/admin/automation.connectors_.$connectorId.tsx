@@ -9,13 +9,14 @@ import {
   PolicyDefaultSelect,
   PolicyDial,
 } from '@/components/admin/automation/connectors/policy-dial'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DefaultErrorPage } from '@/components/shared/error-page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { BackLink } from '@/components/ui/back-link'
 import { connectorQueries } from '@/lib/client/queries/assistant-connectors'
 import {
   useDeleteConnector,
@@ -80,14 +81,11 @@ function ToolGroup({
             <div className="flex flex-wrap items-center gap-1.5 text-[13px] font-medium">
               {tool.name}
               {tool.destructive && (
-                <Badge
-                  size="sm"
-                  className="border-transparent bg-red-500/10 text-red-700 dark:text-red-400"
-                >
-                  destructive
+                <Badge size="sm" variant="destructive">
+                  Destructive
                 </Badge>
               )}
-              {tool.isNew && <Badge size="sm">new</Badge>}
+              {tool.isNew && <Badge size="sm">New</Badge>}
             </div>
             {tool.description && (
               <p className="truncate text-[11.5px] text-muted-foreground">{tool.description}</p>
@@ -108,10 +106,19 @@ function ToolGroup({
 
 function ConnectorDetailPage() {
   const intl = useIntl()
+  const connectorCrumbs = [
+    {
+      label: intl.formatMessage({
+        id: 'automation.connectors.title',
+        defaultMessage: 'Connectors',
+      }),
+      to: '/admin/automation/connectors',
+    },
+  ]
   const { connectorId } = Route.useParams()
   const navigate = useNavigate()
   const detail = useQuery(connectorQueries.detail(connectorId))
-  const update = useUpdateConnector()
+  const update = useUpdateConnector({ autosave: true })
   const refresh = useRefreshConnector()
   const remove = useDeleteConnector()
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -127,12 +134,11 @@ function ConnectorDetailPage() {
   }
   if (!connector) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <BackLink to="/admin/automation/connectors">
-          {intl.formatMessage({ id: 'automation.connectors.title', defaultMessage: 'Connectors' })}
-        </BackLink>
-        <p className="text-sm text-muted-foreground">Connector not found.</p>
-      </div>
+      <SettingsPage title="Connector not found" area="automation" crumbs={connectorCrumbs}>
+        <p className="text-sm text-muted-foreground">
+          This connector does not exist or was disconnected.
+        </p>
+      </SettingsPage>
     )
   }
 
@@ -146,38 +152,28 @@ function ConnectorDetailPage() {
       write?: ConnectorToolPolicy
     }
   ) => {
-    update.mutate(
-      {
-        id: connector.id,
-        toolPolicies: {
-          groupDefaults: {
-            read: group?.read ?? connector.toolPolicies.groupDefaults.read,
-            write: group?.write ?? connector.toolPolicies.groupDefaults.write,
-          },
-          tools: nextTools,
+    update.mutate({
+      id: connector.id,
+      toolPolicies: {
+        groupDefaults: {
+          read: group?.read ?? connector.toolPolicies.groupDefaults.read,
+          write: group?.write ?? connector.toolPolicies.groupDefaults.write,
         },
+        tools: nextTools,
       },
-      { onError: () => toast.error('Could not save permissions') }
-    )
+    })
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <BackLink to="/admin/automation/connectors">
-        {intl.formatMessage({ id: 'automation.connectors.title', defaultMessage: 'Connectors' })}
-      </BackLink>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex gap-3">
-          <ConnectorMark name={connector.name} size="lg" />
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[17px] font-semibold">{connector.name}</h1>
-              <ConnectorStatusBadge status={connector.status} />
-            </div>
-            <p className="font-mono text-xs text-muted-foreground">{connector.url}</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+    <SettingsPage
+      title={connector.name}
+      area="automation"
+      crumbs={connectorCrumbs}
+      logo={<ConnectorMark name={connector.name} size="lg" />}
+      badge={<ConnectorStatusBadge status={connector.status} />}
+      description={connector.url}
+      actions={
+        <>
           <Button
             type="button"
             size="sm"
@@ -194,56 +190,39 @@ function ConnectorDetailPage() {
           <Button type="button" size="sm" variant="outline" onClick={() => setConfirmDelete(true)}>
             Disconnect
           </Button>
-        </div>
-      </div>
-
-      <SettingsCard
-        title="Available to"
-        description="Which Quinn agents can use this connector's tools."
-      >
-        <div className="space-y-3">
+        </>
+      }
+    >
+      <SettingsCard title="Available to">
+        <SettingRows>
           {(['agent', 'copilot'] as const).map((agent) => (
-            <div
+            <SettingRow
               key={agent}
-              className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5"
-            >
-              <div>
-                <div id={`connector-available-${agent}`} className="text-[13px] font-medium">
-                  {agent === 'agent' ? 'Agent' : 'Copilot'}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {agent === 'agent'
-                    ? 'Customer-facing. Approvals land as inbox cards for your team.'
-                    : 'Teammate-facing. Approvals appear inline in the Copilot panel.'}
-                </p>
-              </div>
-              <Switch
-                aria-labelledby={`connector-available-${agent}`}
-                checked={connector.assignments[agent]}
-                onCheckedChange={(checked) =>
-                  update.mutate(
-                    {
+              label={agent === 'agent' ? 'Agent' : 'Copilot'}
+              htmlFor={`connector-available-${agent}`}
+              description={
+                agent === 'agent'
+                  ? 'Customer-facing. Approvals land as inbox cards for your team.'
+                  : 'Teammate-facing. Approvals appear inline in the Copilot panel.'
+              }
+              control={
+                <Switch
+                  id={`connector-available-${agent}`}
+                  checked={connector.assignments[agent]}
+                  onCheckedChange={(checked) =>
+                    update.mutate({
                       id: connector.id,
                       assignments: { ...connector.assignments, [agent]: checked },
-                    },
-                    {
-                      onError: () => {
-                        toast.error('Could not update availability')
-                      },
-                    }
-                  )
-                }
-              />
-            </div>
+                    })
+                  }
+                />
+              }
+            />
           ))}
-        </div>
+        </SettingRows>
       </SettingsCard>
 
-      <SettingsCard
-        title="Tool permissions"
-        description="Choose when Quinn is allowed to use each tool."
-        contentClassName="p-0"
-      >
+      <SettingsCard title="Tool permissions" contentClassName="p-0">
         <ToolGroup
           title="Read-only tools"
           tools={reads}
@@ -275,6 +254,6 @@ function ConnectorDetailPage() {
           })
         }}
       />
-    </div>
+    </SettingsPage>
   )
 }

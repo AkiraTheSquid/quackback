@@ -23,6 +23,8 @@ type SettingsPageProps = PageTitle & {
   /** `form` is a single column of settings; `wide` is for tables, card grids and live previews. */
   width?: 'form' | 'wide'
   area?: 'settings' | 'automation'
+  /** False on the mobile index page, which is the back link's own target. */
+  backLink?: boolean
   children?: ReactNode
 }
 
@@ -48,6 +50,7 @@ export function SettingsPage({
   actions,
   width = 'form',
   area,
+  backLink = true,
   children,
 }: SettingsPageProps) {
   const intl = useIntl()
@@ -71,7 +74,7 @@ export function SettingsPage({
   const hasBackCrumb = crumbs?.some((crumb) => crumb.to !== undefined) ?? false
   return (
     <div data-settings-page-body="" className={cn('space-y-6', WIDTH_CLASS[width])}>
-      {!hasBackCrumb && (
+      {backLink && !hasBackCrumb && (
         <div className="lg:hidden">
           <BackLink to={back.to}>{back.label}</BackLink>
         </div>

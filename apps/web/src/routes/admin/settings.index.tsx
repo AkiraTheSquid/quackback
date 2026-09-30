@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { SettingsNav } from '@/components/admin/settings/settings-nav'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { useMediaQuery } from '@/lib/client/hooks/use-media-query'
 
 export const Route = createFileRoute('/admin/settings/')({
@@ -23,8 +23,9 @@ function SettingsIndexPage() {
 
   return (
     <div className="lg:hidden">
-      <PageHeader title="Settings" className="mb-6" />
-      <SettingsNav />
+      <SettingsPage title="Settings" backLink={false}>
+        <SettingsNav />
+      </SettingsPage>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
 import { AutomationNav } from '@/components/admin/automation/automation-nav'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { useMediaQuery } from '@/lib/client/hooks/use-media-query'
 import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
@@ -62,14 +62,16 @@ function AutomationIndexPage() {
 
   return (
     <div className="lg:hidden">
-      <PageHeader
+      <SettingsPage
         title={intl.formatMessage({
           id: 'automation.nav.label',
           defaultMessage: 'AI & Automation',
         })}
-        className="mb-6"
-      />
-      <AutomationNav />
+        area="automation"
+        backLink={false}
+      >
+        <AutomationNav />
+      </SettingsPage>
     </div>
   )
 }

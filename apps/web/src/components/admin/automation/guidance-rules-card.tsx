@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { SettingRow } from '@/components/admin/settings/setting-row'
 import { Textarea } from '@/components/ui/textarea'
 import { assistantQueries } from '@/lib/client/queries/assistant'
 import {
@@ -288,7 +289,7 @@ export function GuidanceRulesCard({ agent }: { agent: AssistantAgentKind }) {
                   defaultMessage: 'Add guidance for a specific situation',
                 })}
               </p>
-              <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {intl.formatMessage({
                   id: 'automation.agent.guidance.emptyDescription',
                   defaultMessage:
@@ -328,21 +329,12 @@ export function GuidanceRulesCard({ agent }: { agent: AssistantAgentKind }) {
                 const stat = statsQuery.data?.[rule.id]
                 return (
                   <article key={rule.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
-                    <div className="flex items-start gap-3">
-                      <Switch
-                        checked={rule.enabled}
-                        onCheckedChange={() => void toggleEnabled(rule)}
-                        aria-label={intl.formatMessage(
-                          {
-                            id: 'automation.agent.guidance.enableAria',
-                            defaultMessage: 'Enable {name}',
-                          },
-                          { name: rule.name }
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-medium">{rule.name}</h3>
+                    <div className="min-w-0">
+                      <SettingRow
+                        className="py-0"
+                        label={rule.name}
+                        htmlFor={`guidance-enabled-${rule.id}`}
+                        badge={
                           <Badge variant="outline" size="sm">
                             {rule.appliesWhen
                               ? intl.formatMessage({
@@ -354,14 +346,30 @@ export function GuidanceRulesCard({ agent }: { agent: AssistantAgentKind }) {
                                   defaultMessage: 'Always on',
                                 })}
                           </Badge>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {rule.appliesWhen ??
-                            intl.formatMessage({
-                              id: 'automation.agent.guidance.everyConversation',
-                              defaultMessage: 'Applies to every eligible customer conversation.',
-                            })}
-                        </p>
+                        }
+                        description={
+                          rule.appliesWhen ??
+                          intl.formatMessage({
+                            id: 'automation.agent.guidance.everyConversation',
+                            defaultMessage: 'Applies to every eligible customer conversation.',
+                          })
+                        }
+                        control={
+                          <Switch
+                            id={`guidance-enabled-${rule.id}`}
+                            checked={rule.enabled}
+                            onCheckedChange={() => void toggleEnabled(rule)}
+                            aria-label={intl.formatMessage(
+                              {
+                                id: 'automation.agent.guidance.enableAria',
+                                defaultMessage: 'Enable {name}',
+                              },
+                              { name: rule.name }
+                            )}
+                          />
+                        }
+                      />
+                      <div>
                         <p className="mt-2 line-clamp-2 text-sm">{rule.instruction}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           <span>
@@ -705,7 +713,7 @@ function GuidanceRuleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-[42rem]">
         <DialogHeader>
           <DialogTitle>
             {rule
@@ -905,23 +913,20 @@ function GuidanceRuleDialog({
             )}
           </div>
 
-          <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border p-3">
-            <div>
-              <Label htmlFor="guidance-enabled" className="cursor-pointer">
-                {intl.formatMessage({
-                  id: 'automation.agent.guidance.enabledLabel',
-                  defaultMessage: 'Enabled',
-                })}
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {intl.formatMessage({
-                  id: 'automation.agent.guidance.enabledHelp',
-                  defaultMessage: 'Disabled guidance remains saved but is not applied.',
-                })}
-              </p>
-            </div>
-            <Switch id="guidance-enabled" checked={enabled} onCheckedChange={setEnabled} />
-          </div>
+          <SettingRow
+            label={intl.formatMessage({
+              id: 'automation.agent.guidance.enabledLabel',
+              defaultMessage: 'Enabled',
+            })}
+            htmlFor="guidance-enabled"
+            description={intl.formatMessage({
+              id: 'automation.agent.guidance.enabledHelp',
+              defaultMessage: 'Disabled guidance remains saved but is not applied.',
+            })}
+            control={
+              <Switch id="guidance-enabled" checked={enabled} onCheckedChange={setEnabled} />
+            }
+          />
 
           {error && (
             <p role="alert" className="text-sm text-destructive">

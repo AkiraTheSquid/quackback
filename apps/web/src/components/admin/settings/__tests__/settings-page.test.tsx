@@ -107,6 +107,11 @@ describe('SettingsPage', () => {
     expect(link.parentElement?.className).toContain('lg:hidden')
   })
 
+  it('omits the back link on an index page that is itself the target', () => {
+    renderPage(<SettingsPage title="Settings" backLink={false} />)
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull()
+  })
+
   it('derives the automation area from an automation page path', () => {
     renderPage(<SettingsPage page="/admin/automation/skills" />)
     expect(screen.getByRole('link', { name: 'AI & Automation' }).getAttribute('href')).toBe(
