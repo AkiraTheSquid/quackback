@@ -48,7 +48,7 @@ describe('HeaderLinksCard', () => {
     expect(mutate).toHaveBeenCalledWith({ headerLinks: [{ label: 'Blog', url: '/docs' }] })
   })
 
-  it('saves right away when a link is removed', () => {
+  it('asks before removing a saved link, then saves right away', async () => {
     render(
       <HeaderLinksCard
         links={[
@@ -58,6 +58,67 @@ describe('HeaderLinksCard', () => {
       />
     )
     fireEvent.click(screen.getByRole('button', { name: 'Remove link 1' }))
+    expect(mutate).not.toHaveBeenCalled()
+    expect(screen.getByText('Delete link?')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete link' }))
     expect(mutate).toHaveBeenCalledWith({ headerLinks: [{ label: 'Blog', url: '/blog' }] })
+  })
+
+  it('keeps the link when the removal is cancelled', () => {
+    render(<HeaderLinksCard links={[{ label: 'Docs', url: '/docs' }]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(mutate).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Link 1 label')).toBeTruthy()
+  })
+
+  it('removes a blank row without asking', () => {
+    render(<HeaderLinksCard links={[]} />)
+    fireEvent.click(screen.getByRole('button', { name: /Add link/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link 1' }))
+    expect(screen.queryByText('Delete link?')).toBeNull()
+    expect(screen.getByText('No header links.')).toBeTruthy()
+  })
+
+  it('does not save a URL the server would reject, and says so on that row', () => {
+    const { unmount } = render(<HeaderLinksCard links={[{ label: 'Docs', url: '/docs' }]} />)
+    const url = screen.getByLabelText('Link 1 URL')
+    fireEvent.change(url, { target: { value: 'example.com' } })
+    fireEvent.blur(url)
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(mutate).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert').textContent).toMatch(/http/)
+    unmount()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('saves every valid edit once the invalid row is fixed', () => {
+    render(
+      <HeaderLinksCard
+        links={[
+          { label: 'Docs', url: '/docs' },
+          { label: 'Blog', url: '/blog' },
+        ]}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Link 1 label'), { target: { value: 'Guides' } })
+    fireEvent.change(screen.getByLabelText('Link 2 URL'), { target: { value: 'blog' } })
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(mutate).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Link 2 URL'), { target: { value: 'https://blog.dev' } })
+    act(() => {
+      vi.advanceTimersByTime(900)
+    })
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(mutate).toHaveBeenCalledWith({
+      headerLinks: [
+        { label: 'Guides', url: '/docs' },
+        { label: 'Blog', url: 'https://blog.dev' },
+      ],
+    })
   })
 })
