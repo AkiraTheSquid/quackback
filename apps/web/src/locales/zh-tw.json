@@ -1058,10 +1058,9 @@
   "automation.skills.title": "Skills",
   "automation.skills.description": "Procedures Quinn follows for specific situations. Loaded only when relevant.",
   "automation.skills.add": "New skill",
-  "automation.skills.empty": "No skills yet. Add a procedure the agents can follow.",
+  "automation.skills.empty": "新增一個智慧代理可以遵循的流程。",
   "automation.nav.new": "New",
   "automation.connectors.auth.oauthHint": "OAuth is negotiated with the server on connect. Pick Bearer token for servers that use a static API key.",
-  "automation.skills.footer": "Quinn always sees each skill's name and when to use it; the full instructions load only when a conversation calls for them.",
   "automation.skills.whenHint": "Always visible to Quinn. Keep it to one line; it decides when the skill loads.",
   "automation.skills.instructionsHint": "Markdown. You can mention connector or built-in tools by name.",
   "automation.skills.edit": "Edit",
@@ -1158,5 +1157,6 @@
   "widget.changelog.new": "新",
   "widget.shell.tab.messages.unread": "{count} 則未讀",
   "automation.connectors.empty.title": "還沒有連接器",
-  "automation.builtinTools.agent": "Agent"
+  "automation.builtinTools.agent": "Agent",
+  "automation.skills.empty.title": "還沒有技能"
 }

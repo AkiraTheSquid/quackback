@@ -3,8 +3,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { toast } from 'sonner'
-import { BookOpenIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { BookOpenIcon } from '@heroicons/react/24/outline'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { EmptyState } from '@/components/shared/empty-state'
+import { NewButton } from '@/components/shared/new-button'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DefaultErrorPage } from '@/components/shared/error-page'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +32,6 @@ import {
 } from '@/lib/client/mutations/assistant-skills'
 import { skillInputSchema, type SkillDTO } from '@/lib/shared/assistant/skills'
 import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
-import { BackLink } from '@/components/ui/back-link'
 
 export const Route = createFileRoute('/admin/automation/skills')({
   beforeLoad: ({ context }) => {
@@ -51,6 +54,7 @@ function SkillsPage() {
   const list = useQuery(skillQueries.list())
   const create = useCreateSkill()
   const update = useUpdateSkill()
+  const toggle = useUpdateSkill({ autosave: true })
   const remove = useDeleteSkill()
   const [editor, setEditor] = useState<Partial<SkillDTO> | 'new' | null>(null)
   const [deleting, setDeleting] = useState<SkillDTO | null>(null)
@@ -122,37 +126,23 @@ function SkillsPage() {
 
   const skills = list.data?.skills ?? []
 
-  return (
-    <div className="max-w-3xl space-y-6">
-      <div className="lg:hidden">
-        <BackLink to="/admin/automation">
-          {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-        </BackLink>
-      </div>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <BookOpenIcon className="size-[18px]" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold">
-              {intl.formatMessage({ id: 'automation.skills.title', defaultMessage: 'Skills' })}
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {intl.formatMessage({
-                id: 'automation.skills.description',
-                defaultMessage:
-                  'Procedures Quinn follows for specific situations. Loaded only when relevant.',
-              })}
-            </p>
-          </div>
-        </div>
-        <Button size="sm" onClick={openNew}>
-          <PlusIcon className="size-4" />
-          {intl.formatMessage({ id: 'automation.skills.add', defaultMessage: 'New skill' })}
-        </Button>
-      </div>
+  const newButton = (
+    <NewButton noun="skill" onClick={openNew}>
+      {intl.formatMessage({ id: 'automation.skills.add', defaultMessage: 'New skill' })}
+    </NewButton>
+  )
 
+  return (
+    <SettingsPage
+      page="/admin/automation/skills"
+      area="automation"
+      description={intl.formatMessage({
+        id: 'automation.skills.description',
+        defaultMessage:
+          'Procedures Quinn follows for specific situations. Loaded only when relevant.',
+      })}
+      actions={newButton}
+    >
       {list.isPending ? (
         <p className="text-sm text-muted-foreground">
           {intl.formatMessage({
@@ -168,58 +158,66 @@ function SkillsPage() {
           })}
         </p>
       ) : (
-        <SettingsCard contentClassName={skills.length === 0 ? undefined : 'p-0'}>
+        <SettingsCard contentClassName={skills.length === 0 ? 'p-0' : undefined}>
           {skills.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {intl.formatMessage({
-                id: 'automation.skills.empty',
-                defaultMessage: 'No skills yet. Add a procedure the agents can follow.',
+            <EmptyState
+              size="compact"
+              icon={BookOpenIcon}
+              title={intl.formatMessage({
+                id: 'automation.skills.empty.title',
+                defaultMessage: 'No skills yet',
               })}
-            </p>
+              description={intl.formatMessage({
+                id: 'automation.skills.empty',
+                defaultMessage: 'Add a procedure the agents can follow.',
+              })}
+              action={newButton}
+            />
           ) : (
-            skills.map((skill) => (
-              <div
-                key={skill.id}
-                className="flex items-center gap-3 border-b border-border/60 px-4 py-3.5 last:border-0 sm:px-[18px]"
-              >
-                <Switch
-                  checked={skill.enabled}
-                  aria-label={skill.enabled ? 'Enabled' : 'Disabled'}
-                  onCheckedChange={(checked) =>
-                    update.mutate(
-                      {
-                        id: skill.id,
-                        name: skill.name,
-                        whenToUse: skill.whenToUse,
-                        instructions: skill.instructions,
-                        assignments: skill.assignments,
-                        enabled: checked,
-                      },
-                      { onError: () => toast.error('Could not update skill') }
-                    )
+            <SettingRows>
+              {skills.map((skill) => (
+                <SettingRow
+                  key={skill.id}
+                  label={skill.name}
+                  description={skill.whenToUse}
+                  htmlFor={`skill-enabled-${skill.id}`}
+                  control={
+                    <>
+                      {skill.assignments.agent && <Badge size="sm">Agent</Badge>}
+                      {skill.assignments.copilot && <Badge size="sm">Copilot</Badge>}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEdit(skill)}
+                      >
+                        {intl.formatMessage({
+                          id: 'automation.skills.edit',
+                          defaultMessage: 'Edit',
+                        })}
+                      </Button>
+                      <Switch
+                        id={`skill-enabled-${skill.id}`}
+                        checked={skill.enabled}
+                        onCheckedChange={(checked) =>
+                          toggle.mutate({
+                            id: skill.id,
+                            name: skill.name,
+                            whenToUse: skill.whenToUse,
+                            instructions: skill.instructions,
+                            assignments: skill.assignments,
+                            enabled: checked,
+                          })
+                        }
+                      />
+                    </>
                   }
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13.5px] font-semibold">{skill.name}</div>
-                  <p className="truncate text-xs text-muted-foreground">{skill.whenToUse}</p>
-                </div>
-                {skill.assignments.agent && <Badge size="sm">Agent</Badge>}
-                {skill.assignments.copilot && <Badge size="sm">Copilot</Badge>}
-                <Button type="button" size="sm" variant="ghost" onClick={() => openEdit(skill)}>
-                  {intl.formatMessage({ id: 'automation.skills.edit', defaultMessage: 'Edit' })}
-                </Button>
-              </div>
-            ))
+              ))}
+            </SettingRows>
           )}
         </SettingsCard>
       )}
-      <p className="text-xs text-muted-foreground">
-        {intl.formatMessage({
-          id: 'automation.skills.footer',
-          defaultMessage:
-            "Quinn always sees each skill's name and when to use it; the full instructions load only when a conversation calls for them.",
-        })}
-      </p>
 
       <Dialog open={editor !== null} onOpenChange={(open) => !open && setEditor(null)}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
@@ -304,14 +302,14 @@ function SkillsPage() {
                 className="me-auto"
                 onClick={() => setDeleting(editor as SkillDTO)}
               >
-                Delete
+                Delete skill
               </Button>
             )}
             <Button type="button" variant="outline" onClick={() => setEditor(null)}>
               {intl.formatMessage({ id: 'common.cancel', defaultMessage: 'Cancel' })}
             </Button>
             <Button type="button" onClick={save}>
-              Save
+              {editor === 'new' ? 'Create skill' : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -320,9 +318,9 @@ function SkillsPage() {
       <ConfirmDialog
         open={Boolean(deleting)}
         onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete this skill?"
+        title="Delete skill?"
         description="The agents will stop seeing it in the catalogue."
-        confirmLabel="Delete"
+        confirmLabel="Delete skill"
         variant="destructive"
         onConfirm={() => {
           if (!deleting) return
@@ -335,6 +333,6 @@ function SkillsPage() {
           })
         }}
       />
-    </div>
+    </SettingsPage>
   )
 }

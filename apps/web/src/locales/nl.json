@@ -1058,10 +1058,9 @@
   "automation.skills.title": "Vaardigheden",
   "automation.skills.description": "Procedures die Quinn volgt in specifieke situaties. Worden alleen geladen wanneer relevant.",
   "automation.skills.add": "Nieuwe vaardigheid",
-  "automation.skills.empty": "Nog geen vaardigheden. Voeg een procedure toe die de agents kunnen volgen.",
+  "automation.skills.empty": "Voeg een procedure toe die de agents kunnen volgen.",
   "automation.nav.new": "Nieuw",
   "automation.connectors.auth.oauthHint": "OAuth wordt bij het verbinden met de server onderhandeld. Kies Bearer-token voor servers met een vaste API-sleutel.",
-  "automation.skills.footer": "Quinn ziet altijd de naam van elke vaardigheid en wanneer die te gebruiken is; de volledige instructies worden pas geladen wanneer een gesprek daarom vraagt.",
   "automation.skills.whenHint": "Altijd zichtbaar voor Quinn. Beperk het tot één regel: dit bepaalt wanneer de vaardigheid wordt geladen.",
   "automation.skills.instructionsHint": "Markdown. Je kunt tools van koppelingen of ingebouwde tools bij naam noemen.",
   "automation.skills.edit": "Bewerken",
@@ -1158,5 +1157,6 @@
   "widget.changelog.new": "Nieuw",
   "widget.shell.tab.messages.unread": "{count} ongelezen",
   "automation.connectors.empty.title": "Nog geen connectors",
-  "automation.builtinTools.agent": "Agent"
+  "automation.builtinTools.agent": "Agent",
+  "automation.skills.empty.title": "Nog geen skills"
 }

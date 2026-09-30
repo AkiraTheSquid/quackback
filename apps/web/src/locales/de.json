@@ -1058,10 +1058,9 @@
   "automation.skills.title": "Skills",
   "automation.skills.description": "Abläufe, denen Quinn in bestimmten Situationen folgt. Werden nur geladen, wenn sie relevant sind.",
   "automation.skills.add": "Neuer Skill",
-  "automation.skills.empty": "Noch keine Skills. Füge einen Ablauf hinzu, dem die Agenten folgen können.",
+  "automation.skills.empty": "Füge ein Verfahren hinzu, dem die Agenten folgen können.",
   "automation.nav.new": "Neu",
   "automation.connectors.auth.oauthHint": "OAuth wird beim Verbinden mit dem Server ausgehandelt. Wähle Bearer-Token für Server mit statischem API-Schlüssel.",
-  "automation.skills.footer": "Quinn sieht immer den Namen jedes Skills und wann er zu verwenden ist; die vollständigen Anweisungen werden erst geladen, wenn eine Unterhaltung sie braucht.",
   "automation.skills.whenHint": "Für Quinn immer sichtbar. Halte es bei einer Zeile – davon hängt ab, wann der Skill geladen wird.",
   "automation.skills.instructionsHint": "Markdown. Du kannst Connector- oder integrierte Werkzeuge beim Namen nennen.",
   "automation.skills.edit": "Bearbeiten",
@@ -1158,5 +1157,6 @@
   "widget.changelog.new": "Neu",
   "widget.shell.tab.messages.unread": "{count} ungelesen",
   "automation.connectors.empty.title": "Noch keine Connectors",
-  "automation.builtinTools.agent": "Agent"
+  "automation.builtinTools.agent": "Agent",
+  "automation.skills.empty.title": "Noch keine Skills"
 }

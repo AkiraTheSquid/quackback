@@ -10,7 +10,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/automation.connectors_.$connectorId.tsx',
     'routes/admin/automation.index.tsx',
     'routes/admin/automation.performance.tsx',
-    'routes/admin/automation.skills.tsx',
     'routes/admin/settings.billing.tsx',
     'routes/admin/settings.billing_.checkout.tsx',
     'routes/admin/settings.domains.tsx',
@@ -26,7 +25,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
     'routes/admin/automation.connectors_.$connectorId.tsx',
     'routes/admin/automation.performance.tsx',
-    'routes/admin/automation.skills.tsx',
     'routes/admin/automation.workflows.tsx',
     'routes/admin/settings.billing.tsx',
     'routes/admin/settings.billing_.checkout.tsx',
@@ -35,7 +33,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   ],
   'registry-pages': [
     '/admin/automation/performance',
-    '/admin/automation/skills',
     '/admin/automation/workflows',
     '/admin/settings/billing',
     '/admin/settings/domains',
@@ -112,7 +109,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/statuses/status-list.tsx',
     'components/admin/settings/tickets/fields-editor.tsx',
     'routes/admin/automation.connectors_.$connectorId.tsx',
-    'routes/admin/automation.skills.tsx',
   ],
   palette: [
     'components/admin/automation/connectors/connector-mark.tsx',
