@@ -19,7 +19,7 @@ import {
 import { AUTOSAVE } from '@/lib/client/autosave'
 import { fetchOfficeHoursFn, updateOfficeHoursFn } from '@/lib/server/functions/settings'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
-import { SettingRow } from '@/components/admin/settings/setting-row'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Combobox } from '@/components/ui/combobox'
 import { Switch } from '@/components/ui/switch'
@@ -208,19 +208,21 @@ function OfficeHoursPage() {
     <SettingsPage page="/admin/settings/office-hours" crumbs={[{ label: 'Support' }]}>
       <SettingsCard title="Availability" description="Off means available 24/7.">
         <div className="space-y-5">
-          <SettingRow
-            label="Set office hours"
-            description="Customers see when you'll be back."
-            htmlFor="office-hours-enabled"
-            control={
-              <Switch
-                id="office-hours-enabled"
-                checked={schedule.enabled}
-                onCheckedChange={onToggleEnabled}
-                disabled={isBusy}
-              />
-            }
-          />
+          <SettingRows>
+            <SettingRow
+              label="Set office hours"
+              description="Customers see when you'll be back."
+              htmlFor="office-hours-enabled"
+              control={
+                <Switch
+                  id="office-hours-enabled"
+                  checked={schedule.enabled}
+                  onCheckedChange={onToggleEnabled}
+                  disabled={isBusy}
+                />
+              }
+            />
+          </SettingRows>
 
           {schedule.enabled && (
             <>

@@ -106,7 +106,7 @@ export function TicketTypesManager({
   }
 
   return (
-    <SettingsCard contentClassName="p-0">
+    <SettingsCard contentClassName="p-0 sm:p-0">
       <div className="divide-y divide-border/40">
         {TICKET_TYPES.map((category) => {
           const group = live.filter((t) => t.category === category)

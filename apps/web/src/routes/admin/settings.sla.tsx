@@ -26,7 +26,7 @@ import {
   type SlaPolicyDTO,
 } from '@/lib/server/functions/sla'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
-import { SettingRow } from '@/components/admin/settings/setting-row'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
 import { SlaRulesPopover } from '@/components/admin/settings/sla-rules-popover'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -179,45 +179,47 @@ function SlaSettingsPage() {
       crumbs={[{ label: 'Support' }]}
     >
       <SettingsCard>
-        <SettingRow
-          label={intl.formatMessage({
-            id: 'settings.sla.defaultPolicy',
-            defaultMessage: 'Default policy',
-          })}
-          description={intl.formatMessage({
-            id: 'settings.sla.defaultPolicyHint',
-            defaultMessage: 'Applied when a conversation starts',
-          })}
-          control={
-            <>
-              <SlaRulesPopover />
-              <Select
-                value={defaultSla?.policyId ?? DEFAULT_SLA_NONE}
-                onValueChange={(value) =>
-                  updateDefaultSla.mutate({ policyId: value === DEFAULT_SLA_NONE ? null : value })
-                }
-                disabled={updateDefaultSla.isPending}
-              >
-                <SelectTrigger size="sm" className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={DEFAULT_SLA_NONE}>
-                    {intl.formatMessage({
-                      id: 'settings.sla.defaultPolicyNone',
-                      defaultMessage: 'None',
-                    })}
-                  </SelectItem>
-                  {live.map((policy) => (
-                    <SelectItem key={policy.id} value={policy.id}>
-                      {policy.name}
+        <SettingRows>
+          <SettingRow
+            label={intl.formatMessage({
+              id: 'settings.sla.defaultPolicy',
+              defaultMessage: 'Default policy',
+            })}
+            description={intl.formatMessage({
+              id: 'settings.sla.defaultPolicyHint',
+              defaultMessage: 'Applied when a conversation starts',
+            })}
+            control={
+              <>
+                <SlaRulesPopover />
+                <Select
+                  value={defaultSla?.policyId ?? DEFAULT_SLA_NONE}
+                  onValueChange={(value) =>
+                    updateDefaultSla.mutate({ policyId: value === DEFAULT_SLA_NONE ? null : value })
+                  }
+                  disabled={updateDefaultSla.isPending}
+                >
+                  <SelectTrigger size="sm" className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={DEFAULT_SLA_NONE}>
+                      {intl.formatMessage({
+                        id: 'settings.sla.defaultPolicyNone',
+                        defaultMessage: 'None',
+                      })}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          }
-        />
+                    {live.map((policy) => (
+                      <SelectItem key={policy.id} value={policy.id}>
+                        {policy.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            }
+          />
+        </SettingRows>
       </SettingsCard>
 
       <SettingsCard
