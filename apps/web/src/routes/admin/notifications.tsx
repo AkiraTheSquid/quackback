@@ -6,7 +6,7 @@ import {
   EllipsisHorizontalIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
-import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid'
+import { PageHeader } from '@/components/shared/page-header'
 import { EmptyState } from '@/components/shared/empty-state'
 import { Spinner } from '@/components/shared/spinner'
 import { Button } from '@/components/ui/button'
@@ -52,7 +52,7 @@ interface NotificationsSearch {
 }
 
 export const Route = createFileRoute('/admin/notifications')({
-  // Only the literal 'unread' is accepted — anything else falls back to the
+  // Only the literal 'unread' is accepted; anything else falls back to the
   // default All tab rather than surfacing a broken filter state.
   validateSearch: (search: Record<string, unknown>): NotificationsSearch => ({
     filter: search.filter === 'unread' ? 'unread' : undefined,
@@ -60,7 +60,7 @@ export const Route = createFileRoute('/admin/notifications')({
   component: NotificationsPage,
 })
 
-function NotificationsPage() {
+export function NotificationsPage() {
   const navigate = Route.useNavigate()
   const { filter } = Route.useSearch()
   const unreadOnly = filter === 'unread'
@@ -74,119 +74,97 @@ function NotificationsPage() {
 
   const notifications = data?.pages.flatMap((page) => page.notifications) ?? []
   const unreadCount = data?.pages[0]?.unreadCount ?? 0
-  const total = data?.pages[0]?.total ?? 0
   const groups = groupNotificationsByDate(notifications)
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <BellIconSolid className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold">Notifications</h1>
-            <p className="text-xs text-muted-foreground">
-              {total === 0
-                ? 'No notifications'
-                : unreadCount > 0
-                  ? `${unreadCount} unread of ${total}`
-                  : `${total} notifications — all caught up`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Tabs
-            value={filter === 'unread' ? 'unread' : 'all'}
-            onValueChange={(value) => {
-              void navigate({
-                search: (prev) => ({ ...prev, filter: value === 'unread' ? 'unread' : undefined }),
-                replace: true,
-              })
-            }}
-            variant="line"
-          >
-            <TabsList className="w-fit">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="unread">
-                Unread
-                {unreadCount > 0 && (
-                  <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
-                    {unreadCount}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllAsRead.mutate()}
-              disabled={markAllAsRead.isPending}
-            >
-              Mark all as read
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="More notification actions">
-                <EllipsisHorizontalIcon className="h-5 w-5" />
+    <ScrollArea className="h-full">
+      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-16 sm:px-6">
+        <PageHeader
+          title="Notifications"
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAllAsRead.mutate()}
+                disabled={unreadCount === 0 || markAllAsRead.isPending}
+              >
+                Mark all as read
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setArchiveAllReadOpen(true)}>
-                Archive all read
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <AlertDialog open={archiveAllReadOpen} onOpenChange={setArchiveAllReadOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive all read notifications?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Read notifications will be removed from your list. This can't be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={archiveAllRead.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => archiveAllRead.mutate()}
-              disabled={archiveAllRead.isPending}
-            >
-              Archive
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <Spinner size="xl" />
-        </div>
-      ) : isError ? (
-        <EmptyState
-          icon={ExclamationTriangleIcon}
-          title="Failed to load"
-          description="We couldn't load your notifications. Please try again."
-          action={
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Retry
-            </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="More notification actions">
+                    <EllipsisHorizontalIcon className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setArchiveAllReadOpen(true)}>
+                    Archive all read
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           }
-          className="py-24"
         />
-      ) : notifications.length > 0 ? (
-        <ScrollArea className="flex-1">
-          <div className="space-y-4 px-6 py-4">
+
+        <Tabs
+          value={filter === 'unread' ? 'unread' : 'all'}
+          onValueChange={(value) => {
+            void navigate({
+              search: (prev) => ({ ...prev, filter: value === 'unread' ? 'unread' : undefined }),
+              replace: true,
+            })
+          }}
+          variant="line"
+        >
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="unread">Unread</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <AlertDialog open={archiveAllReadOpen} onOpenChange={setArchiveAllReadOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Archive all read notifications?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Read notifications will be removed from your list. This can't be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={archiveAllRead.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => archiveAllRead.mutate()}
+                disabled={archiveAllRead.isPending}
+              >
+                Archive
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Content */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-24">
+            <Spinner size="xl" />
+          </div>
+        ) : isError ? (
+          <EmptyState
+            icon={ExclamationTriangleIcon}
+            title="Failed to load"
+            description="We couldn't load your notifications. Please try again."
+            action={
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Retry
+              </Button>
+            }
+            className="py-24"
+          />
+        ) : notifications.length > 0 ? (
+          <div className="space-y-4">
             {groups.map((group) => (
               <div key={group.label}>
-                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h2 className="mb-2 text-[13px] font-medium text-muted-foreground">
                   {GROUP_LABELS[group.label]}
                 </h2>
                 <div className="divide-y divide-border/50">
@@ -216,22 +194,22 @@ function NotificationsPage() {
               </div>
             )}
           </div>
-        </ScrollArea>
-      ) : unreadOnly ? (
-        <EmptyState
-          icon={CheckCircleIcon}
-          title="All caught up"
-          description="No unread notifications."
-          className="py-24"
-        />
-      ) : (
-        <EmptyState
-          icon={InboxIcon}
-          title="No notifications yet"
-          description="You'll see notifications here when there are status changes or new comments on posts you're subscribed to."
-          className="py-24"
-        />
-      )}
-    </div>
+        ) : unreadOnly ? (
+          <EmptyState
+            icon={CheckCircleIcon}
+            title="Nothing to review"
+            description="No unread notifications."
+            className="py-24"
+          />
+        ) : (
+          <EmptyState
+            icon={InboxIcon}
+            title="No notifications yet"
+            description="You'll see notifications here when there are status changes or new comments on posts you're subscribed to."
+            className="py-24"
+          />
+        )}
+      </div>
+    </ScrollArea>
   )
 }

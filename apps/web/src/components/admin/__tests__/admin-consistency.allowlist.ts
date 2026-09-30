@@ -63,7 +63,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/security/identity-providers/claims-table.tsx',
     'components/admin/settings/security/identity-providers/outcome-preview-rail.tsx',
     'components/admin/update-banner.tsx',
-    'routes/admin/notifications.tsx',
   ],
   'tab-icons': [],
   'toggle-rows': [
