@@ -21,12 +21,12 @@ export interface AnalyticsStatProps {
 }
 
 /** A single headline stat, styled to match the Overview metric tiles
- *  (uppercase label, large tabular number) but static — these report, they
+ *  (sentence-case label, large tabular number) but static: these report, they
  *  don't drive a chart, so there's no hover/active affordance. */
 function AnalyticsStat({ label, value, suffix, delta, caption, muted }: AnalyticsStatProps) {
   return (
     <div className="px-5 py-4">
-      <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mb-2 text-[13px] text-muted-foreground">{label}</p>
       <p
         data-muted={muted ? 'true' : undefined}
         className={cn(

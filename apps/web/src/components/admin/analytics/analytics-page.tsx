@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PageHeader } from '@/components/shared/page-header'
-import { FilterSection } from '@/components/shared/filter-section'
 import { MENU_ICON, MENU_ROW } from '@/components/ui/menu'
 import { cn } from '@/lib/shared/utils'
 import { FunnelIcon, CalendarDaysIcon } from '@heroicons/react/24/solid'
@@ -132,9 +131,9 @@ function channelTotals(volume: {
 }
 
 /** Format a median resolution time (in days) as a stat value + unit suffix.
- *  null (nothing resolved in the period) renders as an em dash. */
+ *  null (nothing resolved in the period) renders as a hyphen. */
 function formatResolveTime(days: number | null): { value: string; suffix?: string } {
-  if (days == null) return { value: '—' }
+  if (days == null) return { value: '-' }
   if (days < 1) return { value: '<1', suffix: 'day' }
   return { value: days < 10 ? days.toFixed(1) : Math.round(days).toString(), suffix: 'days' }
 }
@@ -185,31 +184,29 @@ export function AnalyticsPage() {
         </div>
         <ScrollArea className="min-h-0 flex-1">
           <div className="px-5 pb-5">
-            <FilterSection title="Sections">
-              <div className="space-y-1">
-                {sections.map(({ key, label, icon: Icon }) => {
-                  const active = section === key
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setSection(key)}
-                      data-active={active || undefined}
-                      className={cn(
-                        MENU_ROW,
-                        'w-full',
-                        active
-                          ? 'bg-muted text-foreground font-medium'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                      )}
-                    >
-                      <Icon className={cn(MENU_ICON, active && 'text-primary')} />
-                      <span className="min-w-0 flex-1 truncate text-left">{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </FilterSection>
+            <div className="space-y-1">
+              {sections.map(({ key, label, icon: Icon }) => {
+                const active = section === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSection(key)}
+                    data-active={active || undefined}
+                    className={cn(
+                      MENU_ROW,
+                      'w-full',
+                      active
+                        ? 'bg-muted text-foreground font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <Icon className={cn(MENU_ICON, active && 'text-primary')} />
+                    <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </ScrollArea>
       </aside>
@@ -497,7 +494,7 @@ export function AnalyticsPage() {
                         {
                           label: 'AI CSAT',
                           value:
-                            data.ai.ratingCount > 0 ? (data.ai.avgRating ?? 0).toFixed(1) : '—',
+                            data.ai.ratingCount > 0 ? (data.ai.avgRating ?? 0).toFixed(1) : '-',
                           suffix: data.ai.ratingCount > 0 ? '/ 5' : undefined,
                         },
                       ]}

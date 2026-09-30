@@ -65,14 +65,14 @@
     --chart-3: oklch(0.398 0.07 227);
     --chart-4: oklch(0.828 0.189 84);
     --chart-5: oklch(0.769 0.188 70);
-    /* Analytics metric palette — readable on white, cohesive with zinc & gold */
-    --metric-posts: oklch(0.55 0.15 250);
-    --metric-votes: oklch(0.66 0.14 75);
-    --metric-comments: oklch(0.58 0.11 195);
-    --metric-users: oklch(0.55 0.15 295);
-    --metric-visitors: oklch(0.55 0.13 170);
-    --metric-pageviews: oklch(0.52 0.13 230);
-    --metric-visits: oklch(0.6 0.14 45);
+    /* Analytics series colour: one gold, readable on the surface */
+    --metric-posts: oklch(0.72 0.16 85);
+    --metric-votes: oklch(0.72 0.16 85);
+    --metric-comments: oklch(0.72 0.16 85);
+    --metric-users: oklch(0.72 0.16 85);
+    --metric-visitors: oklch(0.72 0.16 85);
+    --metric-pageviews: oklch(0.72 0.16 85);
+    --metric-visits: oklch(0.72 0.16 85);
     /* Conversation arrival channels (support volume chart) */
     --metric-widget: oklch(0.55 0.15 250);
     --metric-email: oklch(0.58 0.11 195);
@@ -146,13 +146,13 @@
     --chart-4: oklch(0.627 0.265 303);
     --chart-5: oklch(0.645 0.246 16);
     /* Analytics metric palette — lifted lightness for legibility on near-black */
-    --metric-posts: oklch(0.7 0.14 250);
-    --metric-votes: oklch(0.8 0.14 80);
-    --metric-comments: oklch(0.72 0.11 195);
-    --metric-users: oklch(0.7 0.15 295);
-    --metric-visitors: oklch(0.7 0.13 170);
-    --metric-pageviews: oklch(0.7 0.13 230);
-    --metric-visits: oklch(0.75 0.13 50);
+    --metric-posts: oklch(0.82 0.16 88);
+    --metric-votes: oklch(0.82 0.16 88);
+    --metric-comments: oklch(0.82 0.16 88);
+    --metric-users: oklch(0.82 0.16 88);
+    --metric-visitors: oklch(0.82 0.16 88);
+    --metric-pageviews: oklch(0.82 0.16 88);
+    --metric-visits: oklch(0.82 0.16 88);
     /* Conversation arrival channels (support volume chart) */
     --metric-widget: oklch(0.7 0.14 250);
     --metric-email: oklch(0.72 0.11 195);

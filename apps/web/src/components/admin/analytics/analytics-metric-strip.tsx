@@ -46,8 +46,10 @@ export function AnalyticsMetricStrip({
             }
           >
             <p
-              className="mb-2 text-xs uppercase tracking-wider text-muted-foreground"
-              style={isActive ? { color } : undefined}
+              className={cn(
+                'mb-2 text-[13px] text-muted-foreground',
+                isActive && 'font-medium text-foreground'
+              )}
             >
               {label}
             </p>
@@ -55,7 +57,7 @@ export function AnalyticsMetricStrip({
               {value.toLocaleString()}
             </p>
             {delta !== null && <TrendDelta value={delta} className="mt-1.5" />}
-            {/* Active indicator — full-strength metric color, clearly visible */}
+            {/* Active indicator in the series colour */}
             <div
               className={cn(
                 'absolute inset-x-0 bottom-0 h-[3px] transition-opacity duration-150',

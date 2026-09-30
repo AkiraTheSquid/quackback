@@ -24,7 +24,7 @@ export function AnalyticsBarList({ header, rows }: AnalyticsBarListProps) {
   const max = Math.max(...rows.map((r) => r.value), 1)
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between px-1 text-xs uppercase tracking-wider text-muted-foreground">
+      <div className="mb-1 flex items-center justify-between px-1 text-[13px] text-muted-foreground">
         <span>{header.label}</span>
         <span>{header.value}</span>
       </div>

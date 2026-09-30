@@ -40,9 +40,9 @@ export function channelColor(channel: string, index: number): string {
 
 /** Compact duration for response-time stat values and tooltip rows
  *  ("45m", "2h 15m", "1.5d"). null (nothing answered in the period) renders
- *  as an em dash. */
+ *  as a hyphen. */
 export function formatResponseTime(minutes: number | null): string {
-  if (minutes == null) return '—'
+  if (minutes == null) return '-'
   if (minutes < 1) return '<1m'
   if (minutes < 60) return `${Math.round(minutes)}m`
   if (minutes < 1440) {

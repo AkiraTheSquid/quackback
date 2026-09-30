@@ -39,8 +39,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   ],
   'no-dashes': [
     'components/admin/admin-author-hover-card.tsx',
-    'components/admin/analytics/analytics-constants.ts',
-    'components/admin/analytics/analytics-page.tsx',
     'components/admin/automation/attribute-breakdown-card.tsx',
     'components/admin/automation/workflow-builder/flow-layout.ts',
     'components/admin/automation/workflow-builder/inspector/action-editor.tsx',
