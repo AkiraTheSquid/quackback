@@ -16,10 +16,11 @@ declare module '@tanstack/react-query' {
        * instead of asking them to try again.
        */
       showServerMessage?: boolean
-      /** True for an error the page reports itself (an upgrade prompt, a conflict notice). */
+      /**
+       * True for an error the page reports itself (an upgrade prompt, a
+       * revision conflict notice).
+       */
       ownsError?: (error: unknown) => boolean
-      /** The page reports revision conflicts itself (see `isRevisionConflict`). */
-      onConflict?: boolean
     }
   }
 }
@@ -33,7 +34,9 @@ function toastMessage(error: unknown, showServerMessage: boolean | undefined): s
 
 /**
  * True when a save was rejected because the settings changed in another
- * session (an optimistic-revision mismatch).
+ * session (an optimistic-revision mismatch). A server function failure reaches
+ * the client as a plain Error carrying only the server's message, so the
+ * message is the signal that survives; the typed fields cover other callers.
  */
 export function isRevisionConflict(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
@@ -56,7 +59,6 @@ export function createAutosaveMutationCache() {
       const meta = mutation.meta
       if (meta?.autosave !== true) return
       if (meta.ownsError?.(error)) return
-      if (meta.onConflict === true && isRevisionConflict(error)) return
       const message = toastMessage(error, meta.showServerMessage)
       void import('sonner').then(({ toast }) => toast.error(message))
     },

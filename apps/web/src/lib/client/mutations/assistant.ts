@@ -18,7 +18,7 @@ import {
   updateAssistantCopilotCapabilitiesFn,
   updateWidgetAssistantDeploymentFn,
 } from '@/lib/server/functions/assistant-settings'
-import { AUTOSAVE } from '@/lib/client/autosave'
+import { AUTOSAVE, isRevisionConflict } from '@/lib/client/autosave'
 import { assistantKeys } from '@/lib/client/queries/assistant'
 import { settingsQueries } from '@/lib/client/queries/settings'
 
@@ -87,7 +87,7 @@ export function useReorderGuidanceRules() {
 export function useUpdateAssistantIdentity() {
   const queryClient = useQueryClient()
   return useMutation({
-    meta: { ...AUTOSAVE, onConflict: true },
+    meta: { ...AUTOSAVE, ownsError: isRevisionConflict },
     mutationFn: (data: Parameters<typeof updateAssistantIdentityFn>[0]['data']) =>
       updateAssistantIdentityFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
@@ -97,7 +97,7 @@ export function useUpdateAssistantIdentity() {
 export function useUpdateAssistantVoice() {
   const queryClient = useQueryClient()
   return useMutation({
-    meta: { ...AUTOSAVE, onConflict: true },
+    meta: { ...AUTOSAVE, ownsError: isRevisionConflict },
     mutationFn: (data: Parameters<typeof updateAssistantVoiceFn>[0]['data']) =>
       updateAssistantVoiceFn({ data }),
     onSuccess: (result) => setAssistantConfig(queryClient, result),
