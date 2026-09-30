@@ -58,7 +58,7 @@ function CopyableField({ label, value }: { label: string; value: string }) {
           title="Copy to clipboard"
         >
           {copied ? (
-            <CheckIcon className="h-3.5 w-3.5 text-green-600" />
+            <CheckIcon className="h-3.5 w-3.5 text-success" />
           ) : (
             <ClipboardDocumentIcon className="h-3.5 w-3.5" />
           )}
@@ -169,7 +169,7 @@ export function AuthProviderCredentialsForm({
             <div key={field.key}>
               <Label className="text-sm font-medium text-muted-foreground">{field.label}</Label>
               <div className="mt-1 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm font-mono text-muted-foreground">
-                {maskedFields?.[field.key] ?? '—'}
+                {maskedFields?.[field.key] ?? 'Not set'}
               </div>
             </div>
           ))}
@@ -273,7 +273,7 @@ export function AuthProviderCredentialsForm({
           className="rounded-md border border-border/40 bg-muted/10"
         >
           <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
-            Advanced — manual endpoints &amp; scopes
+            Advanced: manual endpoints &amp; scopes
           </summary>
           <div className="space-y-3 px-3 pt-1 pb-3">{advancedFields.map(renderField)}</div>
         </details>

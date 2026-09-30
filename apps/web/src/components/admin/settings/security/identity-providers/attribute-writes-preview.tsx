@@ -136,9 +136,7 @@ export function AttributeWritesPreview({
       )}
 
       {stale ? (
-        <p className="text-xs text-amber-700 dark:text-amber-400">
-          Configuration changed since capture. Re-test.
-        </p>
+        <p className="text-xs text-warning">Configuration changed since capture. Re-test.</p>
       ) : (
         <p className="text-xs text-muted-foreground">
           Assumes the person has no attributes yet. With Overwrite off, someone who already has a

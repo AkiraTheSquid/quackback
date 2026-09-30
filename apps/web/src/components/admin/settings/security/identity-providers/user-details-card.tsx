@@ -120,7 +120,7 @@ function UserDetailsSummary({
 
   return (
     <div className="space-y-4 text-sm">
-      {issue && <p className="font-medium text-amber-700 dark:text-amber-400">{issue}</p>}
+      {issue && <p className="font-medium text-warning">{issue}</p>}
       {!customProfile && <p className="font-medium">Uses standard profile fields</p>}
       <ClaimsTable
         profileRows={customProfile ? model.profile : []}
