@@ -83,8 +83,7 @@ export function CsvImportSection() {
       <div>
         <p className="text-sm font-medium">Import subscribers</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Upload a CSV with an "Email" column to subscribe existing accounts to changelog emails.
-          Rows that don't match an existing account are skipped.
+          Upload a CSV with an Email column Rows that don't match an existing account are skipped.
         </p>
       </div>
 

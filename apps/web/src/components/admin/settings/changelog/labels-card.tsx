@@ -3,10 +3,9 @@ import { useRouter } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
-  PlusIcon,
   TrashIcon,
   PencilSquareIcon,
-  ArrowPathIcon,
+  TagIcon,
   ChevronUpIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/solid'
@@ -22,6 +21,8 @@ import {
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+import { EmptyState } from '@/components/shared/empty-state'
+import { NewButton } from '@/components/shared/new-button'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { SegmentMultiSelect } from '@/components/admin/segments/segment-multi-select'
 import { cn } from '@/lib/shared/utils'
@@ -134,7 +135,7 @@ function CategoryDialog({ open, onOpenChange, category, segments, onSaved }: Cat
       onSaved(saved)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save category')
+      setError(err instanceof Error ? err.message : 'Failed to save label')
     } finally {
       setIsSaving(false)
     }
@@ -144,7 +145,7 @@ function CategoryDialog({ open, onOpenChange, category, segments, onSaved }: Cat
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit category' : 'New category'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit label' : 'Create label'}</DialogTitle>
         </DialogHeader>
 
         <div className="flex justify-center py-3 bg-muted/30 rounded-lg">
@@ -152,7 +153,7 @@ function CategoryDialog({ open, onOpenChange, category, segments, onSaved }: Cat
             className="inline-flex items-center px-3 py-0.5 rounded-md text-sm font-medium"
             style={{ backgroundColor: color + '20', color }}
           >
-            {name.trim() || 'Category name'}
+            {name.trim() || 'Label name'}
           </span>
         </div>
 
@@ -197,7 +198,7 @@ function CategoryDialog({ open, onOpenChange, category, segments, onSaved }: Cat
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : isEdit ? 'Save changes' : 'Create category'}
+            {isSaving ? 'Saving...' : isEdit ? 'Save changes' : 'Create label'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -247,7 +248,7 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
       setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id))
       startTransition(() => router.invalidate())
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete category')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete label')
     } finally {
       setDeletingCategory(null)
     }
@@ -264,7 +265,7 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
       await reorderChangelogCategoriesFn({ data: { ids: next.map((c) => c.id) } })
       startTransition(() => router.invalidate())
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to reorder categories')
+      toast.error(error instanceof Error ? error.message : 'Failed to reorder labels')
       setCategories(categories)
     } finally {
       setReordering(false)
@@ -272,103 +273,93 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <>
       <SettingsCard
         title="Labels"
-        description="Categorize changelog entries. Gate a label to specific segments to show it only to the customers it applies to."
-        contentClassName="p-4"
+        description="Group entries by label"
+        action={<NewButton noun="label" onClick={openCreate} />}
+        contentClassName={categories.length === 0 ? 'p-0 sm:p-0' : 'p-4'}
       >
-        <div className="space-y-1">
-          {categories.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No labels yet. Create your first label to get started.
-            </p>
-          )}
+        {categories.length === 0 ? (
+          <EmptyState icon={TagIcon} title="No labels yet" size="compact" />
+        ) : (
+          <div className="space-y-1">
+            {categories.map((category, index) => (
+              <div
+                key={category.id}
+                className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 group"
+              >
+                <div className="flex flex-col -my-1">
+                  <button
+                    type="button"
+                    className="text-muted-foreground/50 hover:text-muted-foreground disabled:opacity-30"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0 || reordering}
+                    aria-label={`Move ${category.name} up`}
+                  >
+                    <ChevronUpIcon className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    className="text-muted-foreground/50 hover:text-muted-foreground disabled:opacity-30"
+                    onClick={() => move(index, 1)}
+                    disabled={index === categories.length - 1 || reordering}
+                    aria-label={`Move ${category.name} down`}
+                  >
+                    <ChevronDownIcon className="h-3 w-3" />
+                  </button>
+                </div>
 
-          {categories.map((category, index) => (
-            <div
-              key={category.id}
-              className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 group"
-            >
-              <div className="flex flex-col -my-1">
-                <button
-                  type="button"
-                  className="text-muted-foreground/50 hover:text-muted-foreground disabled:opacity-30"
-                  onClick={() => move(index, -1)}
-                  disabled={index === 0 || reordering}
-                  aria-label={`Move ${category.name} up`}
+                <span
+                  className="h-3 w-3 rounded-full shrink-0"
+                  style={{ backgroundColor: category.color }}
+                />
+
+                <span className="text-sm font-medium">{category.name}</span>
+
+                {category.segmentIds.length > 0 && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full hover:bg-muted/70">
+                        {category.segmentIds.length} segment
+                        {category.segmentIds.length === 1 ? '' : 's'}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 text-xs" align="start">
+                      Only visible to members of{' '}
+                      {category.segmentIds
+                        .map((id) => segments.find((s) => s.id === id)?.name ?? id)
+                        .join(', ')}
+                      .
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                <span className="flex-1" />
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100"
+                  onClick={() => openEdit(category)}
+                  title="Edit label"
                 >
-                  <ChevronUpIcon className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  className="text-muted-foreground/50 hover:text-muted-foreground disabled:opacity-30"
-                  onClick={() => move(index, 1)}
-                  disabled={index === categories.length - 1 || reordering}
-                  aria-label={`Move ${category.name} down`}
+                  <PencilSquareIcon className="h-3.5 w-3.5" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
+                  onClick={() => setDeletingCategory(category)}
+                  title="Delete label"
                 >
-                  <ChevronDownIcon className="h-3 w-3" />
-                </button>
+                  <TrashIcon className="h-3.5 w-3.5" />
+                </Button>
               </div>
-
-              <span
-                className="h-3 w-3 rounded-full shrink-0"
-                style={{ backgroundColor: category.color }}
-              />
-
-              <span className="text-sm font-medium">{category.name}</span>
-
-              {category.segmentIds.length > 0 && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full hover:bg-muted/70">
-                      {category.segmentIds.length} segment
-                      {category.segmentIds.length === 1 ? '' : 's'}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 text-xs" align="start">
-                    Only visible to members of{' '}
-                    {category.segmentIds
-                      .map((id) => segments.find((s) => s.id === id)?.name ?? id)
-                      .join(', ')}
-                    .
-                  </PopoverContent>
-                </Popover>
-              )}
-
-              <span className="flex-1" />
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100"
-                onClick={() => openEdit(category)}
-                title="Edit label"
-              >
-                <PencilSquareIcon className="h-3.5 w-3.5" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
-                onClick={() => setDeletingCategory(category)}
-                title="Delete label"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
-
-          <button
-            className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 w-full text-muted-foreground"
-            onClick={openCreate}
-          >
-            <PlusIcon className="h-3 w-3" />
-            <span className="text-sm">Add new label</span>
-            {reordering && <ArrowPathIcon className="h-3 w-3 animate-spin ms-1" />}
-          </button>
-        </div>
+            ))}
+          </div>
+        )}
       </SettingsCard>
 
       <CategoryDialog
@@ -382,12 +373,12 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
       <ConfirmDialog
         open={!!deletingCategory}
         onOpenChange={() => setDeletingCategory(null)}
-        title="Delete label"
-        description={`Are you sure you want to delete "${deletingCategory?.name}"? This will remove it from every changelog entry.`}
-        confirmLabel="Delete"
+        title="Delete label?"
+        description={`Delete "${deletingCategory?.name}"? This removes it from every changelog entry.`}
+        confirmLabel="Delete label"
         variant="destructive"
         onConfirm={handleDelete}
       />
-    </div>
+    </>
   )
 }
