@@ -82,4 +82,13 @@ describe('<ChangelogTopViewed>', () => {
     const { container } = renderWithClient(<ChangelogTopViewed />)
     expect(container).toBeEmptyDOMElement()
   })
+
+  it('titles the card Most viewed in sentence case', async () => {
+    hoisted.topViewedChangelogsFn.mockResolvedValue(ENTRIES)
+    const { container } = renderWithClient(<ChangelogTopViewed />)
+
+    const title = await screen.findByText('Most viewed')
+    expect(title.className).not.toContain('uppercase')
+    expect(container.textContent).not.toMatch(/top viewed/i)
+  })
 })

@@ -26,9 +26,7 @@ export function ChangelogTopViewed({ onSelect }: ChangelogTopViewedProps) {
   return (
     <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/50">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Top viewed
-        </span>
+        <h3 className="text-sm font-semibold">Most viewed</h3>
       </div>
 
       <div className="divide-y divide-border/50">

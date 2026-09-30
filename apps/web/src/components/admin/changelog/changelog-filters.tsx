@@ -1,3 +1,8 @@
+import { useState } from 'react'
+import { PlusIcon } from '@heroicons/react/16/solid'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { MENU_ROW } from '@/components/ui/menu'
+import { cn } from '@/lib/shared/utils'
 import { FilterSection } from '@/components/shared/filter-section'
 import { FilterList } from '@/components/admin/feedback/single-select-filter-list'
 import type { ChangelogStatusFilter } from './use-changelog-filters'
@@ -37,5 +42,72 @@ export function ChangelogFiltersPanel({ status, onStatusChange }: ChangelogFilte
         />
       </FilterSection>
     </div>
+  )
+}
+
+export type ChangelogSort = 'newest' | 'oldest'
+
+export const CHANGELOG_SORT_OPTIONS: Array<{ value: ChangelogSort; label: string }> = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+]
+
+interface SortableEntry {
+  displayDate?: string | null
+  publishedAt: string | null
+  createdAt: string
+}
+
+function entryTime(entry: SortableEntry): number {
+  return new Date(entry.displayDate ?? entry.publishedAt ?? entry.createdAt).getTime()
+}
+
+/** Orders entries by the date they show: the display date, else published, else created. */
+export function sortChangelogEntries<T extends SortableEntry>(entries: T[], sort: ChangelogSort): T[] {
+  const direction = sort === 'oldest' ? 1 : -1
+  return [...entries].sort((a, b) => direction * (entryTime(a) - entryTime(b)))
+}
+
+/** The Filter control for the list toolbar: picks an entry status. */
+export function ChangelogFilterButton({ status, onStatusChange }: ChangelogFiltersProps) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5',
+            'rounded-full text-[13px]',
+            'border border-dashed border-border/50',
+            'text-muted-foreground hover:text-foreground',
+            'hover:border-border hover:bg-muted/30',
+            'transition-colors'
+          )}
+        >
+          <PlusIcon className="h-3 w-3" />
+          Filter
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-44 p-1">
+        {CHANGELOG_STATUSES.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              onStatusChange(item.id)
+              setOpen(false)
+            }}
+            className={cn(
+              MENU_ROW,
+              'w-full hover:bg-muted/50',
+              item.id === status ? 'bg-muted font-medium' : 'text-muted-foreground'
+            )}
+          >
+            {item.name}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   )
 }

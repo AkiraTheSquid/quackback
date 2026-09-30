@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test'
 // ---------------------------------------------------------------------------
 
 /**
- * Open the "New Entry" dialog and return the dialog locator.
+ * Open the "New entry" dialog and return the dialog locator.
  * Returns null if the button is not present.
  */
 async function openCreateDialog(page: import('@playwright/test').Page) {
@@ -72,7 +72,7 @@ test.describe('Changelog admin navigation', () => {
     await expect(content.first()).toBeVisible({ timeout: 10000 })
   })
 
-  test('page has a "New Entry" button', async ({ page }) => {
+  test('page has a "New entry" button', async ({ page }) => {
     const newEntryBtn = page.getByRole('button', { name: /new entry/i })
     await expect(newEntryBtn.first()).toBeVisible({ timeout: 10000 })
   })
@@ -95,7 +95,7 @@ test.describe('Changelog create entry', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('can open create dialog via "New Entry" button', async ({ page }) => {
+  test('can open create dialog via "New entry" button', async ({ page }) => {
     const dialog = await openCreateDialog(page)
     if (!dialog) return
 

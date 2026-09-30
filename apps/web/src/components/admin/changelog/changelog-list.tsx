@@ -12,7 +12,14 @@ import { useInfiniteScroll } from '@/lib/client/hooks/use-infinite-scroll'
 import { useDebouncedSearch } from '@/lib/client/hooks/use-debounced-search'
 import { useOpenedOnce } from '@/lib/client/hooks/use-opened-once'
 import { lazyWithPreload } from '@/lib/client/lazy-with-preload'
-import { ChangelogFiltersPanel } from './changelog-filters'
+import { NewButton } from '@/components/shared/new-button'
+import {
+  ChangelogFiltersPanel,
+  ChangelogFilterButton,
+  CHANGELOG_SORT_OPTIONS,
+  sortChangelogEntries,
+  type ChangelogSort,
+} from './changelog-filters'
 import { useChangelogFilters } from './use-changelog-filters'
 import { ChangelogListItem } from './changelog-list-item'
 import { ChangelogTopViewed } from './changelog-top-viewed'
@@ -20,33 +27,30 @@ import { changelogQueries } from '@/lib/client/queries/changelog'
 import { useDeleteChangelog } from '@/lib/client/mutations/changelog'
 import { Route } from '@/routes/admin/changelog'
 import type { ChangelogId } from '@quackback/ids'
-import { DocumentTextIcon, PlusIcon } from '@heroicons/react/24/solid'
+import { DocumentTextIcon } from '@heroicons/react/24/solid'
 
 // The create dialog carries the editor and the entry form, which outweigh the
 // list; it loads on first open, or ahead of it when the pointer or focus
-// reaches the New Entry button.
+// reaches the New entry button.
 const { Component: CreateChangelogDialog, preload: preloadCreateChangelogDialog } = lazyWithPreload(
   () => import('./create-changelog-dialog'),
   'CreateChangelogDialog'
 )
 
-/** The New Entry button and the create dialog it opens. */
+/** The New entry button and the create dialog it opens. */
 function NewChangelogEntryButton() {
   const [open, setOpen] = useState(false)
   // Kept mounted after the first open so closing animates.
   const opened = useOpenedOnce(open)
   return (
     <>
-      <Button
-        size="sm"
+      <NewButton
+        noun="entry"
         aria-haspopup="dialog"
         onPointerEnter={preloadCreateChangelogDialog}
         onFocus={preloadCreateChangelogDialog}
         onClick={() => setOpen(true)}
-      >
-        <PlusIcon className="h-4 w-4 mr-1.5" />
-        New Entry
-      </Button>
+      />
       {opened && (
         <Suspense fallback={null}>
           <CreateChangelogDialog open={open} onOpenChange={setOpen} />
@@ -130,17 +134,19 @@ export function ChangelogList() {
 
   const allEntries = data?.pages.flatMap((page) => page.items) ?? []
 
-  // Client-side search filtering
+  // Client-side search filtering, then the chosen order
   const entries = useMemo(() => {
-    if (!filters.search) return allEntries
-    const q = filters.search.toLowerCase()
-    return allEntries.filter(
-      (e) =>
-        e.title.toLowerCase().includes(q) ||
-        e.content.toLowerCase().includes(q) ||
-        e.author?.name.toLowerCase().includes(q)
-    )
-  }, [allEntries, filters.search])
+    const q = filters.search?.toLowerCase()
+    const matching = q
+      ? allEntries.filter(
+          (e) =>
+            e.title.toLowerCase().includes(q) ||
+            e.content.toLowerCase().includes(q) ||
+            e.author?.name.toLowerCase().includes(q)
+        )
+      : allEntries
+    return sortChangelogEntries(matching, filters.sort)
+  }, [allEntries, filters.search, filters.sort])
 
   // Navigate to entry via URL for shareable links
   const handleEdit = useCallback(
@@ -188,6 +194,15 @@ export function ChangelogList() {
           <AdminListHeader
             searchValue={searchValue}
             onSearchChange={setSearchValue}
+            sortOptions={CHANGELOG_SORT_OPTIONS}
+            activeSort={filters.sort}
+            onSortChange={(sort) => setFilters({ sort: sort as ChangelogSort })}
+            filters={
+              <ChangelogFilterButton
+                status={filters.status}
+                onStatusChange={(status) => setFilters({ status })}
+              />
+            }
             action={<NewChangelogEntryButton />}
           />
 

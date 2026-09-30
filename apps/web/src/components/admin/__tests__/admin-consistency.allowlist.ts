@@ -35,8 +35,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     '/admin/settings/support',
   ],
   'create-labels': [
-    'components/admin/changelog/changelog-list.tsx',
-    'components/admin/changelog/create-changelog-dialog.tsx',
     'components/admin/help-center/create-article-dialog.tsx',
     'components/admin/segments/segment-form.tsx',
   ],
