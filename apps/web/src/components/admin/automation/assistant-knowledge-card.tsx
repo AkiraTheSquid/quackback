@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
-import { toast } from 'sonner'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,15 +17,17 @@ import {
   type AssistantAgentKnowledge,
   type AssistantCopilotKnowledge,
 } from '@/lib/shared/assistant/config'
-import { isAssistantFieldManaged, ManagedSettingHint } from './assistant-form'
+import { isRevisionConflict } from '@/lib/client/autosave'
+import { isAssistantFieldManaged } from './assistant-form'
 
 /**
  * Every knowledge source's admin label, help text, and readiness live in one
  * map (C2-style single vocabulary site). `readiness` distinguishes how a source
- * grounds: 'ready' sources are retrieval-indexed; 'live' is the status source,
- * a real-time `get_status` lookup rather than an index. Feedback posts carry a
- * per-agent description because the Agent only ever sees public boards (D8),
- * cited as customer feedback.
+ * grounds: 'ready' sources are retrieval-indexed and carry no badge; 'live' is
+ * the status source, a real-time `get_status` lookup rather than an index, and
+ * is the one source that says so. Feedback posts carry a per-agent description
+ * because the Agent only ever sees public boards (D8), cited as customer
+ * feedback.
  */
 const SOURCE_META = {
   helpCenter: {
@@ -107,21 +109,14 @@ interface KnowledgeRow {
   descriptionOverride?: { id: string; defaultMessage: string }
 }
 
-function ReadinessChip({ readiness }: { readiness: 'ready' | 'live' }) {
+function LiveLookupBadge() {
   const intl = useIntl()
-  if (readiness === 'live') {
-    return (
-      <Badge size="sm" variant="outline" shape="pill">
-        {intl.formatMessage({
-          id: 'automation.knowledge.readiness.live',
-          defaultMessage: 'Live lookup',
-        })}
-      </Badge>
-    )
-  }
   return (
-    <Badge size="sm" variant="secondary" shape="pill">
-      {intl.formatMessage({ id: 'automation.knowledge.readiness.ready', defaultMessage: 'Ready' })}
+    <Badge size="sm" variant="outline" shape="pill">
+      {intl.formatMessage({
+        id: 'automation.knowledge.readiness.live',
+        defaultMessage: 'Live lookup',
+      })}
     </Badge>
   )
 }
@@ -138,40 +133,37 @@ function KnowledgeCard({
 }) {
   const intl = useIntl()
   return (
-    <SettingsCard
-      title={intl.formatMessage({
-        id: 'automation.knowledge.title',
-        defaultMessage: 'Knowledge sources',
-      })}
-      description={intl.formatMessage({
-        id: 'automation.knowledge.description',
-        defaultMessage: 'Choose what Quinn is allowed to draw on when it answers.',
-      })}
-    >
-      <div className="space-y-4">
-        <div className="divide-y divide-border/60">
-          {rows.map((row) => {
-            const meta = SOURCE_META[row.source as keyof typeof SOURCE_META]
-            const switchId = `knowledge-${row.source}`
-            return (
-              <div key={row.source} className="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label htmlFor={switchId} className="text-sm font-medium">
-                      {intl.formatMessage({ id: meta.labelId, defaultMessage: meta.label })}
-                    </label>
-                    <ReadinessChip readiness={meta.readiness} />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {intl.formatMessage(
-                      row.descriptionOverride ?? {
-                        id: meta.descriptionId,
-                        defaultMessage: meta.description,
-                      }
-                    )}
-                  </p>
-                  {row.managed && <ManagedSettingHint />}
-                </div>
+    <SettingsCard>
+      <SettingRows>
+        {rows.map((row) => {
+          const meta = SOURCE_META[row.source as keyof typeof SOURCE_META]
+          const switchId = `knowledge-${row.source}`
+          const label = intl.formatMessage({ id: meta.labelId, defaultMessage: meta.label })
+          return (
+            <SettingRow
+              key={row.source}
+              htmlFor={switchId}
+              label={label}
+              badge={meta.readiness === 'live' ? <LiveLookupBadge /> : undefined}
+              description={
+                <>
+                  {intl.formatMessage(
+                    row.descriptionOverride ?? {
+                      id: meta.descriptionId,
+                      defaultMessage: meta.description,
+                    }
+                  )}
+                  {row.managed && (
+                    <span className="block">
+                      {intl.formatMessage({
+                        id: 'automation.agent.managed',
+                        defaultMessage: 'This setting is managed by your deployment configuration.',
+                      })}
+                    </span>
+                  )}
+                </>
+              }
+              control={
                 <Switch
                   id={switchId}
                   checked={row.enabled}
@@ -179,16 +171,14 @@ function KnowledgeCard({
                   onCheckedChange={(next) => onToggle(row.source, next)}
                   aria-label={intl.formatMessage(
                     { id: 'automation.knowledge.toggleAria', defaultMessage: 'Use {source}' },
-                    {
-                      source: intl.formatMessage({ id: meta.labelId, defaultMessage: meta.label }),
-                    }
+                    { source: label }
                   )}
                 />
-              </div>
-            )
-          })}
-        </div>
-      </div>
+              }
+            />
+          )
+        })}
+      </SettingRows>
     </SettingsCard>
   )
 }
@@ -196,12 +186,7 @@ function KnowledgeCard({
 function KnowledgeLoading() {
   const intl = useIntl()
   return (
-    <SettingsCard
-      title={intl.formatMessage({
-        id: 'automation.knowledge.title',
-        defaultMessage: 'Knowledge sources',
-      })}
-    >
+    <SettingsCard>
       <p role="status" className="text-sm text-muted-foreground">
         {intl.formatMessage({
           id: 'automation.agent.loading',
@@ -215,12 +200,7 @@ function KnowledgeLoading() {
 function KnowledgeError({ onRetry }: { onRetry: () => void }) {
   const intl = useIntl()
   return (
-    <SettingsCard
-      title={intl.formatMessage({
-        id: 'automation.knowledge.title',
-        defaultMessage: 'Knowledge sources',
-      })}
-    >
+    <SettingsCard>
       <div className="flex flex-col items-start gap-3">
         <p role="alert" className="text-sm text-destructive">
           {intl.formatMessage({
@@ -237,7 +217,6 @@ function KnowledgeError({ onRetry }: { onRetry: () => void }) {
 }
 
 export function AgentKnowledgeCard() {
-  const intl = useIntl()
   const settingsQuery = useQuery(assistantQueries.settings())
   const update = useUpdateAssistantAgentKnowledge()
   const [knowledge, setKnowledge] = useState<AssistantAgentKnowledge | null>(null)
@@ -269,14 +248,10 @@ export function AgentKnowledgeCard() {
     setKnowledge(optimistic)
     try {
       await update.mutateAsync({ expectedRevision: revision, knowledge: optimistic })
-    } catch {
+    } catch (error) {
+      // The autosave handler shows the failure toast; a stale revision is refreshed so the next try can succeed.
       setKnowledge(previous)
-      toast.error(
-        intl.formatMessage({
-          id: 'automation.knowledge.saveError',
-          defaultMessage: 'Knowledge sources could not be updated.',
-        })
-      )
+      if (isRevisionConflict(error)) void settingsQuery.refetch()
     }
   }
 
@@ -286,7 +261,6 @@ export function AgentKnowledgeCard() {
 }
 
 export function CopilotKnowledgeCard() {
-  const intl = useIntl()
   const settingsQuery = useQuery(assistantQueries.settings())
   const update = useUpdateAssistantCopilotKnowledge()
   const [knowledge, setKnowledge] = useState<AssistantCopilotKnowledge | null>(null)
@@ -317,14 +291,10 @@ export function CopilotKnowledgeCard() {
     setKnowledge(optimistic)
     try {
       await update.mutateAsync({ expectedRevision: revision, knowledge: optimistic })
-    } catch {
+    } catch (error) {
+      // The autosave handler shows the failure toast; a stale revision is refreshed so the next try can succeed.
       setKnowledge(previous)
-      toast.error(
-        intl.formatMessage({
-          id: 'automation.knowledge.saveError',
-          defaultMessage: 'Knowledge sources could not be updated.',
-        })
-      )
+      if (isRevisionConflict(error)) void settingsQuery.refetch()
     }
   }
 

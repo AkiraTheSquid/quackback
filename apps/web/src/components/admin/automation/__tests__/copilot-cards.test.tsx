@@ -2,7 +2,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createAutosaveMutationCache } from '@/lib/client/autosave'
 import { IntlProvider } from 'react-intl'
+
+const toastError = vi.hoisted(() => vi.fn())
+vi.mock('sonner', () => ({ toast: { error: toastError } }))
 
 const updateCopilotKnowledge = vi.fn()
 const updateAgentKnowledge = vi.fn()
@@ -54,6 +58,7 @@ vi.mock('@/lib/server/functions/assistant-settings', () => ({
   updateWidgetAssistantDeploymentFn: vi.fn(),
 }))
 
+import { getAssistantSettingsFn } from '@/lib/server/functions/assistant-settings'
 import { AgentKnowledgeCard, CopilotKnowledgeCard } from '../assistant-knowledge-card'
 import { CopilotDeploymentCard } from '../copilot-deployment-card'
 
@@ -62,10 +67,15 @@ afterEach(() => {
   updateCopilotKnowledge.mockReset()
   updateAgentKnowledge.mockReset()
   updateCopilotCapabilities.mockReset()
+  toastError.mockReset()
+  vi.mocked(getAssistantSettingsFn).mockClear()
 })
 
 function renderWithProviders(node: React.ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+    mutationCache: createAutosaveMutationCache(),
+  })
   return render(
     <IntlProvider locale="en" messages={{}} onError={() => {}}>
       <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>
@@ -86,8 +96,41 @@ describe('CopilotKnowledgeCard', () => {
     expect(
       screen.queryByText(/take effect when Quinn’s knowledge tools roll out/)
     ).not.toBeInTheDocument()
-    // Status is a live lookup, not an index.
-    expect(screen.getByText(/Live lookup/)).toBeInTheDocument()
+    // Status is a live lookup, not an index; indexed sources carry no badge.
+    expect(screen.getAllByText('Live lookup')).toHaveLength(1)
+    expect(screen.queryByText('Ready')).not.toBeInTheDocument()
+  })
+
+  it('is one card without a header, since the tab is already called Knowledge', async () => {
+    renderWithProviders(<CopilotKnowledgeCard />)
+    await screen.findByText('Tickets')
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  })
+
+  it('puts a failed toggle back and shows the one autosave toast', async () => {
+    updateCopilotKnowledge.mockImplementationOnce(() => {
+      throw new Error('boom')
+    })
+    renderWithProviders(<CopilotKnowledgeCard />)
+    await screen.findByText('Tickets')
+    fireEvent.click(screen.getByLabelText('Use Tickets'))
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    expect(toastError).toHaveBeenCalledWith("Couldn't save. Try again.")
+    await waitFor(() => expect(screen.getByLabelText('Use Tickets')).toBeChecked())
+  })
+
+  it('refreshes the settings after a revision conflict so a retry can succeed', async () => {
+    updateCopilotKnowledge.mockImplementationOnce(() => {
+      throw Object.assign(new Error('changed in another session'), { statusCode: 409 })
+    })
+    renderWithProviders(<CopilotKnowledgeCard />)
+    await screen.findByText('Tickets')
+    const loads = vi.mocked(getAssistantSettingsFn).mock.calls.length
+    fireEvent.click(screen.getByLabelText('Use Tickets'))
+    await waitFor(() =>
+      expect(vi.mocked(getAssistantSettingsFn).mock.calls.length).toBeGreaterThan(loads)
+    )
+    await waitFor(() => expect(screen.getByLabelText('Use Tickets')).toBeChecked())
   })
 
   it('persists a source toggle against the copilot knowledge map', async () => {
