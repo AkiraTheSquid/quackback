@@ -5,8 +5,7 @@ import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { readBatch } from '@/lib/client/queries/read-batch'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { MembersTab } from '@/components/admin/settings/team/members-tab'
 import { TeamsTab } from '@/components/admin/settings/teams/teams-tab'
@@ -46,7 +45,7 @@ export const Route = createFileRoute('/admin/settings/members')({
 })
 
 function MembersPage() {
-  const { settings, currentMember, canManageTeams } = Route.useLoaderData()
+  const { currentMember, canManageTeams } = Route.useLoaderData()
   const { tab: requested = 'members' } = Route.useSearch()
   const tab = requested === 'teams' && !canManageTeams ? 'members' : requested
   const navigate = Route.useNavigate()
@@ -58,15 +57,11 @@ function MembersPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="lg:hidden">
-        <BackLink to="/admin/settings">Settings</BackLink>
-      </div>
-      <PageHeader
-        title="Members & Teams"
-        description="Manage who has access to your workspace, organize them into teams, and control what they can do."
-      />
-
+    <SettingsPage
+      page="/admin/settings/members"
+      description="Who has access to your workspace."
+      width="wide"
+    >
       <Tabs value={tab} onValueChange={setTab} variant="line">
         <TabsList>
           <TabsTrigger value="members">Members</TabsTrigger>
@@ -74,7 +69,7 @@ function MembersPage() {
           <TabsTrigger value="roles">Roles</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
-          <MembersTab workspaceName={settings!.name} currentMember={currentMember} />
+          <MembersTab currentMember={currentMember} />
         </TabsContent>
         {canManageTeams && (
           <TabsContent value="teams">
@@ -85,6 +80,6 @@ function MembersPage() {
           <RolesTab />
         </TabsContent>
       </Tabs>
-    </div>
+    </SettingsPage>
   )
 }

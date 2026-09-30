@@ -13,7 +13,7 @@ export const CATEGORY_LABELS: Record<PermissionCategory, string> = {
   audience: 'Audience',
   feedback: 'Feedback',
   changelog: 'Changelog',
-  help_center: 'Help center',
+  help_center: 'Help Center',
   survey: 'Surveys',
   conversation: 'Inbox',
   analytics: 'Analytics',

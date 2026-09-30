@@ -37,7 +37,7 @@ export function getExpiryText(expiresAt: string) {
   const className = isExpired
     ? 'text-destructive'
     : isExpiringSoon
-      ? 'text-amber-600'
+      ? 'text-warning'
       : 'text-muted-foreground'
 
   return { text, className, isExpired }

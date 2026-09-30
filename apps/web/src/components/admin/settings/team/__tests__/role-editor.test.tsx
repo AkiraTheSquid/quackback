@@ -12,8 +12,9 @@
  *   - system presets render the read-only notice instead of the editor
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { IntlProvider } from 'react-intl'
 import { ALL_PERMISSIONS, PERMISSIONS } from '@/lib/shared/permissions'
 import { RoleEditor } from '../role-editor'
 
@@ -21,8 +22,18 @@ const navigate = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
   // BackLink renders a router Link; stub it as a plain anchor.
-  Link: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <a className={className}>{children}</a>
+  Link: ({
+    children,
+    className,
+    to,
+  }: {
+    children: React.ReactNode
+    className?: string
+    to?: string
+  }) => (
+    <a className={className} href={to}>
+      {children}
+    </a>
   ),
   useSearch: () => ({}),
 }))
@@ -71,9 +82,11 @@ function renderEditor(roleId = CUSTOM_ROLE.id) {
     maxCustomRoles: null,
   })
   return render(
-    <QueryClientProvider client={client}>
-      <RoleEditor mode="edit" roleId={roleId} />
-    </QueryClientProvider>
+    <IntlProvider locale="en" defaultLocale="en">
+      <QueryClientProvider client={client}>
+        <RoleEditor mode="edit" roleId={roleId} />
+      </QueryClientProvider>
+    </IntlProvider>
   )
 }
 
@@ -84,9 +97,11 @@ function renderCreate(duplicateFromId?: string) {
     maxCustomRoles: null,
   })
   return render(
-    <QueryClientProvider client={client}>
-      <RoleEditor mode="create" duplicateFromId={duplicateFromId} />
-    </QueryClientProvider>
+    <IntlProvider locale="en" defaultLocale="en">
+      <QueryClientProvider client={client}>
+        <RoleEditor mode="create" duplicateFromId={duplicateFromId} />
+      </QueryClientProvider>
+    </IntlProvider>
   )
 }
 
@@ -182,5 +197,39 @@ describe('RoleEditor', () => {
     expect(screen.getByDisplayValue('Support Lead copy')).toBeTruthy()
     expect(screen.getAllByText(/1 of \d+ selected/).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText(/staged from/)).toBeTruthy()
+  })
+
+  it('shows the role inside the standard header with breadcrumbs', () => {
+    renderEditor()
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(nav.textContent).toBe('Members & Teams/Roles/Support Lead')
+    expect(within(nav).getByRole('link', { name: 'Roles' }).getAttribute('href')).toBe(
+      '/admin/settings/members'
+    )
+    expect(screen.getByRole('heading', { level: 1, name: 'Support Lead' })).toBeTruthy()
+  })
+
+  it('badges presets only and drops the count chip from the header', () => {
+    const { unmount } = renderEditor(OWNER_PRESET.id)
+    const header = document.querySelector('[data-page-header]') as HTMLElement
+    expect(within(header).getByText('Preset')).toBeTruthy()
+    expect(header.textContent).not.toMatch(/granted/)
+    unmount()
+
+    renderEditor()
+    const customHeader = document.querySelector('[data-page-header]') as HTMLElement
+    expect(within(customHeader).queryByText('Preset')).toBeNull()
+    expect(within(customHeader).queryByText('Custom')).toBeNull()
+    expect(customHeader.textContent).not.toMatch(/granted/)
+  })
+
+  it('draws the groups as sentence-case rows of one card', () => {
+    renderEditor()
+    const label = screen.getByText('Workspace')
+    expect(label.className).not.toContain('uppercase')
+    for (const count of screen.getAllByText(/^\d+ of \d+$/, { selector: 'span' })) {
+      expect(count.className).not.toContain('font-mono')
+    }
+    expect(document.querySelectorAll('[data-settings-card]').length).toBeLessThanOrEqual(2)
   })
 })
