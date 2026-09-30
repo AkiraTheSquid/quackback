@@ -1,5 +1,5 @@
 /**
- * Conversation tags manager (Settings > Conversation data > Tags): the
+ * Conversation tags manager (Settings > Conversations > Tags): the
  * org-wide label taxonomy with total usage counts that click through to the
  * filtered inbox, rename/recolor (propagates everywhere by id), archive/
  * restore, and permanent delete behind archive. Archive and delete are

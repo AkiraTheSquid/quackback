@@ -152,7 +152,7 @@ const SETTINGS_TOUR = [
   ['/admin/settings/security/authentication', 'Access & Security'],
   ['/admin/settings/developers', 'Developers'],
   ['/admin/settings/integrations', 'Integrations'],
-  ['/admin/settings/people', 'People'],
+  ['/admin/settings/people', 'Users'],
   ['/admin/settings/companies', 'Companies'],
   ['/admin/settings/imports', 'Imports & exports'],
 ] as const
