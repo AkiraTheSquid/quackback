@@ -16,10 +16,14 @@ import { useAssistantSave } from './assistant-save-queue'
  * Copilot to run, so the control is hidden.
  */
 
-/** The quiet line under the Copilot title: whether teammates can use it. */
-export function useCopilotStatusLine(available = true) {
+/**
+ * The quiet line under the Copilot title: whether teammates can use it.
+ * Availability comes from the settings unless the caller overrides it.
+ */
+export function useCopilotStatusLine(availableOverride?: boolean) {
   const intl = useIntl()
   const settingsQuery = useQuery(assistantQueries.settings())
+  const available = availableOverride ?? settingsQuery.data?.aiAvailable !== false
   if (!available) {
     return intl.formatMessage({
       id: 'automation.copilot.deployment.unavailable',
@@ -39,9 +43,10 @@ export function useCopilotStatusLine(available = true) {
 }
 
 /** The header action that pauses or resumes Copilot for teammates. */
-export function CopilotPauseControl({ available = true }: { available?: boolean }) {
+export function CopilotPauseControl({ available: availableOverride }: { available?: boolean }) {
   const intl = useIntl()
   const settingsQuery = useQuery(assistantQueries.settings())
+  const available = availableOverride ?? settingsQuery.data?.aiAvailable !== false
   const update = useUpdateAssistantCopilotCapabilities()
   const saveQueued = useAssistantSave()
   const [confirmingEnabled, setConfirmingEnabled] = useState<boolean | null>(null)

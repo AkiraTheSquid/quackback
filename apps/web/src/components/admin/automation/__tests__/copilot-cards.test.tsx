@@ -69,6 +69,11 @@ afterEach(() => {
   updateCopilotCapabilities.mockReset()
   toastError.mockReset()
   vi.mocked(getAssistantSettingsFn).mockClear()
+  vi.mocked(getAssistantSettingsFn).mockImplementation(async () => ({
+    config,
+    revision: 4,
+    managedFieldPaths: [],
+  }))
 })
 
 function renderWithProviders(node: React.ReactElement) {
@@ -158,6 +163,7 @@ describe('AgentKnowledgeCard', () => {
 })
 
 function CopilotHeader({ available }: { available?: boolean }) {
+  // `available` is omitted to read it from the settings, as the route does.
   const line = useCopilotStatusLine(available)
   return (
     <>
@@ -204,5 +210,31 @@ describe('Copilot pause control', () => {
     renderWithProviders(<CopilotHeader available={false} />)
     expect(await screen.findByTestId('line')).toHaveTextContent(/Configure an AI model/)
     expect(screen.queryByRole('button', { name: 'Pause Copilot' })).not.toBeInTheDocument()
+  })
+
+  it('reads availability from the settings when the page does not pass it', async () => {
+    vi.mocked(getAssistantSettingsFn).mockResolvedValue({
+      config,
+      revision: 4,
+      managedFieldPaths: [],
+      aiAvailable: false,
+    } as never)
+    renderWithProviders(<CopilotHeader />)
+    await waitFor(() =>
+      expect(screen.getByTestId('line')).toHaveTextContent(/Configure an AI model/)
+    )
+    expect(screen.queryByRole('button', { name: 'Pause Copilot' })).not.toBeInTheDocument()
+  })
+
+  it('offers the control when the settings report a configured model', async () => {
+    vi.mocked(getAssistantSettingsFn).mockResolvedValue({
+      config,
+      revision: 4,
+      managedFieldPaths: [],
+      aiAvailable: true,
+    } as never)
+    renderWithProviders(<CopilotHeader />)
+    expect(await screen.findByRole('button', { name: 'Pause Copilot' })).toBeInTheDocument()
+    expect(screen.getByTestId('line')).toHaveTextContent('Available to teammates in the inbox')
   })
 })
