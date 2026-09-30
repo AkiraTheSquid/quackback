@@ -95,6 +95,7 @@ function InboundRouteSection({
 }) {
   const [value, setValue] = useState('')
   const [editing, setEditing] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const create = useCreateInboundRoute()
   const clear = useClearInboundForwarding()
   const trust = useUpdateInboundTrust()
@@ -136,11 +137,7 @@ function InboundRouteSection({
               size="sm"
               variant="ghost"
               disabled={clear.isPending}
-              onClick={() =>
-                clear.mutate(undefined, {
-                  onError: reason('Could not remove the route'),
-                })
-              }
+              onClick={() => setConfirmClear(true)}
             >
               Remove
             </Button>
@@ -210,6 +207,19 @@ function InboundRouteSection({
           ))}
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmClear}
+        onOpenChange={setConfirmClear}
+        title="Delete inbound route?"
+        description="Forwarded email stops becoming conversations until you set a route again."
+        confirmLabel="Delete route"
+        variant="destructive"
+        isPending={clear.isPending}
+        onConfirm={() => {
+          clear.mutate(undefined, { onError: reason('Could not remove the route') })
+          setConfirmClear(false)
+        }}
+      />
     </SettingsCard>
   )
 }
@@ -599,7 +609,7 @@ function SendingDomainsSection({
         title="Delete domain?"
         description={
           removeTarget
-            ? `Mail can no longer be sent from ${removeTarget.domain} until it is verified again.`
+            ? `Mail can no longer be sent from ${removeTarget.domain} until you add it again.`
             : undefined
         }
         confirmLabel="Delete domain"

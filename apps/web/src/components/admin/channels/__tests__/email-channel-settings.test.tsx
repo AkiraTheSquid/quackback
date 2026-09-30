@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const deleteAccount = vi.fn()
 const deleteDomain = vi.fn()
+const clearRoute = vi.fn()
 
 vi.mock('@/lib/server/functions/channel-accounts', () => ({
   getEmailChannelConfigFn: vi.fn(),
@@ -17,7 +18,7 @@ vi.mock('@/lib/client/mutations/channel-accounts', () => {
     useCreateSendingDomain: idle,
     useVerifySendingDomain: idle,
     useUpdateInboundTrust: idle,
-    useClearInboundForwarding: idle,
+    useClearInboundForwarding: () => ({ mutate: clearRoute, isPending: false }),
     useUpdateSendingAddressSmtp: idle,
     useDeleteChannelAccount: () => ({ mutate: deleteAccount, isPending: false }),
     useDeleteSendingDomain: () => ({ mutate: deleteDomain, isPending: false }),
@@ -27,10 +28,10 @@ vi.mock('@/lib/client/mutations/channel-accounts', () => {
 const { EmailChannelSettings } = await import('../email-channel-settings')
 const { emailChannelConfigQuery } = await import('@/lib/client/queries/channel-accounts')
 
-function renderSettings() {
+function renderSettings(inboundRoute: unknown = null) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } })
   client.setQueryData(emailChannelConfigQuery().queryKey, {
-    inboundRoute: null,
+    inboundRoute,
     platformAddress: null,
     sendingAddresses: [
       {
@@ -53,6 +54,7 @@ function renderSettings() {
 beforeEach(() => {
   deleteAccount.mockReset()
   deleteDomain.mockReset()
+  clearRoute.mockReset()
 })
 afterEach(cleanup)
 
@@ -83,8 +85,31 @@ describe('removing a sending domain', () => {
     expect(deleteDomain).not.toHaveBeenCalled()
     const dialog = await screen.findByRole('alertdialog')
     expect(within(dialog).getByText('Delete domain?')).toBeTruthy()
+    expect(within(dialog).getByText(/until you add it again/)).toBeTruthy()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete domain' }))
     await waitFor(() => expect(deleteDomain).toHaveBeenCalledWith('dom_1', expect.anything()))
+  })
+})
+
+describe('removing the inbound route', () => {
+  const route = { config: { forwardingTarget: 'support@acme.com' }, inboundTrust: 'strict' }
+
+  it('asks first and clears the route only on confirm', async () => {
+    renderSettings(route)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+    expect(clearRoute).not.toHaveBeenCalled()
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText('Delete inbound route?')).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete route' }))
+    await waitFor(() => expect(clearRoute).toHaveBeenCalledTimes(1))
+  })
+
+  it('cancelling keeps the route', async () => {
+    renderSettings(route)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(clearRoute).not.toHaveBeenCalled()
   })
 })
 

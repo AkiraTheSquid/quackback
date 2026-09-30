@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 
 const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -129,6 +130,9 @@ function OfficeHoursPage() {
   }, [schedule.timezone])
 
   const isBusy = mutation.isPending
+  const [pendingRemoval, setPendingRemoval] = useState<
+    { kind: 'window' | 'holiday'; index: number } | null
+  >(null)
 
   function onToggleEnabled(checked: boolean) {
     apply({
@@ -307,7 +311,7 @@ function OfficeHoursPage() {
                             />
                             <button
                               type="button"
-                              onClick={() => removeInterval(index)}
+                              onClick={() => setPendingRemoval({ kind: 'window', index })}
                               disabled={isBusy}
                               className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
                               aria-label={`Remove ${label} window`}
@@ -377,7 +381,7 @@ function OfficeHoursPage() {
                         </label>
                         <button
                           type="button"
-                          onClick={() => removeHoliday(index)}
+                          onClick={() => setPendingRemoval({ kind: 'holiday', index })}
                           disabled={isBusy}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
                           aria-label={`Remove holiday ${index + 1}`}
@@ -407,6 +411,23 @@ function OfficeHoursPage() {
           )}
         </div>
       </SettingsCard>
+      <ConfirmDialog
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+        title={pendingRemoval?.kind === 'holiday' ? 'Delete holiday?' : 'Delete window?'}
+        description={
+          pendingRemoval?.kind === 'holiday'
+            ? 'That day no longer counts as closed.'
+            : 'That window no longer counts as open.'
+        }
+        confirmLabel={pendingRemoval?.kind === 'holiday' ? 'Delete holiday' : 'Delete window'}
+        variant="destructive"
+        onConfirm={() => {
+          if (pendingRemoval?.kind === 'holiday') removeHoliday(pendingRemoval.index)
+          else if (pendingRemoval) removeInterval(pendingRemoval.index)
+          setPendingRemoval(null)
+        }}
+      />
     </SettingsPage>
   )
 }

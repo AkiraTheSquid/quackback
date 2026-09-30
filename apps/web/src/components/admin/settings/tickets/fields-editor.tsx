@@ -165,7 +165,7 @@ export function FieldsEditor({ category, fields, onChange }: FieldsEditorProps) 
         title="Delete field?"
         description={
           toDelete
-            ? `"${toDelete.label}" is removed from this type's New ticket form. Answers already on tickets are kept.`
+            ? `"${toDelete.label}" is removed from this type's New ticket form when you save the type. Answers already on tickets are kept.`
             : undefined
         }
         confirmLabel="Delete field"
