@@ -55,8 +55,8 @@ export function UsersSegmentNav({
   onSelectSegment,
   // `onClearSegments` is part of the public prop shape (the mobile
   // selector below + downstream callers still pass it), but the
-  // 'All users' click handler now uses a single navigate that strips
-  // both `invites` and `segments` at once — see the comment on that
+  // 'All users' click handler uses a single navigate that strips
+  // both `invites` and `segments` at once; see the comment on that
   // button. Calling onClearSegments here would re-introduce the race.
   onClearSegments: _onClearSegments,
   totalUserCount,
@@ -82,10 +82,10 @@ export function UsersSegmentNav({
           {/* Directory group: the main user list, leads, companies and the
             standalone Invitations view. */}
           <div className="space-y-1">
-            {/* All users — clearing both segment selection and invites mode
+            {/* All users: clearing both segment selection and invites mode
               brings the user back here. Both can be active at once
               (e.g. `?segments=abc&invites=pending`), so we strip both
-              in a SINGLE navigate — splitting it across two updates
+              in a SINGLE navigate; splitting it across two updates
               (one for invites, then `onClearSegments` for segments)
               races: the second navigate re-includes the key the first
               one just cleared because it reads search state from a
@@ -121,7 +121,7 @@ export function UsersSegmentNav({
               </span>
             </button>
 
-            {/* All leads — engaged-but-unauthenticated people (anonymous
+            {/* All leads: engaged-but-unauthenticated people (anonymous
               principals). A lifecycle view, not a filter: it swaps the list's
               population, so segments and invites mode are cleared with it. */}
             <button
@@ -157,7 +157,7 @@ export function UsersSegmentNav({
               )}
             </button>
 
-            {/* All companies — the directory tab over the B2B company object.
+            {/* All companies: the directory tab over the B2B company object.
               A lifecycle view like leads: it swaps the pane's population, so
               segments and invites mode are cleared with it. */}
             <button
@@ -193,7 +193,7 @@ export function UsersSegmentNav({
               )}
             </button>
 
-            {/* Invitations — sibling of All users. Clicking enters invites
+            {/* Invitations: sibling of All users. Clicking enters invites
               mode with the pending status by default; the InvitationsView
               itself lets admins flip between status sub-tabs. */}
             <Link
@@ -220,7 +220,7 @@ export function UsersSegmentNav({
           </div>
         </FilterSection>
 
-        {/* Segments group — its own labelled section via the shared
+        {/* Segments group: its own labelled section via the shared
             FilterSection, with the add button in the header's action slot. */}
         <div className="mt-2">
           <FilterSection

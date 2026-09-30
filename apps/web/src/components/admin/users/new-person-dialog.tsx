@@ -1,5 +1,5 @@
 /**
- * "New user" dialog — ad-hoc contact creation from the Users view.
+ * "New user" dialog: ad-hoc contact creation from the Users view.
  *
  * Cloned from NewCompanyDialog's conventions (companies-view.tsx). Email is
  * optional; the "Email is verified" checkbox asserts trust (it grants the
@@ -7,7 +7,7 @@
  * is entered.
  *
  * Dedup on submit: ANY user match (verified or not) blocks creation and links
- * to the existing person — user.email is unique, so creating over one can
+ * to the existing person, since user.email is unique, so creating over one can
  * only fail with EMAIL_TAKEN. Lead matches (there can be several leads per
  * email; leads have no user row) show as a soft "possible existing matches"
  * list with view links and a "create anyway" path.
@@ -63,7 +63,7 @@ export function NewPersonDialog({
   const trimmedEmail = email.trim()
   const dedupIsCurrent = dedup !== null && dedup.email === trimmedEmail.toLowerCase()
   // user.email is unique, so any user match (verified or not) makes creation
-  // impossible — hard-block and point at the existing person instead.
+  // impossible, so hard-block and point at the existing person instead.
   const userMatch = dedupIsCurrent ? (dedup.matches.find((m) => m.type !== 'lead') ?? null) : null
   const leadMatches = dedupIsCurrent ? dedup.matches.filter((m) => m.type === 'lead') : []
 

@@ -82,7 +82,7 @@ export function OverviewDashboard({
       {overview.isError ? (
         <SettingsCard contentClassName="p-0 sm:p-0">
           <Quiet>
-            Couldn’t load Home.{' '}
+            Couldn’t load this page.{' '}
             <RetryButton onClick={() => void overview.refetch()}>Try again</RetryButton>
           </Quiet>
         </SettingsCard>
