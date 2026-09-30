@@ -7,6 +7,7 @@ import { settingsQueries } from '@/lib/client/queries/settings'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { boardTabSearch, type BoardTab } from '@/components/admin/settings/boards/board-tabs'
 import { BoardGeneralForm } from '@/components/admin/settings/boards/board-general-form'
 import { BoardAccessForm } from '@/components/admin/settings/boards/board-access-form'
 import { BoardModerationForm } from '@/components/admin/settings/boards/board-moderation-form'
@@ -18,11 +19,8 @@ import { assertRoutePermission } from '@/lib/shared/route-permission'
 import { isProductEnabled } from '@/lib/shared/types/settings'
 import { readBatch } from '@/lib/client/queries/read-batch'
 
-const BOARD_TABS = ['general', 'access', 'moderation', 'data'] as const
-export type BoardTab = (typeof BOARD_TABS)[number]
-
 const searchSchema = z.object({
-  tab: z.enum(BOARD_TABS).optional(),
+  tab: boardTabSearch,
 })
 
 export const Route = createFileRoute('/admin/settings/boards/$slug')({

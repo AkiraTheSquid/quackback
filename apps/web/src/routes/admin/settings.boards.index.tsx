@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { BoardsList } from '@/components/admin/settings/boards/boards-list'
+import { boardTabSearch } from '@/components/admin/settings/boards/board-tabs'
 import { CreateBoardDialog } from '@/components/admin/settings/boards/create-board-dialog'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
@@ -14,11 +15,9 @@ import { isProductEnabled } from '@/lib/shared/types/settings'
 
 const FEEDBACK_CRUMBS = [{ label: 'Feedback & Roadmaps' }]
 
-const BOARD_TABS = ['general', 'access', 'moderation', 'data'] as const
-
 const searchSchema = z.object({
   board: z.string().optional(),
-  tab: z.enum(BOARD_TABS).optional(),
+  tab: boardTabSearch,
 })
 
 export const Route = createFileRoute('/admin/settings/boards/')({
