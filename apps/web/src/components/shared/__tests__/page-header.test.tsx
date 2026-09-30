@@ -61,8 +61,13 @@ describe('PageHeader', () => {
     )
     const status = screen.getByText('Saved')
     const action = screen.getByRole('button', { name: 'New board' })
-    expect(
-      status.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
+    expect(status.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('renders a badge beside the title', () => {
+    render(<PageHeader title="Owner" badge={<span>Preset</span>} />)
+    const heading = screen.getByRole('heading', { level: 1, name: 'Owner' })
+    expect(heading.parentElement?.textContent).toContain('Preset')
+    expect(heading.textContent).toBe('Owner')
   })
 })
