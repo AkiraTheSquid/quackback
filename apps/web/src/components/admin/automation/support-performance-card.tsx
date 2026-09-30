@@ -10,7 +10,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { PerformanceStatRow } from './performance-stat-row'
-import { NO_DATA, pct, type DateRange } from './performance-format'
+import { pct, useNoData, type DateRange } from './performance-format'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supportReportingQuery } from '@/lib/client/queries/support-reporting'
 import { formatSlaCountdown } from '@/lib/shared/conversation/sla'
@@ -71,6 +71,7 @@ function BreachHeatmap({ cells }: { cells: SlaBreachHeatmapCell[] }) {
 }
 
 export function SupportPerformanceCard({ range }: { range: DateRange }) {
+  const noData = useNoData()
   const { data, isLoading } = useQuery(supportReportingQuery(range.from, range.to))
 
   const runs = (data?.workflows ?? []).reduce(
@@ -142,7 +143,7 @@ export function SupportPerformanceCard({ range }: { range: DateRange }) {
                       const cell = p[c.key]
                       return (
                         <td key={c.key} className="py-1.5 text-right tabular-nums">
-                          {pct(cell.rate)}{' '}
+                          {pct(cell.rate) ?? noData}{' '}
                           {cell.rate != null && (
                             <span className="text-xs text-muted-foreground">
                               ({cell.met}/{cell.met + cell.breached})
@@ -184,7 +185,7 @@ export function SupportPerformanceCard({ range }: { range: DateRange }) {
                         <span className="text-xs text-muted-foreground">({m.count})</span>
                       </>
                     ) : (
-                      NO_DATA
+                      noData
                     )}
                   </span>
                 )

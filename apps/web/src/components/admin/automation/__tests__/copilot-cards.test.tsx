@@ -69,11 +69,9 @@ afterEach(() => {
   updateCopilotCapabilities.mockReset()
   toastError.mockReset()
   vi.mocked(getAssistantSettingsFn).mockClear()
-  vi.mocked(getAssistantSettingsFn).mockImplementation(async () => ({
-    config,
-    revision: 4,
-    managedFieldPaths: [],
-  }))
+  vi.mocked(getAssistantSettingsFn).mockImplementation(
+    async () => ({ config, revision: 4, managedFieldPaths: [] }) as never
+  )
 })
 
 function renderWithProviders(node: React.ReactElement) {

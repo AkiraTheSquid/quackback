@@ -1154,5 +1154,6 @@
   "automation.connectors.empty.title": "لا توجد موصلات بعد",
   "automation.builtinTools.agent": "Agent",
   "automation.skills.empty.title": "لا توجد مهارات بعد",
+  "automation.performance.noData": "لا توجد بيانات",
   "automation.performance.period": "آخر 30 يومًا"
 }

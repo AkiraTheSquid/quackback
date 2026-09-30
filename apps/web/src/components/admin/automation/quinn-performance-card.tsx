@@ -10,7 +10,7 @@ import { useIntl } from 'react-intl'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Button } from '@/components/ui/button'
 import { PerformanceStatRow } from './performance-stat-row'
-import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
+import { pct, asRate, type DateRange } from './performance-format'
 import { quinnPerformanceQuery } from '@/lib/client/queries/assistant-analytics'
 
 export function QuinnPerformanceCard({ range }: { range: DateRange }) {
@@ -94,7 +94,7 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
                 id: 'automation.performance.agent.actions',
                 defaultMessage: 'Actions completed',
               }),
-              value: data ? String(data.actionsTaken) : NO_DATA,
+              value: data ? String(data.actionsTaken) : null,
             },
             {
               label: intl.formatMessage({
@@ -115,7 +115,7 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
                         }),
                       }
                     )
-                  : NO_DATA,
+                  : null,
               caption: data
                 ? intl.formatMessage(
                     {

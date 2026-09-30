@@ -52,6 +52,13 @@ describe('automation performance page', () => {
     expect(screen.getAllByText('Last 30 days')).toHaveLength(1)
   })
 
+  it('sets the fixed period as plain muted text, not as a control', () => {
+    renderPage()
+    const period = screen.getByText('Last 30 days')
+    expect(period).toHaveClass('text-muted-foreground')
+    expect(period.className).not.toMatch(/border|bg-card|rounded|px-3/)
+  })
+
   it('has the four sections in order', async () => {
     renderPage()
     const titles = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent)

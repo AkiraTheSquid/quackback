@@ -6,6 +6,7 @@
  * domain field) scales it down with `asRate` first.
  */
 import { useMemo } from 'react'
+import { useIntl } from 'react-intl'
 import { last30DaysRange, type DateRange } from '@/lib/client/queries/automation-performance'
 
 export type { DateRange }
@@ -16,11 +17,14 @@ export function useLast30DaysRange(): DateRange {
 }
 
 /** What a figure reads when there is nothing to compute it from. */
-export const NO_DATA = 'No data'
+export function useNoData(): string {
+  const intl = useIntl()
+  return intl.formatMessage({ id: 'automation.performance.noData', defaultMessage: 'No data' })
+}
 
-/** Format a 0-1 rate as a whole-number percent, or "No data" while unset. */
-export function pct(rate: number | null | undefined): string {
-  return rate == null ? NO_DATA : `${Math.round(rate * 100)}%`
+/** Format a 0-1 rate as a whole-number percent, or null while unset. */
+export function pct(rate: number | null | undefined): string | null {
+  return rate == null ? null : `${Math.round(rate * 100)}%`
 }
 
 /** Scale a 0-100 rate down to the 0-1 range `pct` expects; null/undefined pass through unchanged. */

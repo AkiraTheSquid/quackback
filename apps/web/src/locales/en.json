@@ -1154,5 +1154,6 @@
   "automation.connectors.empty.title": "No connectors yet",
   "automation.builtinTools.agent": "Agent",
   "automation.skills.empty.title": "No skills yet",
+  "automation.performance.noData": "No data",
   "automation.performance.period": "Last 30 days"
 }

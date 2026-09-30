@@ -1154,5 +1154,6 @@
   "automation.connectors.empty.title": "还没有连接器",
   "automation.builtinTools.agent": "Agent",
   "automation.skills.empty.title": "还没有技能",
+  "automation.performance.noData": "暂无数据",
   "automation.performance.period": "最近 30 天"
 }

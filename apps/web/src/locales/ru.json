@@ -1154,5 +1154,6 @@
   "automation.connectors.empty.title": "Коннекторов пока нет",
   "automation.builtinTools.agent": "Agent",
   "automation.skills.empty.title": "Навыков пока нет",
+  "automation.performance.noData": "Нет данных",
   "automation.performance.period": "Последние 30 дней"
 }

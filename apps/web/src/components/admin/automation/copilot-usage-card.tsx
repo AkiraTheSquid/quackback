@@ -24,7 +24,7 @@ import {
 import { UserGroupIcon } from '@heroicons/react/24/outline'
 import { PerformanceStatRow } from './performance-stat-row'
 import { EmptyState } from '@/components/shared/empty-state'
-import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
+import { pct, asRate, useNoData, type DateRange } from './performance-format'
 import { copilotUsageMetricsQuery } from '@/lib/client/queries/assistant-copilot-analytics'
 
 /** Admin-facing labels for the raw metadata.transform values. Falls back to
@@ -47,10 +47,11 @@ interface CountRowProps {
 
 /** One label + tabular count line, the card's shared list-row shape. */
 function CountRow({ label, value }: CountRowProps) {
+  const noData = useNoData()
   return (
     <li className="flex items-center justify-between gap-2">
       <span>{label}</span>
-      <span className="tabular-nums text-muted-foreground">{value ?? NO_DATA}</span>
+      <span className="tabular-nums text-muted-foreground">{value ?? noData}</span>
     </li>
   )
 }
@@ -64,6 +65,7 @@ export interface CopilotUsageCardProps {
 }
 
 export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardProps) {
+  const noData = useNoData()
   const { data } = useQuery(copilotUsageMetricsQuery(range.from, range.to))
 
   const transforms = data?.transformsByKind ?? []
@@ -93,15 +95,15 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
         stats={[
           {
             label: 'Questions asked',
-            value: data ? String(data.totalQuestions) : NO_DATA,
+            value: data ? String(data.totalQuestions) : null,
           },
           {
             label: 'Transforms run',
-            value: data ? String(data.totalTransforms) : NO_DATA,
+            value: data ? String(data.totalTransforms) : null,
           },
           {
             label: 'Summaries generated',
-            value: data ? String(data.totalSummaries) : NO_DATA,
+            value: data ? String(data.totalSummaries) : null,
           },
           ...(showActionsFunnel
             ? [
@@ -134,7 +136,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
               },
               {
                 label: 'Helpful votes',
-                value: data ? String(data.feedbackUp) : NO_DATA,
+                value: data ? String(data.feedbackUp) : null,
                 caption: data ? `${data.feedbackDown} not helpful` : undefined,
               },
             ]}
@@ -187,7 +189,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
                       {source.questions}
                     </TableCell>
                     <TableCell className="text-end tabular-nums text-muted-foreground">
-                      {pct(asRate(source.insertRate))}
+                      {pct(asRate(source.insertRate)) ?? noData}
                     </TableCell>
                   </TableRow>
                 ))}
