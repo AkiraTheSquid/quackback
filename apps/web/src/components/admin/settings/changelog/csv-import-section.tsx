@@ -82,9 +82,7 @@ export function CsvImportSection() {
     <div className="space-y-3">
       <div>
         <p className="text-sm font-medium">Import subscribers</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Upload a CSV with an Email column
-        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Upload a CSV with an Email column</p>
       </div>
 
       {result ? (
