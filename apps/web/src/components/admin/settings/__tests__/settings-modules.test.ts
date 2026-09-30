@@ -20,7 +20,7 @@ describe('buildSettingsModules', () => {
     expect(support.pages.map((p) => p.label)).toEqual([
       'Channels',
       'Macros',
-      'Office Hours',
+      'Office hours',
       'SLA policies',
     ])
     expect(support.pages.map((p) => p.to)).not.toContain('/admin/settings/channels/messenger')
@@ -33,10 +33,10 @@ describe('buildSettingsModules', () => {
     expect(support.pages.map((p) => p.label)).toEqual([
       'Channels',
       'Macros',
-      'Office Hours',
+      'Office hours',
       'SLA policies',
       'Ticket types',
-      'Ticket statuses & stages',
+      'Ticket statuses',
     ])
   })
 
@@ -46,10 +46,10 @@ describe('buildSettingsModules', () => {
       'Email',
       'GitHub',
       'Macros',
-      'Office Hours',
+      'Office hours',
       'SLA policies',
       'Ticket types',
-      'Ticket statuses & stages',
+      'Ticket statuses',
     ])
   })
 })

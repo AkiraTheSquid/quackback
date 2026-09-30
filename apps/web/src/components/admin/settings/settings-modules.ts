@@ -1,21 +1,5 @@
 import type { ComponentType } from 'react'
-import {
-  ChatBubbleLeftIcon,
-  ChatBubbleLeftRightIcon,
-  Cog6ToothIcon,
-  Squares2X2Icon,
-  ShieldCheckIcon,
-  TagIcon,
-  ClockIcon,
-  BookOpenIcon,
-  MegaphoneIcon,
-  TicketIcon,
-  QueueListIcon,
-  EnvelopeIcon,
-  DocumentDuplicateIcon,
-  SignalIcon,
-} from '@heroicons/react/24/solid'
-import { GitHubIcon } from '@/components/icons/integration-icons'
+import { SETTINGS_PAGES, type SettingsPagePath } from './settings-pages'
 import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types'
 
 export interface SettingsModulePage {
@@ -35,6 +19,17 @@ export interface SettingsModule {
   pages: SettingsModulePage[]
 }
 
+/** A module page whose label and icon come from the page registry. */
+function modulePage(to: SettingsPagePath, description?: string): SettingsModulePage {
+  const { label, icon } = SETTINGS_PAGES[to]
+  return { label, to, icon, description }
+}
+
+function moduleHead(to: SettingsPagePath) {
+  const { label, icon } = SETTINGS_PAGES[to]
+  return { label, icon }
+}
+
 function pathIsUnder(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`)
 }
@@ -44,106 +39,44 @@ export function buildSettingsModules(flags?: Partial<FeatureFlags>): SettingsMod
   const modules: SettingsModule[] = [
     {
       id: 'feedback',
-      label: 'Feedback & Roadmaps',
-      icon: ChatBubbleLeftIcon,
+      ...moduleHead('/admin/settings/feedback'),
       description: 'Boards, statuses, tags, and moderation.',
       hubTo: '/admin/settings/feedback',
       pages: [
-        {
-          label: 'Boards',
-          to: '/admin/settings/boards',
-          icon: Squares2X2Icon,
-          description: 'Where posts live',
-        },
-        {
-          label: 'Statuses',
-          to: '/admin/settings/statuses',
-          icon: Cog6ToothIcon,
-          description: 'The feedback pipeline',
-        },
-        {
-          label: 'Tags',
-          to: '/admin/settings/tags',
-          icon: TagIcon,
-          description: 'Labels for posts',
-        },
-        {
-          label: 'Moderation',
-          to: '/admin/settings/moderation',
-          icon: ShieldCheckIcon,
-          description: 'Approval and spam',
-        },
+        modulePage('/admin/settings/boards', 'Where posts live'),
+        modulePage('/admin/settings/statuses', 'The feedback pipeline'),
+        modulePage('/admin/settings/tags', 'Labels for posts'),
+        modulePage('/admin/settings/moderation', 'Approval and spam'),
       ],
     },
   ]
 
   const supportPages: SettingsModulePage[] = []
   if (flags?.supportInbox) {
-    supportPages.push({
-      label: 'Channels',
-      to: '/admin/settings/channels',
-      icon: ChatBubbleLeftRightIcon,
-      description: 'Where conversations happen',
-    })
+    supportPages.push(modulePage('/admin/settings/channels', 'Where conversations happen'))
   } else if (isProductEnabled(flags, 'support')) {
     supportPages.push(
-      {
-        label: 'Email',
-        to: '/admin/settings/channels/email',
-        icon: EnvelopeIcon,
-        description: 'Inbound and outbound email',
-      },
-      {
-        label: 'GitHub',
-        to: '/admin/settings/channels/github',
-        icon: GitHubIcon,
-        description: 'Issues as conversations',
-      }
+      modulePage('/admin/settings/channels/email', 'Inbound and outbound email'),
+      modulePage('/admin/settings/channels/github', 'Issues as conversations')
     )
   }
   if (isProductEnabled(flags, 'support')) {
     supportPages.push(
-      {
-        label: 'Macros',
-        to: '/admin/settings/macros',
-        icon: DocumentDuplicateIcon,
-        description: 'Saved replies',
-      },
-      {
-        label: 'Office Hours',
-        to: '/admin/settings/office-hours',
-        icon: ClockIcon,
-        description: 'When the team is available',
-      },
-      {
-        label: 'SLA policies',
-        to: '/admin/settings/sla',
-        icon: ShieldCheckIcon,
-        description: 'Response and resolution targets',
-      }
+      modulePage('/admin/settings/macros', 'Saved replies'),
+      modulePage('/admin/settings/office-hours', 'When the team is available'),
+      modulePage('/admin/settings/sla', 'Response and resolution targets')
     )
   }
   if (flags?.supportTickets) {
     supportPages.push(
-      {
-        label: 'Ticket types',
-        to: '/admin/settings/ticket-types',
-        icon: TicketIcon,
-        description: 'Fields a ticket captures',
-      },
-      {
-        label: 'Ticket statuses & stages',
-        to: '/admin/settings/ticket-statuses',
-        icon: QueueListIcon,
-        description: 'The ticket pipeline',
-      }
+      modulePage('/admin/settings/ticket-types', 'Fields a ticket captures'),
+      modulePage('/admin/settings/ticket-statuses', 'The ticket pipeline')
     )
   }
   if (supportPages.length > 0) {
     modules.push({
       id: 'support',
-      label: 'Support',
-      icon: ChatBubbleLeftRightIcon,
+      ...moduleHead('/admin/settings/support'),
       description: 'Channels, macros, hours, and tickets.',
       hubTo: '/admin/settings/support',
       pages: supportPages,
@@ -153,30 +86,27 @@ export function buildSettingsModules(flags?: Partial<FeatureFlags>): SettingsMod
   if (isProductEnabled(flags, 'helpCenter')) {
     modules.push({
       id: 'helpCenter',
-      label: 'Help Center',
-      icon: BookOpenIcon,
+      ...moduleHead('/admin/settings/help-center'),
       description: 'Articles and categories.',
-      pages: [{ label: 'Help Center', to: '/admin/settings/help-center', icon: BookOpenIcon }],
+      pages: [modulePage('/admin/settings/help-center')],
     })
   }
 
   if (isProductEnabled(flags, 'changelog')) {
     modules.push({
       id: 'changelog',
-      label: 'Changelog',
-      icon: MegaphoneIcon,
+      ...moduleHead('/admin/settings/changelog'),
       description: 'Release notes.',
-      pages: [{ label: 'Changelog', to: '/admin/settings/changelog', icon: MegaphoneIcon }],
+      pages: [modulePage('/admin/settings/changelog')],
     })
   }
 
   if (isProductEnabled(flags, 'status')) {
     modules.push({
       id: 'status',
-      label: 'Status',
-      icon: SignalIcon,
+      ...moduleHead('/admin/settings/status'),
       description: 'Status page.',
-      pages: [{ label: 'Status', to: '/admin/settings/status', icon: SignalIcon }],
+      pages: [modulePage('/admin/settings/status')],
     })
   }
 

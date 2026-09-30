@@ -60,7 +60,7 @@ describe('navSectionsFor', () => {
       'Notifications',
       'Plan & billing',
     ])
-    expect(labels(only(PERMISSIONS.USER_ATTRIBUTE_VIEW), 'Data')).toEqual(['People'])
+    expect(labels(only(PERMISSIONS.USER_ATTRIBUTE_VIEW), 'Data')).toEqual(['Users'])
     expect(labels(only(PERMISSIONS.COMPANY_VIEW), 'Data')).toEqual(['Companies'])
     expect(labels(only(PERMISSIONS.CONVERSATION_MANAGE), 'Data')).toEqual(['Conversations'])
   })

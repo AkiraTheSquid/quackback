@@ -1,28 +1,13 @@
 import { memo, useMemo, useState, type ComponentType } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
-import {
-  Cog6ToothIcon,
-  UsersIcon,
-  UserGroupIcon,
-  PuzzlePieceIcon,
-  ChatBubbleLeftRightIcon,
-  ChatBubbleLeftIcon,
-  CommandLineIcon,
-  ShieldCheckIcon,
-  ArrowDownTrayIcon,
-  ChevronDownIcon,
-  BellIcon,
-  BuildingOfficeIcon,
-  CreditCardIcon,
-  GlobeAltIcon,
-  BeakerIcon,
-} from '@heroicons/react/24/solid'
+import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { cn } from '@/lib/shared/utils'
 import { NAV_ICON_CLASS, NAV_ITEM_CLASS, NAV_SECTION_CLASS } from '@/components/shared/nav-tokens'
 import { FilterSection } from '@/components/shared/filter-section'
 import { usePermissions } from '@/lib/client/use-permissions'
 import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
 import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types'
+import { SETTINGS_PAGES, type SettingsPagePath } from './settings-pages'
 import {
   buildSettingsModules,
   settingsModuleActivePaths,
@@ -63,6 +48,12 @@ interface NavSection {
   items: NavEntry[]
 }
 
+/** A nav row whose label and icon come from the page registry. */
+function navPage(to: SettingsPagePath) {
+  const { label, icon } = SETTINGS_PAGES[to]
+  return { label, to, icon }
+}
+
 export function isNavGroup(entry: NavEntry): entry is NavGroup {
   return 'kids' in entry
 }
@@ -96,70 +87,50 @@ export function buildNavSections(
       label: 'Workspace',
       items: [
         {
-          label: 'General',
-          to: '/admin/settings/general',
-          icon: Cog6ToothIcon,
+          ...navPage('/admin/settings/general'),
           permission: PERMISSIONS.SETTINGS_MANAGE,
         },
         ...(cloudEnabled
           ? [
               {
-                label: 'Domains',
-                to: '/admin/settings/domains',
-                icon: GlobeAltIcon,
+                ...navPage('/admin/settings/domains'),
                 permission: PERMISSIONS.SETTINGS_CUSTOM_DOMAIN,
               },
             ]
           : []),
-        { label: 'Notifications', to: '/admin/settings/notifications', icon: BellIcon },
+        { ...navPage('/admin/settings/notifications') },
         {
-          label: 'Portal',
-          to: '/admin/settings/portal',
-          icon: GlobeAltIcon,
+          ...navPage('/admin/settings/portal'),
           permission: PERMISSIONS.SETTINGS_BRANDING,
         },
         {
-          label: 'Widget',
-          to: '/admin/settings/widget',
-          icon: ChatBubbleLeftRightIcon,
+          ...navPage('/admin/settings/widget'),
           permission: PERMISSIONS.SETTINGS_MANAGE,
         },
         {
-          label: 'Members & Teams',
-          to: '/admin/settings/members',
-          icon: UsersIcon,
+          ...navPage('/admin/settings/members'),
           permission: PERMISSIONS.MEMBER_VIEW,
         },
         {
-          label: 'Access & Security',
-          to: '/admin/settings/security/authentication',
-          icon: ShieldCheckIcon,
+          ...navPage('/admin/settings/security/authentication'),
           permission: PERMISSIONS.AUTH_MANAGE,
         },
         {
-          label: 'Developers',
-          to: '/admin/settings/developers',
-          icon: CommandLineIcon,
+          ...navPage('/admin/settings/developers'),
           permission: PERMISSIONS.API_KEY_MANAGE,
         },
         {
-          label: 'Labs',
-          to: '/admin/settings/labs',
-          icon: BeakerIcon,
+          ...navPage('/admin/settings/labs'),
           permission: PERMISSIONS.SETTINGS_MANAGE,
         },
         {
-          label: 'Integrations',
-          to: '/admin/settings/integrations',
-          icon: PuzzlePieceIcon,
+          ...navPage('/admin/settings/integrations'),
           permission: PERMISSIONS.INTEGRATION_VIEW,
         },
         ...(billingEnabled
           ? [
               {
-                label: 'Plan & billing',
-                to: '/admin/settings/billing',
-                icon: CreditCardIcon,
+                ...navPage('/admin/settings/billing'),
                 permission: PERMISSIONS.BILLING_MANAGE,
               },
             ]
@@ -170,31 +141,23 @@ export function buildNavSections(
       label: 'Data',
       items: [
         {
-          label: 'People',
-          to: '/admin/settings/people',
-          icon: UserGroupIcon,
+          ...navPage('/admin/settings/people'),
           permission: PERMISSIONS.USER_ATTRIBUTE_VIEW,
         },
         {
-          label: 'Companies',
-          to: '/admin/settings/companies',
-          icon: BuildingOfficeIcon,
+          ...navPage('/admin/settings/companies'),
           permission: PERMISSIONS.COMPANY_VIEW,
         },
         ...(isProductEnabled(flags, 'support')
           ? [
               {
-                label: 'Conversations',
-                to: '/admin/settings/conversation-data',
-                icon: ChatBubbleLeftIcon,
+                ...navPage('/admin/settings/conversation-data'),
                 permission: PERMISSIONS.CONVERSATION_MANAGE,
               },
             ]
           : []),
         {
-          label: 'Imports & exports',
-          to: '/admin/settings/imports',
-          icon: ArrowDownTrayIcon,
+          ...navPage('/admin/settings/imports'),
           permission: PERMISSIONS.SETTINGS_MANAGE,
         },
       ],

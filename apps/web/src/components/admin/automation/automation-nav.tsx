@@ -13,6 +13,10 @@ import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { cn } from '@/lib/shared/utils'
 import type { FeatureFlags } from '@/lib/shared/types/settings'
+import {
+  AUTOMATION_PAGES,
+  type AutomationPagePath,
+} from '@/components/admin/settings/settings-pages'
 import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
 
 interface NavItem {
@@ -20,6 +24,12 @@ interface NavItem {
   defaultLabel: string
   to: string
   icon: typeof SparklesIcon
+}
+
+/** A nav row labelled through the page registry. */
+function automationItem(to: AutomationPagePath, icon: NavItem['icon']): NavItem {
+  const { id, defaultMessage } = AUTOMATION_PAGES[to]
+  return { labelId: id, defaultLabel: defaultMessage, to, icon }
 }
 
 /**
@@ -49,50 +59,18 @@ export function buildAutomationNavSections(
 ): NavSection[] {
   const agents: NavItem[] = permissions.assistant
     ? [
-        {
-          labelId: 'automation.nav.agent',
-          defaultLabel: 'Agent',
-          to: '/admin/automation/agent',
-          icon: SparklesIcon,
-        },
-        {
-          labelId: 'automation.nav.copilot',
-          defaultLabel: 'Copilot',
-          to: '/admin/automation/copilot',
-          icon: UserGroupIcon,
-        },
-        {
-          labelId: 'automation.nav.connectors',
-          defaultLabel: 'Connectors',
-          to: '/admin/automation/connectors',
-          icon: LinkIcon,
-        },
-        {
-          labelId: 'automation.nav.skills',
-          defaultLabel: 'Skills',
-          to: '/admin/automation/skills',
-          icon: BookOpenIcon,
-        },
+        automationItem('/admin/automation/agent', SparklesIcon),
+        automationItem('/admin/automation/copilot', UserGroupIcon),
+        automationItem('/admin/automation/connectors', LinkIcon),
+        automationItem('/admin/automation/skills', BookOpenIcon),
       ]
     : []
 
   const tools: NavItem[] = [
     permissions.workflows && flags?.supportInbox
-      ? {
-          labelId: 'automation.nav.workflows',
-          defaultLabel: 'Workflows',
-          to: '/admin/automation/workflows',
-          icon: BoltIcon,
-        }
+      ? automationItem('/admin/automation/workflows', BoltIcon)
       : null,
-    permissions.analytics
-      ? {
-          labelId: 'automation.nav.performance',
-          defaultLabel: 'Performance',
-          to: '/admin/automation/performance',
-          icon: ChartBarIcon,
-        }
-      : null,
+    permissions.analytics ? automationItem('/admin/automation/performance', ChartBarIcon) : null,
   ].filter((item): item is NavItem => item !== null)
 
   const sections: NavSection[] = []

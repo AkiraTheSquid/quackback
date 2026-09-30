@@ -203,21 +203,21 @@ describe('buildNavSections', () => {
     expect(!isNavGroup(security) && security.to).toBe('/admin/settings/security/authentication')
   })
 
-  it('Data contains People and Imports & exports (always), Conversations under support', () => {
+  it('Data contains Users and Imports & exports (always), Conversations under support', () => {
     expect(itemLabels(buildNavSections(), 'Data')).toEqual([
-      'People',
+      'Users',
       'Companies',
       'Imports & exports',
     ])
     const sections = buildNavSections({ supportInbox: true })
     expect(itemLabels(sections, 'Data')).toEqual([
-      'People',
+      'Users',
       'Companies',
       'Conversations',
       'Imports & exports',
     ])
     expect(itemLabels(buildNavSections({ supportTickets: true }), 'Data')).toEqual([
-      'People',
+      'Users',
       'Companies',
       'Conversations',
       'Imports & exports',
