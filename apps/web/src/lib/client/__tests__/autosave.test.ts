@@ -130,7 +130,6 @@ describe('settings autosave hooks', () => {
     'useUpdateWorkflowAbandonedAutoClose',
     'useUpdateWorkflowCloseSpam',
     'useUpdateDefaultSlaPolicy',
-    'useSetWorkspaceExperimentEnabled',
   ])('%s is tagged as an autosave', (hook) => {
     expect(body(hook)).toContain('meta: AUTOSAVE')
   })

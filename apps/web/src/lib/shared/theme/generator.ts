@@ -1,5 +1,5 @@
 import type { ThemeConfig, ThemeMode, ThemeVariables } from './types'
-import { expandTheme, type MinimalThemeVariables, type ThemeBaseline } from './expand'
+import { expandTheme, type MinimalThemeVariables } from './expand'
 
 export const variableMap: Record<string, string> = {
   background: '--background',
@@ -436,51 +436,33 @@ export function normalizeFontSans(fontSans: string): string {
   return normalized
 }
 
-export interface GenerateThemeCSSOptions {
-  /** Unbranded baseline. Legacy (default) keeps existing unparameterized output. */
-  baseline?: ThemeBaseline
-}
-
-export function generateThemeCSS(config: ThemeConfig, options?: GenerateThemeCSSOptions): string {
+export function generateThemeCSS(config: ThemeConfig): string {
   if (!config) return ''
 
-  const baseline: ThemeBaseline = options?.baseline ?? 'legacy'
   const themeMode = config.themeMode ?? 'user'
-  const hasLight = Boolean(config.light)
-  const hasDark = Boolean(config.dark)
-  // Legacy empty configs stay on stylesheet defaults. Refined unbranded emits
-  // the experiment baseline so admin/portal/widget share one source of tokens
-  // when branding is absent.
-  if (!hasLight && !hasDark && baseline === 'legacy') return ''
-
-  const emitLight = themeMode !== 'dark' && (hasLight || baseline === 'refined')
-  const emitDark = themeMode !== 'light' && (hasDark || baseline === 'refined')
-
-  const lightVars = emitLight ? expandTheme(config.light ?? {}, { mode: 'light', baseline }) : {}
-  const darkVars = emitDark ? expandTheme(config.dark ?? {}, { mode: 'dark', baseline }) : {}
+  // An unbranded config still emits the refined baseline so admin, portal and
+  // widget share one source of tokens when branding is absent.
+  const lightVars = themeMode !== 'dark' ? expandTheme(config.light ?? {}, { mode: 'light' }) : {}
+  const darkVars = themeMode !== 'light' ? expandTheme(config.dark ?? {}, { mode: 'dark' }) : {}
   if (lightVars.fontSans) lightVars.fontSans = normalizeFontSans(lightVars.fontSans)
   if (darkVars.fontSans) darkVars.fontSans = normalizeFontSans(darkVars.fontSans)
 
   const parts: string[] = []
-  // :where() keeps refined selectors at :root / .dark specificity so later
-  // branding and custom CSS still win, matching today's cascade.
-  const lightSelector =
-    baseline === 'refined' ? ':root:where([data-visual-theme="refined"])' : ':root'
-  const darkForcedSelector =
-    baseline === 'refined' ? ':root:where([data-visual-theme="refined"])' : ':root'
-  const darkClassSelector =
-    baseline === 'refined' ? '.dark:where([data-visual-theme="refined"])' : '.dark'
+  // :where() keeps the selectors at :root / .dark specificity so later
+  // branding and custom CSS still win.
+  const rootSelector = ':root:where([data-visual-theme="refined"])'
+  const darkClassSelector = '.dark:where([data-visual-theme="refined"])'
 
   if (themeMode !== 'dark') {
     const lightCSS = variablesToCSS(lightVars)
-    if (lightCSS) parts.push(`${lightSelector} { ${lightCSS} }`)
+    if (lightCSS) parts.push(`${rootSelector} { ${lightCSS} }`)
   }
 
   if (themeMode !== 'light') {
     const darkCSS = variablesToCSS(darkVars)
     if (darkCSS) {
       if (themeMode === 'dark') {
-        parts.push(`${darkForcedSelector} { ${darkCSS} }`)
+        parts.push(`${rootSelector} { ${darkCSS} }`)
       } else {
         parts.push(`${darkClassSelector} { ${darkCSS} }`)
       }
@@ -501,16 +483,9 @@ export function generateThemeCSS(config: ThemeConfig, options?: GenerateThemeCSS
   return parts.join(' ')
 }
 
-/** Portal/widget/auth helper: emit CSS only when branding or the refined baseline needs it. */
-export function generateWorkspaceThemeCSS(
-  config: ThemeConfig | null | undefined,
-  visualTheme: ThemeBaseline | null | undefined
-): string {
-  const baseline: ThemeBaseline = visualTheme === 'refined' ? 'refined' : 'legacy'
-  const branding = config ?? {}
-  const hasThemeConfig = Boolean(branding.light || branding.dark)
-  if (!hasThemeConfig && baseline === 'legacy') return ''
-  return generateThemeCSS(branding, { baseline })
+/** Portal, widget and auth helper: the refined baseline with the workspace's branding on top. */
+export function generateWorkspaceThemeCSS(config: ThemeConfig | null | undefined): string {
+  return generateThemeCSS(config ?? {})
 }
 
 export function parseThemeConfig(json: string | null | undefined): ThemeConfig | null {

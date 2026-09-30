@@ -48,11 +48,11 @@ afterEach(() => {
   expireRouteContext()
 })
 
-function bootstrap(themeCookie: 'light' | 'dark') {
+function bootstrap(themeCookie: 'light' | 'dark', settings: Record<string, unknown> = {}) {
   doc.bootstrap = {
     baseUrl: 'http://localhost',
     session: null,
-    settings: { featureFlags: {} },
+    settings: { featureFlags: {}, ...settings },
     onboarding: { complete: true, needsSetupWizard: false },
     userRole: 'admin',
     themeCookie,
@@ -119,5 +119,17 @@ describe('root document renders', () => {
     await act(() => router.invalidate())
 
     expect(doc.defaultTheme).toBe('light')
+  })
+
+  // Labs rows are ignored: a workspace that stored the legacy look, one that
+  // stored the refined look and one with no row at all render the same document.
+  it.each([
+    ['no stored appearance', {}],
+    ['a stored legacy appearance', { visualTheme: 'legacy' }],
+    ['a stored refined appearance', { visualTheme: 'refined' }],
+  ])('marks the document refined for %s', async (_label, settings) => {
+    bootstrap('dark', settings)
+    await mount()
+    expect(document.documentElement.getAttribute('data-visual-theme')).toBe('refined')
   })
 })

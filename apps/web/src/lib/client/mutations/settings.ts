@@ -30,7 +30,6 @@ import {
   updateDefaultSlaPolicyFn,
   updateSpamFilterConfigFn,
 } from '@/lib/server/functions/settings'
-import { setWorkspaceExperimentEnabledFn } from '@/lib/server/functions/labs'
 import {
   updateHelpCenterConfigFn,
   updateHelpCenterSeoFn,
@@ -542,16 +541,5 @@ export function useSaveBrandingTheme() {
         queryClient.invalidateQueries({ queryKey: settingsQueries.branding().queryKey }),
         queryClient.invalidateQueries({ queryKey: settingsQueries.customCss().queryKey }),
       ]),
-  })
-}
-
-export function useSetWorkspaceExperimentEnabled() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    meta: AUTOSAVE,
-    mutationFn: (input: { experimentId: string; enabled: boolean }) =>
-      setWorkspaceExperimentEnabledFn({ data: input }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: settingsQueries.labs().queryKey }),
   })
 }

@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState, type ComponentType } from 'react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { cn } from '@/lib/shared/utils'
-import { NAV_ICON_CLASS, NAV_ITEM_CLASS, NAV_SECTION_CLASS } from '@/components/shared/nav-tokens'
+import { NAV_ICON_CLASS, NAV_ITEM_CLASS } from '@/components/shared/nav-tokens'
 import { FilterSection } from '@/components/shared/filter-section'
 import { usePermissions } from '@/lib/client/use-permissions'
 import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
@@ -14,7 +14,6 @@ import {
   useBillingEnabled,
   useCloudEnabled,
   useFeatureFlags,
-  useRefinedTheme,
 } from '@/lib/client/hooks/use-root-context'
 
 interface NavItem {
@@ -127,10 +126,6 @@ export function buildNavSections(
           permission: PERMISSIONS.API_KEY_MANAGE,
         },
         {
-          ...navPage('/admin/settings/labs'),
-          permission: PERMISSIONS.SETTINGS_MANAGE,
-        },
-        {
           ...navPage('/admin/settings/integrations'),
           permission: PERMISSIONS.INTEGRATION_VIEW,
         },
@@ -196,15 +191,13 @@ export function navSectionsFor(
     .filter((section) => section.items.length > 0)
 }
 
-function settingsRowClass(active: boolean, refined: boolean) {
+function settingsRowClass(active: boolean) {
   return cn(
     NAV_ITEM_CLASS,
-    refined && 'w-full',
+    'w-full',
     active
       ? 'bg-muted text-foreground font-medium'
-      : refined
-        ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-        : 'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
   )
 }
 
@@ -218,7 +211,6 @@ export function SettingsNav() {
   const billingEnabled = useBillingEnabled()
   const cloudEnabled = useCloudEnabled()
   const permissions = usePermissions()
-  const refined = useRefinedTheme()
 
   const navSections = useMemo(
     () => navSectionsFor(buildNavSections(flags, billingEnabled, cloudEnabled), permissions),
@@ -226,53 +218,30 @@ export function SettingsNav() {
   )
 
   return (
-    <div className={refined ? undefined : 'space-y-2'}>
+    <div>
       {navSections.map((section) => (
-        <NavCard key={section.label} section={section} refined={refined} />
+        <NavCard key={section.label} section={section} />
       ))}
     </div>
   )
 }
 
-function NavEntries({
-  entries,
-  refined,
-  parentOpen = true,
-}: {
-  entries: NavEntry[]
-  refined: boolean
-  parentOpen?: boolean
-}) {
+function NavEntries({ entries, parentOpen = true }: { entries: NavEntry[]; parentOpen?: boolean }) {
   return entries.map((entry) => {
     if (isNavGroup(entry)) {
-      return (
-        <NavGroupRows key={entry.label} group={entry} parentOpen={parentOpen} refined={refined} />
-      )
+      return <NavGroupRows key={entry.label} group={entry} parentOpen={parentOpen} />
     }
-    return <NavLink key={entry.to} item={entry} tabbable={parentOpen} refined={refined} />
+    return <NavLink key={entry.to} item={entry} tabbable={parentOpen} />
   })
 }
 
-function NavCard({ section, refined }: { section: NavSection; refined: boolean }) {
-  if (refined) {
-    return (
-      <FilterSection title={section.label}>
-        <div className="space-y-0.5">
-          <NavEntries entries={section.items} refined />
-        </div>
-      </FilterSection>
-    )
-  }
-
+function NavCard({ section }: { section: NavSection }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/50 bg-muted/20 bg-gradient-to-b from-foreground/[0.04] to-transparent">
-      <div className="px-3 py-2.5">
-        <span className={NAV_SECTION_CLASS}>{section.label}</span>
+    <FilterSection title={section.label}>
+      <div className="space-y-0.5">
+        <NavEntries entries={section.items} />
       </div>
-      <div className="space-y-0.5 px-1.5 pb-2">
-        <NavEntries entries={section.items} refined={false} />
-      </div>
-    </div>
+    </FilterSection>
   )
 }
 
@@ -291,15 +260,7 @@ function firstPageOf(entry: NavEntry): string | undefined {
 }
 
 /** A module: a toggle row plus its indented page rows. */
-function NavGroupRows({
-  group,
-  parentOpen,
-  refined,
-}: {
-  group: NavGroup
-  parentOpen: boolean
-  refined: boolean
-}) {
+function NavGroupRows({ group, parentOpen }: { group: NavGroup; parentOpen: boolean }) {
   const navigate = useNavigate()
   const inGroup = useRouterState({
     select: (s) => group.kids.some((kid) => entryIsInPath(kid, s.location.pathname)),
@@ -328,15 +289,7 @@ function NavGroupRows({
         onClick={toggle}
         aria-expanded={open}
         tabIndex={parentOpen ? undefined : -1}
-        className={
-          refined
-            ? cn(settingsRowClass(false, true), inGroup && 'text-foreground font-medium')
-            : cn(
-                NAV_ITEM_CLASS,
-                'w-full font-medium',
-                inGroup ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )
-        }
+        className={cn(settingsRowClass(false), inGroup && 'text-foreground font-medium')}
       >
         <Icon className={NAV_ICON_CLASS} />
         <span className="truncate flex-1 text-left">{group.label}</span>
@@ -348,12 +301,8 @@ function NavGroupRows({
         />
       </button>
       {open && (
-        <div
-          className={
-            refined ? 'space-y-0.5 pl-3' : 'ml-4 space-y-0.5 border-l border-border/50 pl-1.5'
-          }
-        >
-          <NavEntries entries={group.kids} parentOpen={parentOpen} refined={refined} />
+        <div className="space-y-0.5 pl-3">
+          <NavEntries entries={group.kids} parentOpen={parentOpen} />
         </div>
       )}
     </div>
@@ -363,16 +312,15 @@ function NavGroupRows({
 interface NavLinkProps {
   item: NavItem
   tabbable: boolean
-  refined: boolean
 }
 
 const PREFIX_ACTIVE = { includeSearch: false }
 const EXACT_ACTIVE = { exact: true, includeSearch: false }
 
-const rowStateProps = (refined: boolean) => ({
-  activeProps: { className: settingsRowClass(true, refined), 'data-active': 'true' },
-  inactiveProps: { className: settingsRowClass(false, refined) },
-})
+const rowStateProps = {
+  activeProps: { className: settingsRowClass(true), 'data-active': 'true' },
+  inactiveProps: { className: settingsRowClass(false) },
+}
 
 function rowContent(item: NavItem) {
   const Icon = item.icon
@@ -387,7 +335,6 @@ function rowContent(item: NavItem) {
 /** Rows are memoized on what they show. */
 const sameRow = (prev: NavLinkProps, next: NavLinkProps) =>
   prev.tabbable === next.tabbable &&
-  prev.refined === next.refined &&
   prev.item.to === next.item.to &&
   prev.item.label === next.item.label &&
   prev.item.icon === next.item.icon &&
@@ -398,14 +345,14 @@ const sameRow = (prev: NavLinkProps, next: NavLinkProps) =>
  * again only when that changes, and then only itself. Its contents are the same
  * in either state and made once, so a navigation renders no row contents.
  */
-const NavLink = memo(function NavLink({ item, tabbable, refined }: NavLinkProps) {
+const NavLink = memo(function NavLink({ item, tabbable }: NavLinkProps) {
   const content = useMemo(() => rowContent(item), [item])
   return (
     <Link
       to={item.to}
       tabIndex={tabbable ? undefined : -1}
       activeOptions={item.exact ? EXACT_ACTIVE : PREFIX_ACTIVE}
-      {...rowStateProps(refined)}
+      {...rowStateProps}
     >
       {content}
     </Link>

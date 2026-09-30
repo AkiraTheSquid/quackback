@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { Component, lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react'
 import type { Role } from '@/lib/shared/roles'
 import type { QueryClient } from '@tanstack/react-query'
 import {
@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-router'
 import { isAdmin } from '@/lib/shared/roles'
 import appCss from '../globals.css?url'
-import refinedThemeCss from '../styles/labs/refined-theme.css?url'
+import refinedThemeCss from '../styles/refined-theme.css?url'
 import { getBootstrapData, type BootstrapData } from '@/lib/server/functions/bootstrap'
 import { createRouteContextMemo } from '@/lib/client/route-context-memo'
 import type { WorkspaceSettings } from '@/lib/shared/types/settings'
@@ -25,11 +25,6 @@ import { OttHandler } from '@/components/shared/ott-handler'
 import { VisitorBeacon } from '@/components/shared/visitor-beacon'
 import { documentLocale, htmlLangDir } from '@/lib/shared/document-locale'
 import { normalizeLocale, DEFAULT_LOCALE, type SupportedLocale } from '@/lib/shared/i18n'
-import {
-  applyVisualThemeToDocument,
-  visualThemeAttribute,
-  type VisualTheme,
-} from '@/lib/shared/labs'
 import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
 
 // The toast renderer is its own chunk: the root module ships with every
@@ -51,8 +46,6 @@ export interface RouterContext {
   updateBannerDismissedVersion?: BootstrapData['updateBannerDismissedVersion']
   billingEnabled?: boolean
   cloudEnabled?: boolean
-  /** Effective Labs appearance. Independent of light/dark preference. */
-  visualTheme?: VisualTheme
 }
 
 // Paths that are allowed before onboarding is complete
@@ -77,8 +70,7 @@ export function isOnboardingExempt(pathname: string): boolean {
 // server, since its response also answers client-side navigations.
 async function loadRootContext() {
   const { settings, ...bootstrap } = await getBootstrapData()
-  const visualTheme: VisualTheme = settings?.visualTheme === 'refined' ? 'refined' : 'legacy'
-  return { ...bootstrap, settings, visualTheme }
+  return { ...bootstrap, settings }
 }
 
 type RootContext = Awaited<ReturnType<typeof loadRootContext>>
@@ -213,13 +205,6 @@ class SafeRootDocument extends Component<{ children: ReactNode }, { hasError: bo
 // feel like they crossed into a different product.
 const NON_PORTAL_PREFIXES = ['/admin', '/onboarding', '/api', '/complete-signup']
 
-function VisualThemeSync({ visualTheme }: { visualTheme: VisualTheme }) {
-  useLayoutEffect(() => {
-    applyVisualThemeToDocument(visualTheme)
-  }, [visualTheme])
-  return null
-}
-
 /**
  * The first navigation after hydration reuses the context this document was
  * rendered with instead of asking the server again. Read once, when the
@@ -248,10 +233,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const acceptLanguageLocale = Route.useRouteContext({
     select: (context) => context.acceptLanguageLocale,
   })
-  const visualTheme = Route.useRouteContext({ select: (context) => context.visualTheme })
   useSeedRootContext()
-  const resolvedVisualTheme: VisualTheme =
-    visualTheme === 'refined' || settings?.visualTheme === 'refined' ? 'refined' : 'legacy'
   // Portal routes can force a specific theme (light/dark) via branding config.
   // Admin and other non-portal routes always respect the user's preference.
   const isPortalRoute = useRouterState({
@@ -324,7 +306,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       dir={dir}
       className={themeClass}
       style={{ colorScheme }}
-      data-visual-theme={visualThemeAttribute(resolvedVisualTheme)}
+      data-visual-theme="refined"
       suppressHydrationWarning
     >
       <head>
@@ -332,7 +314,6 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <DocumentHead />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <VisualThemeSync visualTheme={resolvedVisualTheme} />
         <ThemeProvider
           attribute="class"
           defaultTheme={defaultTheme}

@@ -1,19 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { LabsSettings } from '@/components/admin/settings/labs/labs-settings'
-import { listVisibleLabsExperimentsFn } from '@/lib/server/functions/labs'
-import { PERMISSIONS } from '@/lib/shared/permissions'
-import { assertRoutePermission } from '@/lib/shared/route-permission'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+/** Retired page: the workspace has one visual theme. Kept so old links land on General. */
 export const Route = createFileRoute('/admin/settings/labs')({
-  loader: async ({ context }) => {
-    assertRoutePermission(context.permissions, PERMISSIONS.SETTINGS_MANAGE)
-    const experiments = await listVisibleLabsExperimentsFn()
-    return { experiments }
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/settings/general', replace: true })
   },
-  component: LabsSettingsPage,
 })
-
-function LabsSettingsPage() {
-  const { experiments } = Route.useLoaderData()
-  return <LabsSettings experiments={experiments} />
-}

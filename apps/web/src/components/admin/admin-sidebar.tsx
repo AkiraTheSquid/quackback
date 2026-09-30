@@ -26,7 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { signOut } from '@/lib/client/auth-client'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { NotificationBell } from '@/components/notifications'
@@ -47,7 +46,6 @@ import { adminQueries } from '@/lib/client/queries/admin'
 import { ENTITY_ICONS } from '@/components/admin/entity-icon'
 import {
   useBillingEnabled,
-  useRefinedTheme,
   useSessionContext,
   useUserRole,
   useWorkspaceSettings,
@@ -132,15 +130,11 @@ export function buildRailItems(
   })
 }
 
-function railControlClass(labeled: boolean, isActive = false) {
+function railControlClass(isActive = false) {
   return cn(
-    'relative transition-all duration-200',
-    labeled
-      ? 'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm'
-      : 'flex size-9 items-center justify-center rounded-lg',
+    'relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200',
     'text-muted-foreground/70 hover:text-foreground hover:bg-muted/50',
-    isActive && 'bg-muted/80 text-foreground',
-    labeled && isActive && 'font-semibold'
+    isActive && 'bg-muted/80 font-semibold text-foreground'
   )
 }
 
@@ -153,10 +147,10 @@ function railControlClass(labeled: boolean, isActive = false) {
 const NAV_ACTIVE_OPTIONS = { includeSearch: false }
 const NAV_EXACT_OPTIONS = { exact: true, includeSearch: false }
 
-const railLinkProps = (labeled: boolean, exact: boolean) => ({
+const railLinkProps = (exact: boolean) => ({
   activeOptions: exact ? NAV_EXACT_OPTIONS : NAV_ACTIVE_OPTIONS,
-  activeProps: { className: railControlClass(labeled, true), 'data-active': 'true' },
-  inactiveProps: { className: railControlClass(labeled) },
+  activeProps: { className: railControlClass(true), 'data-active': 'true' },
+  inactiveProps: { className: railControlClass() },
 })
 
 const MOBILE_LINK_CLASS =
@@ -171,7 +165,6 @@ function NavItem({
   badgeLabel,
   dot,
   exact = false,
-  labeled = false,
 }: {
   href: string
   icon: typeof ChatBubbleLeftIcon
@@ -185,58 +178,27 @@ function NavItem({
   dot?: boolean
   /** Active on this path only, not on the pages under it. */
   exact?: boolean
-  /** Icon + visible label. Legacy stays icon-only with a tooltip. */
-  labeled?: boolean
 }) {
-  const link = (
+  return (
     <Link
       to={href}
       onClick={onClick}
       data-admin-rail-item=""
-      data-labeled={labeled ? '' : undefined}
-      {...railLinkProps(labeled, exact)}
+      data-labeled=""
+      {...railLinkProps(exact)}
     >
       <Icon className="size-5 shrink-0" />
-      {labeled ? (
-        <span className="min-w-0 flex-1 truncate">{label}</span>
-      ) : (
-        <span className="sr-only">{label}</span>
-      )}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge != null && badge !== '' && (
-        <span
-          className={cn(
-            labeled
-              ? 'ms-auto flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1'
-              : 'absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1',
-            'border-2 border-card bg-primary text-[11px] font-semibold text-primary-foreground'
-          )}
-        >
+        <span className="ms-auto flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
           <span aria-hidden="true">{badge}</span>
           <span className="sr-only">{badgeLabel ?? badge}</span>
         </span>
       )}
       {dot && (badge == null || badge === '') && (
-        <span
-          className={
-            labeled
-              ? 'ms-auto size-2 rounded-full bg-primary'
-              : 'absolute top-0.5 right-0.5 size-2 rounded-full bg-primary'
-          }
-          aria-hidden="true"
-        />
+        <span className="ms-auto size-2 rounded-full bg-primary" aria-hidden="true" />
       )}
     </Link>
-  )
-
-  if (labeled) return link
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right" sideOffset={8}>
-        {label}
-      </TooltipContent>
-    </Tooltip>
   )
 }
 
@@ -278,7 +240,6 @@ function MobileNavLink({
 }
 
 export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarProps) {
-  const refined = useRefinedTheme()
   const router = useRouter()
   const onNotificationsPage = useRouterState({
     select: (s) => s.location.pathname.startsWith('/admin/notifications'),
@@ -362,20 +323,13 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside
-        data-admin-rail=""
-        data-labeled={refined ? '' : undefined}
-        className={cn('hidden shrink-0 flex-col sm:flex', refined ? 'w-56' : 'w-14')}
-      >
+      <aside data-admin-rail="" data-labeled="" className="hidden w-56 shrink-0 flex-col sm:flex">
         <ScrollArea className="h-full" scrollBarClassName="w-2" type="auto">
           <div className="flex h-full min-h-screen flex-col py-2">
             {/* Logo */}
             <Link
               to="/admin"
-              className={cn(
-                'mb-4 flex items-center opacity-90 transition-opacity hover:opacity-100',
-                refined ? 'gap-2.5 px-4' : 'justify-center'
-              )}
+              className="mb-4 flex items-center gap-2.5 px-4 opacity-90 transition-opacity hover:opacity-100"
             >
               <img
                 src={orgLogo}
@@ -384,11 +338,11 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                 height={28}
                 className="h-7 w-7 rounded object-contain"
               />
-              {refined ? <span className="truncate text-sm font-semibold">{orgName}</span> : null}
+              <span className="truncate text-sm font-semibold">{orgName}</span>
             </Link>
 
             {/* Main Navigation */}
-            <nav className={cn('flex flex-col', refined ? 'gap-0.5 px-2' : 'items-center gap-2.5')}>
+            <nav className="flex flex-col gap-0.5 px-2">
               {railItems.map((item) => (
                 <NavItem
                   key={item.href}
@@ -398,7 +352,6 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                   exact={item.exact}
                   badge={itemBadge(item)}
                   badgeLabel={itemBadgeLabel(item)}
-                  labeled={refined}
                 />
               ))}
             </nav>
@@ -407,91 +360,40 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
             <div className="min-h-3 flex-1" />
 
             {/* Bottom Section */}
-            <div className={cn('flex flex-col', refined ? 'gap-0.5 px-2' : 'items-center gap-2.5')}>
+            <div className="flex flex-col gap-0.5 px-2">
               {/* Settings (admin-only) */}
-              {isAdmin && (
-                <NavItem
-                  href="/admin/settings"
-                  icon={Cog6ToothIcon}
-                  label="Settings"
-                  labeled={refined}
-                />
-              )}
+              {isAdmin && <NavItem href="/admin/settings" icon={Cog6ToothIcon} label="Settings" />}
 
               {billingEnabled && siblings.length > 0 ? (
-                <WorkspaceSwitcher
-                  siblings={siblings}
-                  onOpen={(id) => openSibling.mutate(id)}
-                  labeled={refined}
-                />
+                <WorkspaceSwitcher siblings={siblings} onOpen={(id) => openSibling.mutate(id)} />
               ) : null}
 
               {/* Notifications */}
-              <NotificationBell
-                className={refined ? undefined : 'size-9'}
-                labeled={refined}
-                active={onNotificationsPage}
-              />
+              <NotificationBell labeled active={onNotificationsPage} />
 
               {/* Portal Link */}
-              {refined ? (
-                <Link to="/" data-admin-rail-item="" className={railControlClass(true)}>
-                  <GlobeAltIcon className="size-5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">View portal</span>
-                </Link>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/"
-                      className="flex size-9 items-center justify-center rounded-lg text-muted-foreground/70 transition-all duration-200 hover:bg-muted/50 hover:text-foreground"
-                    >
-                      <GlobeAltIcon className="size-5" />
-                      <span className="sr-only">View portal</span>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>
-                    View portal
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              <Link to="/" data-admin-rail-item="" className={railControlClass()}>
+                <GlobeAltIcon className="size-5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">View portal</span>
+              </Link>
 
               {/* Help Menu */}
               <DropdownMenu>
-                {refined ? (
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      data-admin-rail-item=""
-                      className={cn(
-                        railControlClass(true),
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                      )}
-                    >
-                      <QuestionMarkCircleIcon className="size-5 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate text-left">Help</span>
-                      {latestVersion && (
-                        <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <button className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground/70 transition-all duration-200 hover:bg-muted/50 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                          <QuestionMarkCircleIcon className="size-5" />
-                          {latestVersion && (
-                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-                          )}
-                          <span className="sr-only">Help</span>
-                        </button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={8}>
-                      Help
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                <DropdownMenuTrigger asChild>
+                  <button
+                    data-admin-rail-item=""
+                    className={cn(
+                      railControlClass(),
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    )}
+                  >
+                    <QuestionMarkCircleIcon className="size-5 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-left">Help</span>
+                    {latestVersion && (
+                      <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="right" sideOffset={8} className="w-52">
                   <DropdownMenuItem asChild>
                     <a
@@ -532,57 +434,31 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
 
               {/* User Menu */}
               <DropdownMenu>
-                {refined ? (
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      data-admin-rail-item=""
-                      className={cn(
-                        railControlClass(true),
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                      )}
-                    >
-                      <span className="relative shrink-0">
-                        <Avatar className="size-6" src={avatarUrl} name={name} />
-                        {conversationsEnabled && (
-                          <span
-                            className={cn(
-                              'absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-background',
-                              availability === 'online'
-                                ? 'bg-green-500'
-                                : 'border-2 border-muted-foreground bg-background'
-                            )}
-                            aria-hidden="true"
-                          />
-                        )}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-left">{name || 'Account'}</span>
-                    </button>
-                  </DropdownMenuTrigger>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <button className="relative flex size-9 items-center justify-center rounded-full transition-all duration-200 hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                          <Avatar className="size-7" src={avatarUrl} name={name} />
-                          {conversationsEnabled && (
-                            <span
-                              className={cn(
-                                'absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-background',
-                                availability === 'online'
-                                  ? 'bg-green-500'
-                                  : 'border-2 border-muted-foreground bg-background'
-                              )}
-                              aria-hidden="true"
-                            />
+                <DropdownMenuTrigger asChild>
+                  <button
+                    data-admin-rail-item=""
+                    className={cn(
+                      railControlClass(),
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    )}
+                  >
+                    <span className="relative shrink-0">
+                      <Avatar className="size-6" src={avatarUrl} name={name} />
+                      {conversationsEnabled && (
+                        <span
+                          className={cn(
+                            'absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-background',
+                            availability === 'online'
+                              ? 'bg-green-500'
+                              : 'border-2 border-muted-foreground bg-background'
                           )}
-                        </button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={8}>
-                      Account
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-left">{name || 'Account'}</span>
+                  </button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="right" sideOffset={8} className="w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex items-center gap-2">

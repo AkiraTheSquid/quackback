@@ -154,7 +154,6 @@ export const Route = createFileRoute('/_portal')({
 
       const brandingData = settings?.brandingData ?? null
       const brandingConfig = settings?.brandingConfig ?? {}
-      const visualTheme = settings?.visualTheme === 'refined' ? 'refined' : 'legacy'
       // Locale so the gate's auth dialog renders under PortalIntlProvider.
       const locale = await getPortalLocaleFn().catch(() => DEFAULT_LOCALE)
       // Instant-SSO: when the workspace's only sign-in method is a single OIDC
@@ -177,7 +176,7 @@ export const Route = createFileRoute('/_portal')({
         reason: accessResult.reason,
         workspaceName: settings?.name ?? '',
         logoUrl: brandingData?.logoUrl ?? null,
-        themeStyles: generateWorkspaceThemeCSS(brandingConfig, visualTheme),
+        themeStyles: generateWorkspaceThemeCSS(brandingConfig),
         customCss: settings?.customCss ?? '',
         configFontSans: readFontSans(brandingConfig.light),
         locale,
@@ -232,8 +231,7 @@ export const Route = createFileRoute('/_portal')({
     const publicPortalConfig = settings?.publicPortalConfig ?? null
 
     const themeMode = brandingConfig.themeMode ?? 'user'
-    const visualTheme = settings?.visualTheme === 'refined' ? 'refined' : 'legacy'
-    const themeStyles = generateWorkspaceThemeCSS(brandingConfig, visualTheme)
+    const themeStyles = generateWorkspaceThemeCSS(brandingConfig)
 
     // Always apply custom CSS on top (cascades over theme styles)
     const customCssToApply = customCss

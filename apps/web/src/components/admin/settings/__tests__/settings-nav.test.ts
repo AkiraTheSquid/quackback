@@ -168,7 +168,6 @@ describe('buildNavSections', () => {
       'Members & Teams',
       'Access & Security',
       'Developers',
-      'Labs',
       'Integrations',
     ])
   })

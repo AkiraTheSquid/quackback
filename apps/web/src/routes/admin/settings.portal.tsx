@@ -114,7 +114,6 @@ function PortalPage() {
     initialLogoUrl: logoData?.url ?? null,
     initialThemeConfig: brandingConfig as ThemeConfig,
     initialCustomCss: customCss,
-    baseline: settings?.visualTheme === 'refined' ? 'refined' : 'legacy',
   })
 
   // Baselines for dirty tracking, captured once from the loaded values,

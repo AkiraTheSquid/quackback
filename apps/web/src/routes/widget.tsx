@@ -70,8 +70,7 @@ export const Route = createFileRoute('/widget')({
     const customCss = settings.customCss ?? ''
     const themeMode = brandingConfig.themeMode ?? 'user'
 
-    const visualTheme = settings.visualTheme === 'refined' ? 'refined' : 'legacy'
-    const themeStyles = generateWorkspaceThemeCSS(brandingConfig, visualTheme)
+    const themeStyles = generateWorkspaceThemeCSS(brandingConfig)
 
     // If user is logged into the portal (same-origin), extract the signed
     // session cookie so the widget can reuse it directly as a Bearer token.

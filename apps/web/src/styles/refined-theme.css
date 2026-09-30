@@ -1,6 +1,6 @@
 /*
- * Refined visual theme — gated by the Labs document marker.
- * Legacy appearance is unchanged when the attribute is absent.
+ * Refined visual theme, scoped to the document marker the root route always sets
+ * (data-visual-theme="refined").
  *
  * Tokens stay on :where() so workspace branding / custom CSS still win.
  * Chrome rules omit :where() so they can actually beat utility classes

@@ -81,17 +81,15 @@ import { DEFAULT_FEATURE_FLAGS } from '@/lib/shared/types/settings'
 
 function renderSidebar(
   userRole: 'admin' | 'member',
-  opts: { flags?: Record<string, boolean>; visualTheme?: 'refined'; name?: string } = {}
+  opts: { flags?: Record<string, boolean>; name?: string } = {}
 ) {
   mockRole.current = userRole
   mockGetRouteContext.mockReturnValue({
     session: { user: { name: 'Test', email: 'test@example.com', image: null } },
     settings: {
       featureFlags: opts.flags ?? {},
-      visualTheme: opts.visualTheme,
       brandingData: opts.name ? { name: opts.name } : undefined,
     },
-    visualTheme: opts.visualTheme,
     userRole,
     billingEnabled: mockBillingEnabled.current,
   })
@@ -221,40 +219,37 @@ describe('AdminSidebar — settings cog visibility', () => {
   })
 })
 
-describe('AdminSidebar — refined labeled rail', () => {
+describe('AdminSidebar — labeled rail', () => {
   afterEach(() => cleanup())
 
-  it('keeps the legacy rail icon-only when the experiment is off', () => {
-    const { container } = renderSidebar('admin')
-    expect(container.querySelector('[data-admin-rail][data-labeled]')).toBeNull()
-    expect(container.querySelector('[data-admin-rail-item][data-labeled]')).toBeNull()
-    expect(container.querySelector('aside')?.className).toContain('w-14')
-  })
-
-  it('shows full menu labels when the refined theme is on', () => {
-    mockRole.current = 'admin'
-    mockGetRouteContext.mockReturnValue({
-      session: { user: { name: 'Test', email: 'test@example.com', image: null } },
-      settings: { featureFlags: {}, visualTheme: 'refined' },
-      visualTheme: 'refined',
-      userRole: 'admin',
-      billingEnabled: false,
-    })
-    const { container } = render(
-      <IntlProvider locale="en" messages={{}}>
-        <TooltipProvider>
-          <AdminSidebar />
-        </TooltipProvider>
-      </IntlProvider>
-    )
-    expect(container.querySelector('[data-admin-rail][data-labeled]')).toBeTruthy()
-    expect(
-      container.querySelectorAll('[data-admin-rail-item][data-labeled]').length
-    ).toBeGreaterThan(0)
-    expect(container.querySelector('aside a[href="/admin/settings"]')?.textContent).toContain(
-      'Settings'
-    )
-    expect(container.querySelector('aside')?.className).toContain('w-56')
+  it('always shows full menu labels, whatever the stored appearance says', () => {
+    for (const stored of [undefined, 'legacy', 'refined'] as const) {
+      mockRole.current = 'admin'
+      mockGetRouteContext.mockReturnValue({
+        session: { user: { name: 'Test', email: 'test@example.com', image: null } },
+        settings: { featureFlags: {}, visualTheme: stored },
+        visualTheme: stored,
+        userRole: 'admin',
+        billingEnabled: false,
+      })
+      const { container } = render(
+        <IntlProvider locale="en" messages={{}}>
+          <TooltipProvider>
+            <AdminSidebar />
+          </TooltipProvider>
+        </IntlProvider>
+      )
+      expect(container.querySelector('[data-admin-rail][data-labeled]')).toBeTruthy()
+      expect(
+        container.querySelectorAll('[data-admin-rail-item][data-labeled]').length
+      ).toBeGreaterThan(0)
+      expect(container.querySelector('aside a[href="/admin/settings"]')?.textContent).toContain(
+        'Settings'
+      )
+      expect(container.querySelector('aside')?.className).toContain('w-56')
+      expect(container.querySelector('aside')?.className).not.toContain('w-14')
+      cleanup()
+    }
   })
 })
 
@@ -278,14 +273,9 @@ describe('AdminSidebar rail', () => {
     cleanup()
   })
 
-  it('has a Home item pointing at /admin in both themes', () => {
-    const legacy = renderSidebar('admin', { flags: ALL_ON })
-    expect(legacy.container.querySelector('aside nav a[href="/admin"]')).toBeTruthy()
-    cleanup()
-    const refined = renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
-    expect(refined.container.querySelector('aside nav a[href="/admin"]')?.textContent).toContain(
-      'Home'
-    )
+  it('has a labelled Home item pointing at /admin', () => {
+    const { container } = renderSidebar('admin', { flags: ALL_ON })
+    expect(container.querySelector('aside nav a[href="/admin"]')?.textContent).toContain('Home')
   })
 
   it('links AI & Automation to the area index', () => {
@@ -296,7 +286,7 @@ describe('AdminSidebar rail', () => {
 
   it('shows the pending moderation count on Feedback only when above zero', () => {
     mockPending.current = 3
-    const withCount = renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
+    const withCount = renderSidebar('admin', { flags: ALL_ON })
     const feedback = withCount.container.querySelector('aside nav a[href="/admin/feedback"]')!
     expect(feedback.textContent).toContain('3')
     expect(feedback.textContent).toContain('3 waiting for review')
@@ -305,7 +295,7 @@ describe('AdminSidebar rail', () => {
     ).not.toMatch(/\d/)
     cleanup()
     mockPending.current = 0
-    const none = renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
+    const none = renderSidebar('admin', { flags: ALL_ON })
     expect(none.container.querySelector('aside nav a[href="/admin/feedback"]')!.textContent).toBe(
       'Feedback'
     )
@@ -314,23 +304,20 @@ describe('AdminSidebar rail', () => {
   it('asks for the pending moderation count only with the post.approve permission', () => {
     mockPending.current = 3
     moderationQueryEnabled.current = null
-    const member = renderSidebar('member', { flags: ALL_ON, visualTheme: 'refined' })
+    const member = renderSidebar('member', { flags: ALL_ON })
     expect(moderationQueryEnabled.current).toBe(false)
     expect(member.container.querySelector('aside nav a[href="/admin/feedback"]')!.textContent).toBe(
       'Feedback'
     )
     cleanup()
-    renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
+    renderSidebar('admin', { flags: ALL_ON })
     expect(moderationQueryEnabled.current).toBe(true)
   })
 
-  it('uses solid icons for Status in both themes', () => {
-    for (const visualTheme of [undefined, 'refined'] as const) {
-      const { container } = renderSidebar('admin', { flags: ALL_ON, visualTheme })
-      const svg = container.querySelector('aside nav a[href="/admin/status"] svg')!
-      expect(svg.getAttribute('fill')).toBe('currentColor')
-      cleanup()
-    }
+  it('uses a solid icon for Status', () => {
+    const { container } = renderSidebar('admin', { flags: ALL_ON })
+    const svg = container.querySelector('aside nav a[href="/admin/status"] svg')!
+    expect(svg.getAttribute('fill')).toBe('currentColor')
   })
 
   it('titles the mobile menu with the workspace name', async () => {

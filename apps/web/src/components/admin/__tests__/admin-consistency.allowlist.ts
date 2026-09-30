@@ -2,17 +2,16 @@ import type { RuleName } from './admin-consistency.rules'
 
 /**
  * Files (or, for registry-pages, registry paths) that do not comply with a
- * rule. Every entry is a deliberate exception with its reason above it, or a
- * Labs entry. The guard fails on an offender that is not listed and on a listed
- * entry that no longer offends, so entries are only ever removed.
+ * rule. Every entry is a deliberate exception with its reason above it. The
+ * guard fails on an offender that is not listed and on a listed entry that no
+ * longer offends, so entries are only ever removed.
  */
 export const ALLOWLIST: Record<RuleName, string[]> = {
-  'page-shell': ['components/admin/settings/labs/labs-settings.tsx'],
-  'page-width': ['components/admin/settings/labs/labs-settings.tsx'],
+  'page-shell': [],
+  'page-width': [],
   'registry-pages': [
     // A module label with no page of its own: its URL redirects to the first page of the module.
     '/admin/settings/feedback',
-    '/admin/settings/labs',
     // A module label with no page of its own: its URL redirects to the first page of the module.
     '/admin/settings/support',
   ],
@@ -24,7 +23,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/auth-shared/oauth-provider-grid.tsx',
     // A switch inside a dense draggable row of the portal tab list.
     'components/admin/settings/branding/portal-nav-editor.tsx',
-    'components/admin/settings/labs/labs-settings.tsx',
     // The Enabled switch sits in the page header actions, not in a setting row.
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
     // A switch inside a provider list row, not a setting row.
