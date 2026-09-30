@@ -97,7 +97,7 @@ test.describe('Base UI component usability', () => {
     await expect(general).not.toHaveAttribute('data-active')
 
     await page.goto('/admin/settings/tags')
-    const addTag = page.getByText('Add new tag')
+    const addTag = page.getByRole('button', { name: 'New tag', exact: true })
     await waitForHydration(addTag)
     await addTag.click()
     const tagDialog = page.getByRole('dialog')
