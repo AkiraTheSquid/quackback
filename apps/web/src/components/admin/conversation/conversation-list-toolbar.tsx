@@ -60,7 +60,7 @@ export interface ConversationListToolbarProps {
 /**
  * The list column's toolbar: a Sort menu, the status menu and one Filter menu
  * holding every other refinement, then a removable chip per active filter. It
- * wraps instead of scrolling so nothing is clipped at the column edge.
+ * wraps so nothing is clipped at the column edge.
  */
 export function ConversationListToolbar({
   searching,
@@ -241,16 +241,18 @@ export function ConversationListToolbar({
               onRemove={() => onTicketTypeFilter(undefined)}
             />
           )}
-          {activeCompany && companyFilter && (
-            <FilterChip
-              icon={BuildingOffice2Icon}
-              label="Company"
-              value={activeCompany.name}
-              valueId={activeCompany.id}
-              onRemove={() => companyFilter.onChange(undefined)}
-            />
-          )}
         </>
+      )}
+      {/* A company filter narrows the list wherever it applies, so its chip
+          shows and clears even where the other refinements are hidden. */}
+      {activeCompany && companyFilter && (
+        <FilterChip
+          icon={BuildingOffice2Icon}
+          label="Company"
+          value={activeCompany.name}
+          valueId={activeCompany.id}
+          onRemove={() => companyFilter.onChange(undefined)}
+        />
       )}
     </div>
   )

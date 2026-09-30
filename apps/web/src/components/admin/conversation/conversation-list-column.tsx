@@ -365,6 +365,7 @@ const ConversationListHeader = memo(function ConversationListHeader({
           value={searchInput}
           onChange={onSearchInput}
           placeholder="Search conversations…"
+          aria-label="Search the inbox"
           data-search-input
         />
       </div>

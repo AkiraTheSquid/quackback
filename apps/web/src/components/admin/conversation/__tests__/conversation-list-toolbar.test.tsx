@@ -74,6 +74,11 @@ describe('ConversationListColumn toolbar', () => {
     expect(onSearchInput).toHaveBeenCalledWith('refund')
   })
 
+  it('names the list search for assistive technology', () => {
+    renderColumn()
+    expect(screen.getByRole('textbox', { name: 'Search the inbox' })).toBeTruthy()
+  })
+
   it('shows Sort and Filter menus and wraps rather than scrolling sideways', () => {
     renderColumn()
     const sort = screen.getByRole('button', { name: /Sort: Most recent/ })
@@ -99,6 +104,29 @@ describe('ConversationListColumn toolbar', () => {
     expect(onPriorityFilter).toHaveBeenCalledWith('all')
     fireEvent.click(screen.getByRole('button', { name: /Remove Company Acme filter/ }))
     expect(onCompany).toHaveBeenCalledWith(undefined)
+  })
+
+  it('keeps an active company filter visible and clearable where refinements are hidden', () => {
+    const onCompany = vi.fn()
+    renderColumn({
+      showRefinements: false,
+      companyFilter: {
+        companies: [{ id: 'company_1', name: 'Acme' }],
+        value: 'company_1',
+        onChange: onCompany,
+      },
+    })
+    expect(screen.getByText('Acme')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Remove Company Acme filter/ }))
+    expect(onCompany).toHaveBeenCalledWith(undefined)
+  })
+
+  it('shows no company chip when no company is selected', () => {
+    renderColumn({
+      showRefinements: false,
+      companyFilter: { companies: [{ id: 'company_1', name: 'Acme' }], value: undefined, onChange: noop },
+    })
+    expect(screen.queryByText('Acme')).toBeNull()
   })
 
   it('counts active filters on the Filter button', () => {

@@ -19,6 +19,11 @@ describe('AdminListHeader', () => {
     expect(onSearchChange).toHaveBeenCalledWith('abc')
   })
 
+  it('gives the search input an accessible name', () => {
+    render(<AdminListHeader searchValue="" onSearchChange={() => {}} />)
+    expect(screen.getByRole('textbox', { name: 'Search...' })).toBeTruthy()
+  })
+
   it('caps the search width at 360px', () => {
     render(<AdminListHeader searchValue="" onSearchChange={() => {}} />)
     const wrap = document.querySelector('[data-slot="admin-list-search"]')

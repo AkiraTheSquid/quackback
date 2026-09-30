@@ -84,6 +84,7 @@ import { resolveDefaultClosedStatusId } from '@/lib/shared/tickets'
 import { inboxTeamsQueryOptions } from '@/lib/client/queries/inbox-teams'
 import {
   inboxNavKey,
+  inboxScopeHasRefinements,
   isInboxView,
   navFromSearch,
   normalizeTriageFacet,
@@ -527,6 +528,9 @@ function InboxPage() {
         segment: item.kind === 'segment' ? item.segmentId : undefined,
         team: item.kind === 'team' ? item.teamId : undefined,
         viewId: item.kind === 'custom' ? item.viewId : undefined,
+        // A scope without refinements has no company control, so the filter
+        // does not follow the agent into it.
+        ...(!inboxScopeHasRefinements(item) && { company: undefined }),
         i: scopeMemory.current.get(inboxNavKey(item)),
         m: undefined,
       }),
@@ -615,12 +619,7 @@ function InboxPage() {
   // as they are for the self-contained Mentions/Spam/Created-by-me feeds.
   const activeView: ConversationViewDTO | undefined =
     nav.kind === 'custom' ? navViews?.find((v) => v.id === nav.viewId) : undefined
-  const showRefinements =
-    nav.kind !== 'custom' &&
-    !(
-      nav.kind === 'view' &&
-      (nav.view === 'mentions' || nav.view === 'spam' || nav.view === 'created_by_me')
-    )
+  const showRefinements = inboxScopeHasRefinements(nav)
   // Ordering: URL sort wins; else a custom view's saved sort; else the list's
   // implicit default (relevance while searching, most-recent otherwise).
   const sort: ConversationSort = urlSort ?? activeView?.sort ?? defaultConversationSort(!!search)
@@ -650,6 +649,10 @@ function InboxPage() {
     queryFn: () => listCompaniesFn(),
     staleTime: 60_000,
   })
+  // A deep link can carry `?company=` into a scope that cannot filter by it.
+  useEffect(() => {
+    if (urlCompany && !showRefinements) updateSearch({ company: undefined })
+  }, [urlCompany, showRefinements, updateSearch])
   // Drop a stale `?company=` (deleted / no longer visible) so the filter never
   // strands the list on an unselectable company — mirrors the tag/segment
   // scope-cleanup effect.
