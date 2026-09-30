@@ -42,7 +42,7 @@ function renderSettings() {
       },
     ],
     domains: [{ id: 'dom_1', domain: 'acme.com', status: 'verified', dnsRecords: [] }],
-  })
+  } as never)
   return render(
     <QueryClientProvider client={client}>
       <EmailChannelSettings />

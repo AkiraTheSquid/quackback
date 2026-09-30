@@ -41,15 +41,19 @@ const { githubChannelStatusQuery } =
 let client: QueryClient
 
 function seed(github: Record<string, unknown>) {
-  client.setQueryData(settingsQueries.widgetConfig().queryKey, { tabs: { messenger: true } })
-  client.setQueryData(settingsQueries.portalConfig().queryKey, { support: { enabled: true } })
+  client.setQueryData(settingsQueries.widgetConfig().queryKey, {
+    tabs: { messenger: true },
+  } as never)
+  client.setQueryData(settingsQueries.portalConfig().queryKey, {
+    support: { enabled: true },
+  } as never)
   client.setQueryData(channelSettingsQueries.emailStatus().queryKey, {
     inboundConfigured: true,
     inboundDomain: 'mail.example.app',
     fromAddress: 'a@b.c',
-  })
-  client.setQueryData(githubChannelStatusQuery().queryKey, github)
-  client.setQueryData(channelSettingsQueries.routing().queryKey, { enabled: false })
+  } as never)
+  client.setQueryData(githubChannelStatusQuery().queryKey, github as never)
+  client.setQueryData(channelSettingsQueries.routing().queryKey, { enabled: false } as never)
 }
 
 function renderPage() {

@@ -37,7 +37,7 @@ const { githubChannelStatusQuery } =
 let client: QueryClient
 
 function renderPage(status: Record<string, unknown>) {
-  client.setQueryData(githubChannelStatusQuery().queryKey, status)
+  client.setQueryData(githubChannelStatusQuery().queryKey, status as never)
   return render(
     <IntlProvider locale="en" defaultLocale="en">
       <QueryClientProvider client={client}>
