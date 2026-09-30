@@ -116,7 +116,7 @@ export function RecoveryCodesSection() {
           <ExclamationTriangleIcon className="size-4" />
           <AlertDescription>
             Only {activeCount} recovery {activeCount === 1 ? 'code' : 'codes'} left. Generate a
-            fresh batch before you run out — running out during a broken-SSO incident leaves you
+            fresh batch before you run out. Running out during a broken-SSO incident leaves you
             locked out.
           </AlertDescription>
         </Alert>
@@ -138,8 +138,8 @@ export function RecoveryCodesSection() {
           <DialogHeader>
             <DialogTitle>Save these recovery codes</DialogTitle>
             <DialogDescription>
-              These codes will not be shown again. Store them somewhere safe — a password manager,
-              encrypted note, or printed copy in a locked drawer.
+              These codes will not be shown again. Store them somewhere safe, such as a password
+              manager, an encrypted note or a printed copy in a locked drawer.
             </DialogDescription>
           </DialogHeader>
           {revealedCodes ? (

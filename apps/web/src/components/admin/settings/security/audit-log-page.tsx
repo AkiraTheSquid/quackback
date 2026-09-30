@@ -33,7 +33,7 @@ import type { AuditEventRow } from '@/lib/server/functions/audit-log'
 
 /**
  * Event-type catalog for the filter dropdown. Mirrors the
- * AuditEventType union — sourced from the server to keep the two in
+ * AuditEventType union, sourced from the server to keep the two in
  * lockstep would be neat, but a curated short list is friendlier for
  * the dropdown.
  *
@@ -84,7 +84,7 @@ const FILTER_EVENT_TYPES: FilterEventOption[] = [
   { group: 'Portal', label: 'Visibility changed', value: 'portal.visibility.changed' },
   { group: 'Labs', label: 'Experiment changed', value: 'labs.experiment.changed' },
   { group: 'Portal', label: 'Widget sign-in changed', value: 'portal.widget_signin.changed' },
-  // Widget activity — separated because handshake events are high-volume on active workspaces.
+  // Widget activity, separated because handshake events are high-volume on active workspaces.
   // portal.widget_handshake.consumed is flagged excludeByDefault for future multi-select support.
   {
     group: WIDGET_ACTIVITY_GROUP,
@@ -135,7 +135,7 @@ export function rangeToFromIso(range: TimeRange): string | undefined {
 /**
  * Two-line timestamp: "May 13" above "12:48 AM". Keeps the When
  * column narrow without forcing the date string to wrap mid-word
- * when the table is squeezed by long target IDs. Year is omitted —
+ * when the table is squeezed by long target IDs. Year is omitted.
  * audit-log retention caps at 365 days by default so every row is
  * within the current year.
  */
@@ -157,7 +157,7 @@ function formatTimestamp(iso: string): { date: string; time: string; full: strin
 /**
  * Render the audit-log query result as CSV.
  *
- * Exported for testability — the CSV is the operator's primary
+ * Exported for testability, the CSV is the operator's primary
  * offline-forensics tool, so the column set is worth pinning with
  * unit tests rather than only exercising via the click path.
  */
@@ -206,12 +206,12 @@ export function rowsToCsv(rows: AuditEventRow[]): string {
 }
 
 function ActorCell({ row }: { row: AuditEventRow }) {
-  // Anonymous + service principals don't have an email — fall back to
+  // Anonymous + service principals don't have an email, fall back to
   // actorType so the row isn't a bare em-dash. This is the in-table
   // surface for the 0070_audit_log_observability migration's
   // actorType + authMethod columns; request_id stays in the CSV.
   const primary = row.actorEmail ?? (row.actorType ? `(${row.actorType})` : null)
-  if (!primary) return <span className="text-muted-foreground">—</span>
+  if (!primary) return <span className="text-muted-foreground">None</span>
   const subtitle = [row.actorRole, row.authMethod].filter(Boolean).join(' · ')
   return (
     <div className="flex flex-col">
@@ -231,7 +231,7 @@ function ActorCell({ row }: { row: AuditEventRow }) {
  * row width.
  */
 function TargetCell({ row }: { row: AuditEventRow }) {
-  if (!row.targetType) return <span className="text-muted-foreground">—</span>
+  if (!row.targetType) return <span className="text-muted-foreground">None</span>
   return (
     <div className="flex flex-col">
       <span className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -276,7 +276,7 @@ export function AuditLogPage() {
   // 300ms feels instant without spamming.
   const debouncedActorEmail = useDebouncedValue(actorEmailInput, 300)
 
-  // High-volume events are hidden from the "All events" view by default —
+  // High-volume events are hidden from the "All events" view by default.
   // admins who want to see them pick the specific event type from the
   // dropdown. No separate toggle: the dropdown selection already says
   // exactly what the admin wants to see.
