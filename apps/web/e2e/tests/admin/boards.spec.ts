@@ -91,16 +91,19 @@ test.describe('Admin Board Management', () => {
     await openFirstBoard(page)
     // Find the board name input in the General Settings section (first input, not the delete confirmation)
     const nameInput = page.getByRole('textbox', { name: 'Name', exact: true })
+    await expect(nameInput).toBeVisible()
 
-    if ((await nameInput.count()) > 0) {
-      // Clear and type new name
-      await nameInput.clear()
-      await nameInput.fill('Test Board Name')
+    const newName = `Test Board Name ${Date.now()}`
+    await nameInput.clear()
+    await nameInput.fill(newName)
 
-      // The form saves when the field loses focus
-      await nameInput.blur()
-      await page.waitForLoadState('networkidle')
-    }
+    // The form saves when the field loses focus
+    await nameInput.blur()
+    await page.waitForLoadState('networkidle')
+
+    // The saved value survives a reload
+    await page.reload()
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue(newName)
   })
 
   test('can edit board description', async ({ page }) => {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { IntlProvider } from 'react-intl'
@@ -128,10 +128,14 @@ describe('StatusesSettingsPage', () => {
   })
 
   it('reverts the switch when the save fails and leaves the toast to the autosave handler', async () => {
-    updateStatusFn.mockRejectedValue(new Error('boom'))
+    let reject!: (e: Error) => void
+    updateStatusFn.mockReturnValue(new Promise((_, r) => (reject = r)))
     renderPage()
     const sw = screen.getByRole('switch', { name: 'Show Under Review on the roadmap' })
+    expect(sw).not.toBeChecked()
     fireEvent.click(sw)
+    await waitFor(() => expect(sw).toBeChecked())
+    await act(async () => reject(new Error('boom')))
     await waitFor(() => expect(sw).not.toBeChecked())
     expect(toastError).not.toHaveBeenCalled()
   })
