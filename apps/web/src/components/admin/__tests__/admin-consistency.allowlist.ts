@@ -38,7 +38,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/changelog/changelog-list.tsx',
     'components/admin/changelog/create-changelog-dialog.tsx',
     'components/admin/help-center/create-article-dialog.tsx',
-    'components/admin/roadmap-sidebar.tsx',
     'components/admin/segments/segment-form.tsx',
   ],
   'no-dashes': [

@@ -79,7 +79,7 @@ type IconComponent = React.ComponentType<{ className?: string }>
 const FILTER_CATEGORIES: { key: FilterCategory; label: string; icon: IconComponent }[] = [
   { key: 'status', label: 'Status', icon: CircleIcon },
   { key: 'board', label: 'Board', icon: Squares2X2Icon },
-  { key: 'tags', label: 'PostTag', icon: TagIcon },
+  { key: 'tags', label: 'Tag', icon: TagIcon },
   { key: 'segment', label: 'Segment', icon: UserGroupIcon },
   { key: 'owner', label: 'Assigned to', icon: UserIcon },
   { key: 'date', label: 'Created date', icon: CalendarIcon },
@@ -474,7 +474,7 @@ function computeActiveFilters(
           result.push({
             key: `tag-${id}`,
             type: 'tags',
-            label: 'PostTag:',
+            label: 'Tag:',
             value: tag.name,
             valueId: id,
             options: tagOptions,

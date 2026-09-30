@@ -17,6 +17,7 @@ import { RoadmapSidebar } from './roadmap-sidebar'
 import { RoadmapColumn } from './roadmap-column'
 import { RoadmapCardOverlay } from './roadmap-card'
 import { RoadmapFiltersBar } from './roadmap/roadmap-filters-bar'
+import { PageHeader } from '@/components/shared/page-header'
 import { EmptyState } from '@/components/shared/empty-state'
 import { useRoadmaps } from '@/lib/client/hooks/use-roadmaps-query'
 import { useRoadmapDateBuckets } from '@/lib/client/hooks/use-roadmaps-query'
@@ -182,14 +183,12 @@ export function RoadmapAdmin() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {selectedRoadmap ? (
           <>
-            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-card/50 space-y-3">
-              <div>
-                <h2 className="text-lg font-semibold">{selectedRoadmap.name}</h2>
-                {selectedRoadmap.description && (
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {selectedRoadmap.description}
-                  </p>
-                )}
+            <div className="border-b border-border/50">
+              <div className="px-4 sm:px-6 pt-3 sm:pt-4">
+                <PageHeader
+                  title={selectedRoadmap.name}
+                  description={selectedRoadmap.description ?? undefined}
+                />
               </div>
               <RoadmapFiltersBar
                 filters={filters}
