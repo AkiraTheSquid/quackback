@@ -19,12 +19,21 @@ describe('ThemeModeTiles', () => {
     expect(screen.getByText('Visitor chooses')).toBeTruthy()
   })
 
-  it('maps each tile to its theme mode', async () => {
+  it('selects Light and Dark from a visitor-chooses value', async () => {
     const onChange = vi.fn()
     render(<ThemeModeTiles value="user" onChange={onChange} />)
     const user = userEvent.setup()
     await user.click(screen.getByText('Light'))
     await user.click(screen.getByText('Dark'))
     expect(onChange.mock.calls).toEqual([['light'], ['dark']])
+  })
+
+  it('maps each tile to its theme mode', async () => {
+    const onChange = vi.fn()
+    render(<ThemeModeTiles value="light" onChange={onChange} />)
+    const user = userEvent.setup()
+    await user.click(screen.getByText('Dark'))
+    await user.click(screen.getByText('Visitor chooses'))
+    expect(onChange.mock.calls).toEqual([['dark'], ['user']])
   })
 })

@@ -26,12 +26,18 @@ vi.mock('@tanstack/react-router', () => ({
     children,
     className,
     to,
+    search,
   }: {
     children: React.ReactNode
     className?: string
     to?: string
+    search?: Record<string, unknown>
   }) => (
-    <a className={className} href={to}>
+    <a
+      className={className}
+      href={to}
+      data-search={search ? JSON.stringify(search) : undefined}
+    >
       {children}
     </a>
   ),
@@ -203,9 +209,10 @@ describe('RoleEditor', () => {
     renderEditor()
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(nav.textContent).toBe('Members & Teams/Roles/Support Lead')
-    expect(within(nav).getByRole('link', { name: 'Roles' }).getAttribute('href')).toBe(
-      '/admin/settings/members'
-    )
+    const roles = within(nav).getByRole('link', { name: 'Roles' })
+    expect(roles.getAttribute('href')).toBe('/admin/settings/members')
+    // The crumb returns to the Roles tab, not the default tab.
+    expect(roles.getAttribute('data-search')).toBe(JSON.stringify({ tab: 'roles' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Support Lead' })).toBeTruthy()
   })
 
