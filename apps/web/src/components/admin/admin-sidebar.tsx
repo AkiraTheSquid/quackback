@@ -12,10 +12,10 @@ import {
   BookOpenIcon,
   ChartBarIcon,
   QuestionMarkCircleIcon,
-  CpuChipIcon,
+  HomeIcon,
+  SignalIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/solid'
-import { SignalIcon as SignalIconOutline } from '@heroicons/react/24/outline'
-import { SignalIcon as SignalIconSolid } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import {
@@ -43,6 +43,7 @@ import { friendlySiblingAddress, WorkspaceSwitcher } from '@/components/admin/wo
 import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { isProductEnabled, type FeatureFlags, type ProductId } from '@/lib/shared/types/settings'
+import { adminQueries } from '@/lib/client/queries/admin'
 import { ENTITY_ICONS } from '@/components/admin/entity-icon'
 import {
   useBillingEnabled,
@@ -79,17 +80,23 @@ interface AdminSidebarProps {
   latestVersion?: LatestVersionResult | null
 }
 
-const navItems: Array<{
+const AUTOMATION_HREF = '/admin/automation'
+
+interface RailItem {
   label: string
   href: string
   icon: typeof ChatBubbleLeftIcon
+  /** Active on this path only, not on the pages under it. */
+  exact?: boolean
+  /** The workspace product this item belongs to; hidden while it is off. */
   product?: ProductId
-}> = [
+}
+
+// One product reads as one run: Feedback, Roadmap and Changelog sit together,
+// then Support, Help Center and Status.
+const RAIL_ITEMS: RailItem[] = [
+  { label: 'Home', href: '/admin', icon: HomeIcon, exact: true },
   { label: 'Feedback', href: '/admin/feedback', icon: ENTITY_ICONS.post, product: 'feedback' },
-  // UNIFIED-INBOX-SPEC.md §2.3/§4: one Support entry replaces the old
-  // Conversations + Tickets pair — the unified /admin/inbox shell now covers
-  // both (gated below on either flag being on).
-  { label: 'Support', href: '/admin/inbox', icon: ENTITY_ICONS.conversation, product: 'support' },
   { label: 'Roadmap', href: '/admin/roadmap', icon: MapIcon, product: 'feedback' },
   {
     label: 'Changelog',
@@ -97,23 +104,32 @@ const navItems: Array<{
     icon: ENTITY_ICONS.changelog,
     product: 'changelog',
   },
+  // One Support entry covers conversations and tickets: the unified inbox
+  // shell serves both (gated on either flag being on).
+  { label: 'Support', href: '/admin/inbox', icon: ENTITY_ICONS.conversation, product: 'support' },
   {
     label: 'Help Center',
     href: '/admin/help-center',
     icon: ENTITY_ICONS.article,
     product: 'helpCenter',
   },
-  { label: 'Status', href: '/admin/status', icon: SignalIconOutline, product: 'status' },
+  { label: 'Status', href: '/admin/status', icon: SignalIcon, product: 'status' },
   { label: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
-  { label: 'AI & Automation', href: '/admin/automation/agent', icon: CpuChipIcon },
+  // The area index sends each viewer to the first page they can open.
+  { label: 'AI & Automation', href: AUTOMATION_HREF, icon: SparklesIcon },
   { label: 'Users', href: '/admin/users', icon: UsersIcon },
 ]
 
-function navItemIcon(
-  item: (typeof navItems)[number],
-  refined: boolean
-): (typeof navItems)[number]['icon'] {
-  return item.product === 'status' && refined ? SignalIconSolid : item.icon
+/** The rail items a viewer sees: products that are on, and AI & Automation for those who can open it. */
+export function buildRailItems(
+  flags: Partial<FeatureFlags> | undefined,
+  canOpenAutomation: boolean
+): RailItem[] {
+  return RAIL_ITEMS.filter((item) => {
+    if (item.product && !isProductEnabled(flags, item.product)) return false
+    if (item.href === AUTOMATION_HREF) return canOpenAutomation
+    return true
+  })
 }
 
 function railControlClass(labeled: boolean, isActive = false) {
@@ -135,9 +151,10 @@ function railControlClass(labeled: boolean, isActive = false) {
  * search-only one (opening a post or a conversation) none.
  */
 const NAV_ACTIVE_OPTIONS = { includeSearch: false }
+const NAV_EXACT_OPTIONS = { exact: true, includeSearch: false }
 
-const railLinkProps = (labeled: boolean) => ({
-  activeOptions: NAV_ACTIVE_OPTIONS,
+const railLinkProps = (labeled: boolean, exact: boolean) => ({
+  activeOptions: exact ? NAV_EXACT_OPTIONS : NAV_ACTIVE_OPTIONS,
   activeProps: { className: railControlClass(labeled, true), 'data-active': 'true' },
   inactiveProps: { className: railControlClass(labeled) },
 })
@@ -152,6 +169,7 @@ function NavItem({
   onClick,
   badge,
   dot,
+  exact = false,
   labeled = false,
 }: {
   href: string
@@ -162,6 +180,8 @@ function NavItem({
   badge?: string | number | null
   /** Quiet marker while the plan is resolved but the first win is still open */
   dot?: boolean
+  /** Active on this path only, not on the pages under it. */
+  exact?: boolean
   /** Icon + visible label. Legacy stays icon-only with a tooltip. */
   labeled?: boolean
 }) {
@@ -171,7 +191,7 @@ function NavItem({
       onClick={onClick}
       data-admin-rail-item=""
       data-labeled={labeled ? '' : undefined}
-      {...railLinkProps(labeled)}
+      {...railLinkProps(labeled, exact)}
     >
       <Icon className="size-5 shrink-0" />
       {labeled ? (
@@ -221,22 +241,31 @@ function MobileNavLink({
   icon: Icon,
   label,
   onClick,
+  exact = false,
+  badge,
 }: {
   href: string
   icon: typeof ChatBubbleLeftIcon
   label: string
   onClick: () => void
+  exact?: boolean
+  badge?: number | null
 }) {
   return (
     <Link
       to={href}
       onClick={onClick}
-      activeOptions={NAV_ACTIVE_OPTIONS}
+      activeOptions={exact ? NAV_EXACT_OPTIONS : NAV_ACTIVE_OPTIONS}
       activeProps={{ className: cn(MOBILE_LINK_CLASS, 'bg-muted/80 text-foreground font-medium') }}
       inactiveProps={{ className: MOBILE_LINK_CLASS }}
     >
       <Icon className="h-5 w-5" />
-      {label}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {badge ? (
+        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+          {badge}
+        </span>
+      ) : null}
     </Link>
   )
 }
@@ -264,11 +293,16 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
   const orgLogo = branding?.logoUrl ?? branding?.headerLogoUrl ?? '/logo.png'
   const orgName = branding?.name ?? 'Quackback'
 
-  const filteredNavItems = navItems.filter((item) => {
-    if (item.product && !isProductEnabled(flags, item.product)) return false
-    if (item.href === '/admin/automation/agent') return canOpenAutomation
-    return true
+  const railItems = buildRailItems(flags, canOpenAutomation)
+  // Posts waiting for review. Shown on Feedback when there are any.
+  const feedbackEnabled = isProductEnabled(flags, 'feedback')
+  const { data: moderation } = useQuery({
+    ...adminQueries.moderationStatus(),
+    enabled: feedbackEnabled,
   })
+  const pendingModeration = feedbackEnabled ? (moderation?.pendingCount ?? 0) : 0
+  const itemBadge = (item: RailItem) =>
+    item.href === '/admin/feedback' && pendingModeration > 0 ? pendingModeration : null
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const user = session?.user
@@ -341,12 +375,14 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
 
             {/* Main Navigation */}
             <nav className={cn('flex flex-col', refined ? 'gap-0.5 px-2' : 'items-center gap-2.5')}>
-              {filteredNavItems.map((item) => (
+              {railItems.map((item) => (
                 <NavItem
                   key={item.href}
                   href={item.href}
-                  icon={navItemIcon(item, refined)}
+                  icon={item.icon}
                   label={item.label}
+                  exact={item.exact}
+                  badge={itemBadge(item)}
                   labeled={refined}
                 />
               ))}
@@ -574,16 +610,18 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                     className="h-7 w-7 rounded object-contain"
                   />
                 </Link>
-                <span className="text-base font-semibold">Quackback</span>
+                <span className="text-base font-semibold">{orgName}</span>
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-1.5 px-4 py-3">
-              {filteredNavItems.map((item) => (
+              {railItems.map((item) => (
                 <MobileNavLink
                   key={item.href}
                   href={item.href}
-                  icon={navItemIcon(item, refined)}
+                  icon={item.icon}
                   label={item.label}
+                  exact={item.exact}
+                  badge={itemBadge(item)}
                   onClick={() => setMobileMenuOpen(false)}
                 />
               ))}
