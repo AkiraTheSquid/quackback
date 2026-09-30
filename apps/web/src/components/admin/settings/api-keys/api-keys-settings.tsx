@@ -62,7 +62,7 @@ export function ApiKeysSettings({ apiKeys }: ApiKeysSettingsProps) {
         title="API keys"
         description="Shown only once, when created."
         action={newKeyButton}
-        contentClassName="p-0"
+        contentClassName="p-0 sm:p-0"
       >
         {apiKeys.length === 0 ? (
           <EmptyState
