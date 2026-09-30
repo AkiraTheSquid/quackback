@@ -51,7 +51,9 @@ describe('SettingRow', () => {
 
   it('puts the control in the right slot', () => {
     render(<SettingRow label="Label" control={<button type="button">Go</button>} />)
-    const slot = screen.getByRole('button', { name: 'Go' }).closest('[data-slot="setting-row-control"]')
+    const slot = screen
+      .getByRole('button', { name: 'Go' })
+      .closest('[data-slot="setting-row-control"]')
     expect(slot).toBeTruthy()
     expect(slot?.previousElementSibling?.textContent).toContain('Label')
   })
