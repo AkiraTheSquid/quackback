@@ -8,7 +8,7 @@ import { ExportHistoryList } from './export-history-list'
 export function ImportsHubPage() {
   return (
     <SettingsPage page="/admin/settings/imports" width="wide">
-      <SettingsCard title="Import" description="Upload a CSV of posts.">
+      <SettingsCard title="Import" description="Import posts from a CSV exported from any tool.">
         <ImportCsv />
       </SettingsCard>
 

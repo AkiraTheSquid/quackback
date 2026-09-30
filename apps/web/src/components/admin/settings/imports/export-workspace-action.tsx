@@ -11,7 +11,7 @@ import { settingsQueries } from '@/lib/client/queries/settings'
 const IN_FLIGHT_STATUSES = new Set(['pending', 'running'])
 
 /**
- * The "Export workspace data" action: starts the async export and reflects
+ * The workspace export action: starts the async export and reflects
  * the in-flight run. Shares the ['export-runs'] query cache with the history
  * list, so starting a run here immediately polls/disables everywhere.
  */
@@ -54,7 +54,7 @@ export function ExportWorkspaceAction() {
     <div className="flex items-center gap-3">
       <Button onClick={startExport} disabled={isSubmitting || activeRun != null}>
         <ArrowDownTrayIcon className="size-4" />
-        {activeRun ? 'Exporting…' : 'Export workspace data'}
+        {activeRun ? 'Exporting…' : 'Export'}
       </Button>
       {activeRun && (
         <span className="text-sm text-muted-foreground">

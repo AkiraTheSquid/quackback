@@ -127,7 +127,7 @@ describe('<ExportWorkspaceAction>', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderWithClient(<ExportWorkspaceAction />)
-    const button = await screen.findByRole('button', { name: /Export workspace data/ })
+    const button = await screen.findByRole('button', { name: /^Export$/ })
     fireEvent.click(button)
 
     await waitFor(() => {
