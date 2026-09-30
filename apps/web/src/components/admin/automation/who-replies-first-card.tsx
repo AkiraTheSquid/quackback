@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { SparklesIcon } from '@heroicons/react/24/outline'
 import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { WHO_REPLIES_FIRST } from '@/lib/shared/assistant/who-replies-first'
@@ -9,7 +8,7 @@ import type { FeatureFlags } from '@/lib/shared/types/settings'
 import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
 
 /**
- * The rule the server now enforces: the agent answers first, and a live
+ * The rule the server enforces: the agent answers first, and a live
  * assistant.handed_off workflow owns routing on handoff. Permission-aware
  * links so a workflows-only admin is not sent to Access denied.
  */
@@ -44,14 +43,13 @@ export function WhoRepliesFirstCard() {
   }
 
   return (
-    <section className="rounded-xl border border-violet-500/25 bg-violet-500/[0.04] px-[18px] py-3.5">
-      <div className="mb-1.5 flex items-center gap-2 text-[13px] font-semibold">
-        <SparklesIcon className="size-[15px] text-violet-600 dark:text-violet-400" aria-hidden />
+    <section className="rounded-xl border border-border/50 bg-card px-[18px] py-3.5 shadow-sm">
+      <h2 className="mb-1.5 text-[13px] font-semibold">
         {intl.formatMessage({
           id: WHO_REPLIES_FIRST.titleId,
           defaultMessage: WHO_REPLIES_FIRST.title,
         })}
-      </div>
+      </h2>
       <ol className="list-decimal space-y-0.5 pl-[18px] text-xs leading-[1.7] text-muted-foreground">
         {WHO_REPLIES_FIRST.steps.map((step) => (
           <li key={step.id}>

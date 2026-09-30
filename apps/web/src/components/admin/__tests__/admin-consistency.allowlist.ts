@@ -3,7 +3,6 @@ import type { RuleName } from './admin-consistency.rules'
 /** Files (or, for registry-pages, registry paths) that do not comply yet. Entries only shrink. */
 export const ALLOWLIST: Record<RuleName, string[]> = {
   'page-shell': [
-    'components/admin/automation/workflows-manager.tsx',
     'components/admin/settings/labs/labs-settings.tsx',
     'components/admin/settings/security/identity-providers/provider-create-page.tsx',
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
@@ -25,7 +24,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
     'routes/admin/automation.connectors_.$connectorId.tsx',
     'routes/admin/automation.performance.tsx',
-    'routes/admin/automation.workflows.tsx',
     'routes/admin/settings.billing.tsx',
     'routes/admin/settings.billing_.checkout.tsx',
     'routes/admin/settings.domains.tsx',
@@ -33,7 +31,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   ],
   'registry-pages': [
     '/admin/automation/performance',
-    '/admin/automation/workflows',
     '/admin/settings/billing',
     '/admin/settings/domains',
     '/admin/settings/feedback',
@@ -93,7 +90,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   ],
   'tab-icons': [],
   'toggle-rows': [
-    'components/admin/automation/abandoned-journey-auto-close-card.tsx',
     'components/admin/automation/guidance-rules-card.tsx',
     'components/admin/automation/workflow-builder/inspector/collect-data-editor.tsx',
     'components/admin/automation/workflow-builder/inspector/csat-editor.tsx',
@@ -113,7 +109,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   palette: [
     'components/admin/automation/connectors/connector-mark.tsx',
     'components/admin/automation/connectors/connector-status-badge.tsx',
-    'components/admin/automation/who-replies-first-card.tsx',
     'components/admin/automation/workflow-builder/canvas.tsx',
     'components/admin/automation/workflow-builder/inspector/collect-data-editor.tsx',
     'components/admin/automation/workflow-builder/inspector/inspector-panel.tsx',
@@ -129,7 +124,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/automation/workflow-runs-sheet.tsx',
     'components/admin/automation/workflow-template-gallery.tsx',
     'components/admin/automation/workflow-templates.ts',
-    'components/admin/automation/workflows-manager.tsx',
     'components/admin/settings/billing/free-downgrade-dialog.tsx',
     'components/admin/settings/help-center/domains-languages-tab.tsx',
     'components/admin/settings/imports/import-csv.tsx',

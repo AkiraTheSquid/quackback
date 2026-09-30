@@ -1,7 +1,5 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
-import { useIntl } from 'react-intl'
 import type { FeatureFlags } from '@/lib/shared/types/settings'
-import { BackLink } from '@/components/ui/back-link'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { workflowsQuery } from '@/lib/client/queries/workflows'
 import { WhoRepliesFirstCard } from '@/components/admin/automation/who-replies-first-card'
@@ -51,19 +49,10 @@ function WorkflowsPageRoute() {
 }
 
 function WorkflowsPage() {
-  const intl = useIntl()
   const { workflowsEntitled } = Route.useLoaderData()
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="lg:hidden">
-        <BackLink to="/admin/automation">
-          {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-        </BackLink>
-      </div>
-      <WorkflowsManager entitled={workflowsEntitled}>
-        <WhoRepliesFirstCard />
-      </WorkflowsManager>
-      <AbandonedJourneyAutoCloseCard />
-    </div>
+    <WorkflowsManager entitled={workflowsEntitled} after={<AbandonedJourneyAutoCloseCard />}>
+      <WhoRepliesFirstCard />
+    </WorkflowsManager>
   )
 }

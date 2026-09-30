@@ -67,19 +67,13 @@ import { UpgradeModal } from '@/components/admin/upgrade'
 import { isPlanRefusal } from '@/lib/shared/describe-upgrade'
 import { WorkflowRunsSheet } from './workflow-runs-sheet'
 import { cn } from '@/lib/shared/utils'
-import { PageHeader } from '@/components/shared/page-header'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { WorkflowFilters } from './workflow-filters'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -229,9 +223,13 @@ export function workflowStepSummary(graph: unknown): string {
 export function WorkflowsManager({
   entitled = true,
   children,
+  after,
 }: {
   entitled?: boolean
+  /** A note shown above the list. */
   children?: ReactNode
+  /** Page content shown below the list. */
+  after?: ReactNode
 }) {
   const intl = useIntl()
   const navigate = useNavigate()
@@ -247,8 +245,8 @@ export function WorkflowsManager({
   )
 
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'any' | StatusValue>('any')
-  const [typeFilter, setTypeFilter] = useState<'any' | (typeof CLASSES)[number]['value']>('any')
+  const [statusFilter, setStatusFilter] = useState<StatusValue | null>(null)
+  const [typeFilter, setTypeFilter] = useState<(typeof CLASSES)[number]['value'] | null>(null)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [deleting, setDeleting] = useState<WorkflowDTO | null>(null)
@@ -279,8 +277,8 @@ export function WorkflowsManager({
     const q = search.trim().toLowerCase()
     return (workflows ?? []).filter((wf) => {
       if (q && !wf.name.toLowerCase().includes(q)) return false
-      if (statusFilter !== 'any' && wf.status !== statusFilter) return false
-      if (typeFilter !== 'any' && wf.class !== typeFilter) return false
+      if (statusFilter !== null && wf.status !== statusFilter) return false
+      if (typeFilter !== null && wf.class !== typeFilter) return false
       return true
     })
   }, [workflows, search, statusFilter, typeFilter])
@@ -350,7 +348,7 @@ export function WorkflowsManager({
   // A narrowed list shows a subset of each group in the same visual order, so a
   // drop inside it would silently decide the priority of rows it isn't showing.
   // Reordering is therefore only offered on the unfiltered list.
-  const isFiltered = search.trim() !== '' || statusFilter !== 'any' || typeFilter !== 'any'
+  const isFiltered = search.trim() !== '' || statusFilter !== null || typeFilter !== null
 
   const handleDragEnd = (items: WorkflowDTO[], event: DragEndEvent) => {
     const { active, over } = event
@@ -409,20 +407,15 @@ export function WorkflowsManager({
   )
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={intl.formatMessage({
-          id: 'automation.workflows.title',
-          defaultMessage: 'Workflows',
-        })}
-        description={intl.formatMessage({
-          id: 'automation.workflows.description',
-          defaultMessage:
-            'Automate routing, replies, and housekeeping on top of your conversations.',
-        })}
-        actions={newWorkflowMenu}
-      />
-
+    <SettingsPage
+      page="/admin/automation/workflows"
+      area="automation"
+      description={intl.formatMessage({
+        id: 'automation.workflows.description',
+        defaultMessage: 'Automate routing, replies, and housekeeping on top of your conversations.',
+      })}
+      actions={newWorkflowMenu}
+    >
       {children}
 
       <div className="space-y-4">
@@ -443,35 +436,14 @@ export function WorkflowsManager({
               className="pl-8"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
-          >
-            <SelectTrigger size="sm" className="w-36" aria-label="Filter by status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Status · Any</SelectItem>
-              {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_META[s].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
-            <SelectTrigger size="sm" className="w-44" aria-label="Filter by type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Type · Any</SelectItem>
-              {CLASSES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>
-                  {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <WorkflowFilters
+            statuses={STATUSES.map((value) => ({ id: value, label: STATUS_META[value].label }))}
+            types={CLASSES.map((c) => ({ id: c.value, label: c.label }))}
+            status={statusFilter}
+            type={typeFilter}
+            onStatus={(value) => setStatusFilter(value as StatusValue | null)}
+            onType={(value) => setTypeFilter(value as (typeof CLASSES)[number]['value'] | null)}
+          />
         </div>
 
         {!hasAnyWorkflows ? (
@@ -593,7 +565,7 @@ export function WorkflowsManager({
         <ConfirmDialog
           open
           onOpenChange={(open) => !open && setDeleting(null)}
-          title="Delete workflow"
+          title="Delete workflow?"
           description={`"${deleting.name}" will be permanently deleted. This can't be undone.`}
           variant="destructive"
           confirmLabel={del.isPending ? 'Deleting…' : 'Delete workflow'}
@@ -608,7 +580,8 @@ export function WorkflowsManager({
         open={runsWorkflow !== null}
         onOpenChange={(open) => !open && setRunsWorkflow(null)}
       />
-    </div>
+      {after}
+    </SettingsPage>
   )
 }
 
@@ -800,19 +773,11 @@ function WorkflowStatusBadge({
   return (
     <>
       {status === 'live' ? (
-        <Badge
-          size="sm"
-          shape="pill"
-          className="border-transparent bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
-        >
+        <Badge size="sm" shape="pill" variant="success">
           Live
         </Badge>
       ) : status === 'paused' ? (
-        <Badge
-          size="sm"
-          shape="pill"
-          className="border-transparent bg-amber-500/10 font-medium text-amber-700 dark:text-amber-400"
-        >
+        <Badge size="sm" shape="pill" variant="warning">
           Paused
         </Badge>
       ) : (
@@ -821,12 +786,7 @@ function WorkflowStatusBadge({
         </Badge>
       )}
       {needsSetup && (
-        <Badge
-          size="sm"
-          shape="pill"
-          className="gap-1 border-transparent bg-amber-500/10 font-medium text-amber-700 dark:text-amber-400"
-          title={needsSetup}
-        >
+        <Badge size="sm" shape="pill" variant="warning" title={needsSetup}>
           <ExclamationTriangleIcon className="size-3" />
           {needsSetup}
         </Badge>
