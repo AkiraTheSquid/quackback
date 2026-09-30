@@ -32,11 +32,16 @@ export function SegmentedControl<T extends string>({
           : 0
     if (step === 0) return
     event.preventDefault()
-    const index = options.findIndex((option) => option.value === value)
-    const next = options[(index + step + options.length) % options.length]!
-    onChange(next.value)
-    const buttons = group.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')
-    buttons?.[options.indexOf(next)]?.focus()
+    const buttons = Array.from(
+      group.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]') ?? []
+    )
+    // Step from the option in hand: `value` lags behind while a change is still
+    // being saved, so a quick second press would otherwise repeat the first.
+    const focused = buttons.findIndex((button) => button === document.activeElement)
+    const index = focused >= 0 ? focused : options.findIndex((option) => option.value === value)
+    const nextIndex = (index + step + options.length) % options.length
+    onChange(options[nextIndex]!.value)
+    buttons[nextIndex]?.focus()
   }
 
   return (

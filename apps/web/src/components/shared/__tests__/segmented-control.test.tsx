@@ -38,4 +38,17 @@ describe('SegmentedControl', () => {
     await userEvent.keyboard('{ArrowRight}')
     expect(onChange).toHaveBeenCalledWith('never')
   })
+
+  it('steps from the option in hand when a second key is pressed before the value prop updates', async () => {
+    const onChange = vi.fn()
+    // The parent persists the change asynchronously, so `value` stays put.
+    render(
+      <SegmentedControl label="Set attribute" options={OPTIONS} value="allow" onChange={onChange} />
+    )
+    screen.getByRole('radio', { name: 'Allow' }).focus()
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+    expect(onChange.mock.calls.map(([next]) => next)).toEqual(['ask', 'never'])
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(onChange).toHaveBeenLastCalledWith('ask')
+  })
 })
