@@ -22,8 +22,16 @@ describe('autosave mutation errors', () => {
       .getMutationCache()
       .build(client, { meta: AUTOSAVE, mutationFn: async () => Promise.reject(new Error('nope')) })
     await expect(mutation.execute(undefined)).rejects.toThrow('nope')
+    await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    await new Promise((resolve) => setTimeout(resolve, 20))
     expect(toastError).toHaveBeenCalledTimes(1)
     expect(toastError).toHaveBeenCalledWith("Couldn't save. Try again.")
+  })
+
+  it('loads sonner lazily so it stays out of the entry chunk', () => {
+    const source = readFileSync(new URL('../autosave.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/^import .* from 'sonner'/m)
+    expect(source).toContain("import('sonner')")
   })
 
   it('shows nothing for a failing mutation that is not an autosave', async () => {
@@ -37,6 +45,7 @@ describe('autosave mutation errors', () => {
       mutationFn: async () => Promise.reject(new Error('nope')),
     })
     await expect(other.execute(undefined)).rejects.toThrow('nope')
+    await new Promise((resolve) => setTimeout(resolve, 20))
     expect(toastError).not.toHaveBeenCalled()
   })
 

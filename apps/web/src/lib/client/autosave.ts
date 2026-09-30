@@ -1,5 +1,4 @@
 import { MutationCache } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 /**
  * `meta` for a mutation that saves on change, with no Save button. The save
@@ -13,11 +12,16 @@ declare module '@tanstack/react-query' {
   }
 }
 
-/** The mutation cache for the app's QueryClient: autosave failures are never silent. */
+/**
+ * The mutation cache for the app's QueryClient: autosave failures are never silent.
+ * The toast library loads on first failure so it stays out of the entry chunk.
+ */
 export function createAutosaveMutationCache() {
   return new MutationCache({
     onError: (_error, _variables, _context, mutation) => {
-      if (mutation.meta?.autosave === true) toast.error("Couldn't save. Try again.")
+      if (mutation.meta?.autosave === true) {
+        void import('sonner').then(({ toast }) => toast.error("Couldn't save. Try again."))
+      }
     },
   })
 }
