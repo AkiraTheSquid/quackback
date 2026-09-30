@@ -22,7 +22,9 @@ test.describe('Admin Tags Settings', () => {
       await expect(tagRows.first()).toBeVisible()
     } else {
       // Fallback: the "New tag" button is always present, confirming the list rendered
-      await expect(page.getByRole('button', { name: 'New tag', exact: true })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('button', { name: 'New tag', exact: true })).toBeVisible({
+        timeout: 10000,
+      })
     }
   })
 

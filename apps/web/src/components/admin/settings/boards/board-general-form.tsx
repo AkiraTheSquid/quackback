@@ -98,7 +98,6 @@ export function BoardGeneralForm({ board }: BoardGeneralFormProps) {
             </FormItem>
           )}
         />
-
       </form>
     </Form>
   )

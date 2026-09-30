@@ -105,9 +105,7 @@ export function CreateBoardDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {(!isControlled || trigger) && (
-        <DialogTrigger asChild>
-          {trigger ?? <NewButton noun="board" />}
-        </DialogTrigger>
+        <DialogTrigger asChild>{trigger ?? <NewButton noun="board" />}</DialogTrigger>
       )}
       <DialogContent className="sm:max-w-lg">
         <Form {...form}>

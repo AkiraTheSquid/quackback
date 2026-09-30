@@ -49,7 +49,13 @@ const STATUSES = [
   status({ id: 's_open', name: 'Open', slug: 'open', isDefault: true, position: 0 }),
   status({ id: 's_review', name: 'Under Review', slug: 'under_review', position: 1 }),
   status({ id: 's_planned', name: 'Planned', slug: 'planned', position: 2, showOnRoadmap: true }),
-  status({ id: 's_done', name: 'Complete', slug: 'complete', category: 'complete', isDefault: false }),
+  status({
+    id: 's_done',
+    name: 'Complete',
+    slug: 'complete',
+    category: 'complete',
+    isDefault: false,
+  }),
   status({ id: 's_done2', name: 'Shipped', slug: 'shipped', category: 'complete', position: 1 }),
   status({ id: 's_closed', name: 'Closed', slug: 'closed', category: 'closed' }),
 ]

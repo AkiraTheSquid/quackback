@@ -79,10 +79,7 @@ function BoardSettingsPage() {
   return (
     <SettingsPage
       title={currentBoard.name}
-      crumbs={[
-        { label: 'Feedback & Roadmaps' },
-        { label: 'Boards', to: '/admin/settings/boards' },
-      ]}
+      crumbs={[{ label: 'Feedback & Roadmaps' }, { label: 'Boards', to: '/admin/settings/boards' }]}
     >
       <Tabs
         value={selectedTab}

@@ -105,8 +105,7 @@ export function StatusesSettingsPage({ initialStatuses }: StatusListProps) {
   })
 
   const roadmapMutation = useMutation({
-    mutationFn: (input: { id: string; showOnRoadmap: boolean }) =>
-      updateStatusFn({ data: input }),
+    mutationFn: (input: { id: string; showOnRoadmap: boolean }) => updateStatusFn({ data: input }),
     meta: AUTOSAVE,
     onSuccess: () => startTransition(() => router.invalidate()),
     onError: (_error, input) =>
