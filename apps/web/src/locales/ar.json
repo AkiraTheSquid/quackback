@@ -1064,6 +1064,7 @@
   "automation.nav.connectors": "Connectors",
   "automation.nav.skills": "Skills",
   "automation.nav.group.agents": "Agents",
+  "automation.nav.group.operations": "العمليات",
   "automation.connectors.title": "Connectors",
   "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
   "automation.connectors.add": "Add connector",

@@ -54,21 +54,20 @@ describe('buildNavSections', () => {
     expect(allLabels(sections)).not.toContain('Sandbox')
   })
 
-  it('Modules lists Feedback & Roadmaps as a flat link to the hub card', () => {
+  it('Modules lists Feedback & Roadmaps as a group of its own pages, with no hub row', () => {
     const sections = buildNavSections()
     expect(itemLabels(sections, 'Modules')).toContain('Feedback & Roadmaps')
-    expect(groupKids(sections, 'Modules', 'Feedback & Roadmaps')).toEqual([])
-    const item = sections
+    expect(groupKids(sections, 'Modules', 'Feedback & Roadmaps')).toEqual([
+      { label: 'Boards', to: '/admin/settings/boards' },
+      { label: 'Statuses', to: '/admin/settings/statuses' },
+      { label: 'Tags', to: '/admin/settings/tags' },
+      { label: 'Moderation', to: '/admin/settings/moderation' },
+    ])
+    const group = sections
       .find((s) => s.label === 'Modules')!
       .items.find((i) => i.label === 'Feedback & Roadmaps')!
-    expect(!isNavGroup(item) && item.to).toBe('/admin/settings/feedback')
-    expect(!isNavGroup(item) && item.activeFor).toEqual([
-      '/admin/settings/feedback',
-      '/admin/settings/boards',
-      '/admin/settings/statuses',
-      '/admin/settings/tags',
-      '/admin/settings/moderation',
-    ])
+    expect(isNavGroup(group)).toBe(true)
+    expect(allLabels(sections)).not.toContain('Public Statuses')
     expect(itemLabels(buildNavSections({ feedback: false }), 'Modules')).toContain(
       'Feedback & Roadmaps'
     )
@@ -79,28 +78,38 @@ describe('buildNavSections', () => {
     expect(itemLabels(sections, 'Modules')).not.toContain('Support')
   })
 
-  it('Support is a flat link to the Support hub when the inbox is on', () => {
+  it('Support groups its pages when the inbox is on', () => {
     const sections = buildNavSections({ supportInbox: true })
-    expect(groupKids(sections, 'Modules', 'Support')).toEqual([])
-    const item = sections
-      .find((s) => s.label === 'Modules')!
-      .items.find((i) => i.label === 'Support')!
-    expect(!isNavGroup(item) && item.to).toBe('/admin/settings/support')
+    expect(groupKids(sections, 'Modules', 'Support')).toEqual([
+      { label: 'Channels', to: '/admin/settings/channels' },
+      { label: 'Macros', to: '/admin/settings/macros' },
+      { label: 'Office hours', to: '/admin/settings/office-hours' },
+      { label: 'SLA policies', to: '/admin/settings/sla' },
+    ])
     expect(itemLabels(sections, 'Workspace')).not.toContain('Emails')
     expect(allLabels(sections)).not.toContain('Messenger')
-    expect(allLabels(sections)).not.toContain('Email')
     expect(allLabels(sections)).not.toContain('GitHub')
-    expect(allLabels(sections)).not.toContain('Channels')
   })
 
-  it('Support is a flat link to the Support hub when only supportTickets is on', () => {
+  it('Support lists the ticket pages when tickets are on', () => {
+    const sections = buildNavSections({ supportInbox: true, supportTickets: true })
+    expect(groupKids(sections, 'Modules', 'Support').map((k) => k.label)).toEqual([
+      'Channels',
+      'Macros',
+      'Office hours',
+      'SLA policies',
+      'Ticket types',
+      'Ticket statuses',
+    ])
+  })
+
+  it('Support opens on Email and GitHub when only supportTickets is on', () => {
     const sections = buildNavSections({ supportTickets: true })
-    const item = sections
-      .find((s) => s.label === 'Modules')!
-      .items.find((i) => i.label === 'Support')!
-    expect(!isNavGroup(item) && item.to).toBe('/admin/settings/support')
+    expect(groupKids(sections, 'Modules', 'Support').slice(0, 2)).toEqual([
+      { label: 'Email', to: '/admin/settings/channels/email' },
+      { label: 'GitHub', to: '/admin/settings/channels/github' },
+    ])
     expect(allLabels(sections)).not.toContain('Channels')
-    expect(allLabels(sections)).not.toContain('Messenger')
   })
 
   it('Help Center is a flat link that appears only with the helpCenter flag', () => {
@@ -135,19 +144,18 @@ describe('buildNavSections', () => {
     expect(!isNavGroup(item) && item.to).toBe('/admin/settings/status')
   })
 
-  it('Modules never nests product pages in the sidebar', () => {
+  it('nests only the modules that have several pages', () => {
     const sections = buildNavSections({
       helpCenter: true,
       supportInbox: true,
       supportTickets: true,
       statusPage: true,
     })
-    expect(
-      sections.find((s) => s.label === 'Modules')!.items.every((item) => !isNavGroup(item))
-    ).toBe(true)
-    expect(allLabels(sections)).not.toContain('Boards')
-    expect(allLabels(sections)).not.toContain('Macros')
-    expect(allLabels(sections)).not.toContain('Ticket types')
+    const groups = sections
+      .find((s) => s.label === 'Modules')!
+      .items.filter((item) => isNavGroup(item))
+      .map((item) => item.label)
+    expect(groups).toEqual(['Feedback & Roadmaps', 'Support'])
   })
 
   it('Workspace contains the administration pages in order (flags off)', () => {

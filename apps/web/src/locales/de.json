@@ -1064,6 +1064,7 @@
   "automation.nav.connectors": "Connectors",
   "automation.nav.skills": "Skills",
   "automation.nav.group.agents": "Agents",
+  "automation.nav.group.operations": "Betrieb",
   "automation.connectors.title": "Connectors",
   "automation.connectors.description": "Gib Quinn Werkzeuge von externen MCP-Servern. Ein Katalog, zugeordnet zu jedem Agenten.",
   "automation.connectors.add": "Connector hinzufügen",

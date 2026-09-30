@@ -1064,6 +1064,7 @@
   "automation.nav.connectors": "Koppelingen",
   "automation.nav.skills": "Vaardigheden",
   "automation.nav.group.agents": "Agents",
+  "automation.nav.group.operations": "Operaties",
   "automation.connectors.title": "Koppelingen",
   "automation.connectors.description": "Geef Quinn tools vanuit externe MCP-servers. Eén catalogus, toegewezen aan elke agent.",
   "automation.connectors.add": "Koppeling toevoegen",

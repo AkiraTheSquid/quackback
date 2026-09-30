@@ -55,13 +55,20 @@ describe('buildSettingsModules', () => {
 })
 
 describe('settingsModuleLandingPath', () => {
-  it('sends multi-page modules to their hub card', () => {
+  it('sends multi-page modules to their first page, never a hub', () => {
     const modules = buildSettingsModules({ supportInbox: true })
     expect(settingsModuleLandingPath(modules.find((m) => m.id === 'feedback')!)).toBe(
-      '/admin/settings/feedback'
+      '/admin/settings/boards'
     )
     expect(settingsModuleLandingPath(modules.find((m) => m.id === 'support')!)).toBe(
-      '/admin/settings/support'
+      '/admin/settings/channels'
+    )
+  })
+
+  it('lands Support on Email when only tickets are on', () => {
+    const modules = buildSettingsModules({ supportTickets: true })
+    expect(settingsModuleLandingPath(modules.find((m) => m.id === 'support')!)).toBe(
+      '/admin/settings/channels/email'
     )
   })
 
@@ -80,8 +87,9 @@ describe('settingsModuleForPath', () => {
     statusPage: true,
   })
 
-  it('matches the feedback hub to Feedback & Roadmaps', () => {
-    expect(settingsModuleForPath('/admin/settings/feedback', modules)?.id).toBe('feedback')
+  it('has no hub page to match', () => {
+    expect(settingsModuleForPath('/admin/settings/feedback', modules)).toBeUndefined()
+    expect(settingsModuleForPath('/admin/settings/support', modules)).toBeUndefined()
   })
 
   it('matches a nested board page to Feedback & Roadmaps', () => {

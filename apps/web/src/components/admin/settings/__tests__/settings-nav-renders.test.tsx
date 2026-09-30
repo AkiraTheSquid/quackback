@@ -7,7 +7,7 @@
  * hands the tree a new route context object whose parts are unchanged.
  */
 import { forwardRef, type ComponentType } from 'react'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   Outlet,
@@ -74,7 +74,7 @@ afterEach(cleanup)
 // route-context memos), so the parts are the same objects each time while the
 // route context around them is new.
 const rootAnswer = {
-  settings: { featureFlags: { feedback: true, changelog: true } },
+  settings: { featureFlags: { feedback: true, changelog: true, supportInbox: true } },
   billingEnabled: false,
   cloudEnabled: false,
 }
@@ -108,7 +108,7 @@ async function mount(initial: string) {
       </>
     ),
   })
-  const pages = ['general', 'members', 'boards', 'tags'].map((page) =>
+  const pages = ['general', 'members', 'boards', 'tags', 'channels'].map((page) =>
     createRoute({
       getParentRoute: () => adminRoute,
       path: `/settings/${page}`,
@@ -133,7 +133,7 @@ const activeHrefs = (container: HTMLElement) =>
   [...container.querySelectorAll('a[data-active]')].map((a) => a.getAttribute('href'))
 
 describe('SettingsNav', () => {
-  it('re-renders only the rows whose active state a navigation changes', async () => {
+  it('moves the highlight without rendering the rows', async () => {
     const { router, container } = await mount('/admin/settings/general')
     expect(container.querySelectorAll('a').length).toBeGreaterThan(8)
     expect(activeHrefs(container)).toEqual(['/admin/settings/general'])
@@ -142,9 +142,10 @@ describe('SettingsNav', () => {
     await screen.findByText('members page')
 
     expect(activeHrefs(container)).toEqual(['/admin/settings/members'])
+    // Row contents look the same active or not, so no icon renders again.
     const moved = {
-      Cog6ToothIcon: 1,
-      UsersIcon: 1,
+      Cog6ToothIcon: 0,
+      UsersIcon: 0,
       BellIcon: 0,
       CommandLineIcon: 0,
       ChatBubbleLeftIcon: 0,
@@ -161,21 +162,48 @@ describe('SettingsNav', () => {
     expect(rowRenders).toEqual([])
   })
 
-  it('keeps a module row active across its pages and renders it only on entering and leaving', async () => {
-    const { router, container } = await mount('/admin/settings/general')
+  it('opens the module of the current page and highlights only the page itself', async () => {
+    const { container } = await mount('/admin/settings/boards')
+    expect(activeHrefs(container)).toEqual(['/admin/settings/boards'])
+    // Its pages are rows of their own.
+    for (const to of ['statuses', 'tags', 'moderation']) {
+      expect(container.querySelector(`a[href="/admin/settings/${to}"]`)).toBeTruthy()
+    }
+    // A module the viewer is not in stays closed.
+    expect(container.querySelector('a[href="/admin/settings/macros"]')).toBeNull()
+    const header = screen.getByRole('button', { name: /Feedback & Roadmaps/ })
+    expect(header.getAttribute('aria-expanded')).toBe('true')
+    expect(header.hasAttribute('data-active')).toBe(false)
+  })
 
-    await act(() => router.navigate({ to: '/admin/settings/boards' }))
-    await screen.findByText('boards page')
-    expect(activeHrefs(container)).toEqual(['/admin/settings/feedback'])
-    expect(iconRenders).toMatchObject({ Cog6ToothIcon: 1, ChatBubbleLeftIcon: 1, UsersIcon: 0 })
-    // Only the module row, which follows the location itself, rendered.
-    expect(rowRenders).toEqual(['/admin/settings/feedback'])
-
+  it('moves the highlight between a module\'s pages without rendering the nav', async () => {
+    const { router, container } = await mount('/admin/settings/boards')
     await act(() => router.navigate({ to: '/admin/settings/tags' }))
     await screen.findByText('tags page')
-    expect(activeHrefs(container)).toEqual(['/admin/settings/feedback'])
-    expect(iconRenders.ChatBubbleLeftIcon).toBe(1)
-    expect(rowRenders).toEqual(['/admin/settings/feedback'])
+    expect(activeHrefs(container)).toEqual(['/admin/settings/tags'])
     expect(navRenders.count).toBe(0)
+  })
+
+  it('opens a closed module and goes to its first page', async () => {
+    const { container } = await mount('/admin/settings/general')
+    expect(container.querySelector('a[href="/admin/settings/tags"]')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Support/ }))
+    await screen.findByText('channels page')
+    expect(activeHrefs(container)).toEqual(['/admin/settings/channels'])
+    expect(container.querySelector('a[href="/admin/settings/macros"]')).toBeTruthy()
+  })
+
+  it('collapses the open module without leaving the page', async () => {
+    const { container } = await mount('/admin/settings/boards')
+    fireEvent.click(screen.getByRole('button', { name: /Feedback & Roadmaps/ }))
+    expect(container.querySelector('a[href="/admin/settings/tags"]')).toBeNull()
+    expect(screen.getByText('boards page')).toBeTruthy()
+  })
+
+  it('marks the active row with the muted fill, not the primary tint', async () => {
+    const { container } = await mount('/admin/settings/boards')
+    const active = container.querySelector('a[data-active]')!
+    expect(active.className).toContain('bg-muted')
+    expect(active.className).not.toContain('bg-primary')
   })
 })

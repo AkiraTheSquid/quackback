@@ -34,12 +34,12 @@ function automationItem(to: AutomationPagePath, icon: NavItem['icon']): NavItem 
 
 /**
  * A titled cluster of nav rows. The Agents group holds the two peer agents
- * plus their shared catalog (Connectors, Skills); the trailing untitled group
- * holds standalone tools (Workflows, Performance).
+ * plus their shared catalog (Connectors, Skills); Operations holds the
+ * standalone tools (Workflows, Performance).
  */
 interface NavSection {
-  labelId?: string
-  defaultLabel?: string
+  labelId: string
+  defaultLabel: string
   items: NavItem[]
 }
 
@@ -81,7 +81,13 @@ export function buildAutomationNavSections(
       items: agents,
     })
   }
-  if (tools.length > 0) sections.push({ items: tools })
+  if (tools.length > 0) {
+    sections.push({
+      labelId: 'automation.nav.group.operations',
+      defaultLabel: 'Operations',
+      items: tools,
+    })
+  }
   return sections
 }
 
@@ -105,13 +111,11 @@ export function AutomationNav() {
       })}
       className="space-y-4"
     >
-      {sections.map((section, index) => (
-        <div key={section.labelId ?? `section-${index}`} className="space-y-1">
-          {section.labelId && section.defaultLabel && (
-            <p className={cn(MENU_LABEL, 'px-2 pb-1')}>
-              {intl.formatMessage({ id: section.labelId, defaultMessage: section.defaultLabel })}
-            </p>
-          )}
+      {sections.map((section) => (
+        <div key={section.labelId} className="space-y-1">
+          <p className={cn(MENU_LABEL, 'px-2 pb-1')}>
+            {intl.formatMessage({ id: section.labelId, defaultMessage: section.defaultLabel })}
+          </p>
           {section.items.map((item) => {
             const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`)
             const Icon = item.icon
@@ -122,11 +126,11 @@ export function AutomationNav() {
                 className={cn(
                   MENU_ROW,
                   isActive
-                    ? 'bg-primary/10 font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
+                    ? 'bg-muted font-medium text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 )}
               >
-                <Icon className={cn(MENU_ICON, isActive && 'text-primary')} />
+                <Icon className={MENU_ICON} />
                 <span className="min-w-0 flex-1 truncate">
                   {intl.formatMessage({ id: item.labelId, defaultMessage: item.defaultLabel })}
                 </span>

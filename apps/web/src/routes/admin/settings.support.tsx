@@ -1,24 +1,18 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { SettingsModuleHub } from '@/components/admin/settings/settings-module-hub'
-import { buildSettingsModules } from '@/components/admin/settings/settings-modules'
-import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types/settings'
-import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
+import {
+  buildSettingsModules,
+  settingsModuleLandingPath,
+} from '@/components/admin/settings/settings-modules'
+import { isProductEnabled } from '@/lib/shared/types/settings'
 
+/** The module has no page of its own: it opens on its first page. */
 export const Route = createFileRoute('/admin/settings/support')({
   beforeLoad: ({ context }) => {
-    if (!isProductEnabled(context.settings?.featureFlags, 'support')) {
+    const flags = context.settings?.featureFlags
+    const module = buildSettingsModules(flags).find((item) => item.id === 'support')
+    if (!module || !isProductEnabled(flags, 'support')) {
       throw redirect({ to: '/admin/settings/general' })
     }
+    throw redirect({ to: settingsModuleLandingPath(module) as '/admin/settings/boards' })
   },
-  component: SupportSettingsHub,
 })
-
-function SupportSettingsHub() {
-  const settings = useWorkspaceSettings()
-  const flags = settings?.featureFlags as FeatureFlags | undefined
-  const module = buildSettingsModules(flags).find((item) => item.id === 'support')
-  if (!module) return null
-  return (
-    <SettingsModuleHub title={module.label} description={module.description} pages={module.pages} />
-  )
-}
