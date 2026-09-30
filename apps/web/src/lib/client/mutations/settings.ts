@@ -6,6 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AUTOSAVE } from '@/lib/client/autosave'
 import {
   deleteLogoFn,
   deleteHeaderLogoFn,
@@ -267,6 +268,7 @@ export function useUpdatePortalConfig() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updatePortalConfigFn>[0]['data']) =>
       updatePortalConfigFn({ data }),
     onSuccess: () =>
@@ -278,6 +280,7 @@ export function useUpdateModerationDefault() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: NonNullable<Parameters<typeof updateModerationDefaultFn>[0]>['data']) =>
       updateModerationDefaultFn({ data }),
     onSuccess: () =>
@@ -289,6 +292,7 @@ export function useUpdateWidgetConfig() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateWidgetConfigFn>[0]['data']) =>
       updateWidgetConfigFn({ data }),
     onSuccess: () =>
@@ -332,6 +336,7 @@ export function useUpdateHelpCenterConfig() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterConfigFn>[0]['data']) =>
       updateHelpCenterConfigFn({ data }),
     onSuccess: () =>
@@ -343,6 +348,7 @@ export function useUpdateHelpCenterSeo() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterSeoFn>[0]['data']) =>
       updateHelpCenterSeoFn({ data }),
     onSuccess: () =>
@@ -447,6 +453,7 @@ export function useUpdateWorkflowAbandonedAutoClose() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateWorkflowAbandonedAutoCloseFn>[0]['data']) =>
       updateWorkflowAbandonedAutoCloseFn({ data }),
     onSuccess: (saved) =>
@@ -458,6 +465,7 @@ export function useUpdateWorkflowCloseSpam() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateWorkflowCloseSpamFn>[0]['data']) =>
       updateWorkflowCloseSpamFn({ data }),
     onSuccess: (saved) =>
@@ -469,6 +477,7 @@ export function useUpdateDefaultSlaPolicy() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateDefaultSlaPolicyFn>[0]['data']) =>
       updateDefaultSlaPolicyFn({ data }),
     onSuccess: (saved) =>
@@ -512,6 +521,7 @@ export function useSetWorkspaceExperimentEnabled() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (input: { experimentId: string; enabled: boolean }) =>
       setWorkspaceExperimentEnabledFn({ data: input }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: settingsQueries.labs().queryKey }),
