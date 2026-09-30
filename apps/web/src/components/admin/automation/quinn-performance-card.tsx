@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Button } from '@/components/ui/button'
-import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { PerformanceStatRow } from './performance-stat-row'
 import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
 import { quinnPerformanceQuery } from '@/lib/client/queries/assistant-analytics'
 
@@ -39,7 +39,7 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
           </Button>
         </div>
       ) : (
-        <AnalyticsStatRow
+        <PerformanceStatRow
           stats={[
             {
               label: intl.formatMessage({

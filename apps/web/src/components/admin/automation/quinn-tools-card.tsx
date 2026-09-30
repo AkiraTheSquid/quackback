@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { BoltIcon } from '@heroicons/react/24/outline'
-import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { PerformanceStatRow } from './performance-stat-row'
 import { EmptyState } from '@/components/shared/empty-state'
 import type { DateRange } from './performance-format'
 import { quinnToolMetricsQuery } from '@/lib/client/queries/assistant-tools-analytics'
@@ -103,7 +103,7 @@ export function QuinnToolsCard({ range }: { range: DateRange }) {
         />
       ) : (
         <>
-          <AnalyticsStatRow
+          <PerformanceStatRow
             stats={[
               {
                 label: intl.formatMessage({

@@ -9,7 +9,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { PerformanceStatRow } from './performance-stat-row'
 import { NO_DATA, pct, type DateRange } from './performance-format'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supportReportingQuery } from '@/lib/client/queries/support-reporting'
@@ -100,7 +100,7 @@ export function SupportPerformanceCard({ range }: { range: DateRange }) {
           ))}
         </div>
       ) : (
-        <AnalyticsStatRow
+        <PerformanceStatRow
           stats={[
             ...CLOCKS.map((c) => {
               const clock = data?.sla[c.key]

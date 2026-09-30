@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { UserGroupIcon } from '@heroicons/react/24/outline'
-import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
+import { PerformanceStatRow } from './performance-stat-row'
 import { EmptyState } from '@/components/shared/empty-state'
 import { NO_DATA, pct, asRate, type DateRange } from './performance-format'
 import { copilotUsageMetricsQuery } from '@/lib/client/queries/assistant-copilot-analytics'
@@ -89,7 +89,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
 
   return (
     <SettingsCard title="Copilot usage" contentClassName="p-0">
-      <AnalyticsStatRow
+      <PerformanceStatRow
         stats={[
           {
             label: 'Questions asked',
@@ -120,7 +120,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
       <div className="space-y-6 p-4 sm:p-6">
         <div>
           <h3 className="mb-2 text-sm font-medium">Outcomes</h3>
-          <AnalyticsStatRow
+          <PerformanceStatRow
             stats={[
               {
                 label: 'Insert rate',
