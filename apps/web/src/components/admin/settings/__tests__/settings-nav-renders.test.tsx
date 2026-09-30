@@ -66,6 +66,8 @@ vi.mock('@/lib/client/hooks/use-root-context', async (importOriginal) => ({
   },
 }))
 
+import { SYSTEM_ROLE_PERMISSIONS } from '@/lib/shared/permissions'
+
 const { SettingsNav } = await import('../settings-nav')
 
 afterEach(cleanup)
@@ -80,16 +82,7 @@ const rootAnswer = {
 }
 const adminAnswer = {
   // An admin's: every page the nav lists is one it may open.
-  permissions: [
-    'settings.manage',
-    'settings.branding',
-    'member.view',
-    'auth.manage',
-    'api_key.manage',
-    'integration.view',
-    'user_attribute.view',
-    'company.view',
-  ],
+  permissions: [...SYSTEM_ROLE_PERMISSIONS.owner],
 }
 
 async function mount(initial: string) {
@@ -176,7 +169,7 @@ describe('SettingsNav', () => {
     expect(header.hasAttribute('data-active')).toBe(false)
   })
 
-  it('moves the highlight between a module\'s pages without rendering the nav', async () => {
+  it("moves the highlight between a module's pages without rendering the nav", async () => {
     const { router, container } = await mount('/admin/settings/boards')
     await act(() => router.navigate({ to: '/admin/settings/tags' }))
     await screen.findByText('tags page')

@@ -73,11 +73,18 @@ export function buildNavSections(
 ): NavSection[] {
   const products: NavEntry[] = buildSettingsModules(flags).map((module): NavEntry => {
     const [only, ...rest] = module.pages
-    if (only && rest.length === 0) return { label: only.label, to: only.to, icon: only.icon }
+    if (only && rest.length === 0) {
+      return { label: only.label, to: only.to, icon: only.icon, permission: only.permission }
+    }
     return {
       label: module.label,
       icon: module.icon,
-      kids: module.pages.map(({ label, to, icon }) => ({ label, to, icon })),
+      kids: module.pages.map(({ label, to, icon, permission }) => ({
+        label,
+        to,
+        icon,
+        permission,
+      })),
     }
   })
 

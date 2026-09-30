@@ -168,6 +168,7 @@ function NavItem({
   label,
   onClick,
   badge,
+  badgeLabel,
   dot,
   exact = false,
   labeled = false,
@@ -178,6 +179,8 @@ function NavItem({
   onClick?: () => void
   /** Optional count or short mark (e.g. remaining launch steps) */
   badge?: string | number | null
+  /** What the badge counts, read out in place of the bare number. */
+  badgeLabel?: string
   /** Quiet marker while the plan is resolved but the first win is still open */
   dot?: boolean
   /** Active on this path only, not on the pages under it. */
@@ -208,7 +211,8 @@ function NavItem({
             'border-2 border-card bg-primary text-[11px] font-semibold text-primary-foreground'
           )}
         >
-          {badge}
+          <span aria-hidden="true">{badge}</span>
+          <span className="sr-only">{badgeLabel ?? badge}</span>
         </span>
       )}
       {dot && (badge == null || badge === '') && (
@@ -243,6 +247,7 @@ function MobileNavLink({
   onClick,
   exact = false,
   badge,
+  badgeLabel,
 }: {
   href: string
   icon: typeof ChatBubbleLeftIcon
@@ -250,6 +255,7 @@ function MobileNavLink({
   onClick: () => void
   exact?: boolean
   badge?: number | null
+  badgeLabel?: string
 }) {
   return (
     <Link
@@ -263,7 +269,8 @@ function MobileNavLink({
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge ? (
         <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
-          {badge}
+          <span aria-hidden="true">{badge}</span>
+          <span className="sr-only">{badgeLabel ?? badge}</span>
         </span>
       ) : null}
     </Link>
@@ -294,7 +301,7 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
   const orgName = branding?.name ?? 'Quackback'
 
   const railItems = buildRailItems(flags, canOpenAutomation)
-  // Posts waiting for review. Shown on Feedback when there are any.
+  // Posts and comments waiting for review. Shown on Feedback when there are any.
   const feedbackEnabled = isProductEnabled(flags, 'feedback')
   const { data: moderation } = useQuery({
     ...adminQueries.moderationStatus(),
@@ -303,6 +310,8 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
   const pendingModeration = feedbackEnabled ? (moderation?.pendingCount ?? 0) : 0
   const itemBadge = (item: RailItem) =>
     item.href === '/admin/feedback' && pendingModeration > 0 ? pendingModeration : null
+  const itemBadgeLabel = (item: RailItem) =>
+    itemBadge(item) ? `${pendingModeration} waiting for review` : undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const user = session?.user
@@ -383,6 +392,7 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                   label={item.label}
                   exact={item.exact}
                   badge={itemBadge(item)}
+                  badgeLabel={itemBadgeLabel(item)}
                   labeled={refined}
                 />
               ))}
@@ -622,6 +632,7 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                   label={item.label}
                   exact={item.exact}
                   badge={itemBadge(item)}
+                  badgeLabel={itemBadgeLabel(item)}
                   onClick={() => setMobileMenuOpen(false)}
                 />
               ))}

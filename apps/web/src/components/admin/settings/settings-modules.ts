@@ -1,12 +1,15 @@
 import type { ComponentType } from 'react'
 import { SETTINGS_PAGES, type SettingsPagePath } from './settings-pages'
 import { SETTINGS_PAGE_ICONS } from './settings-page-icons'
+import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
 import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types'
 
 export interface SettingsModulePage {
   label: string
   to: string
   icon: ComponentType<{ className?: string }>
+  /** The permission the page's route checks; the nav and module landing offer it only to holders. */
+  permission: PermissionKey
 }
 
 export interface SettingsModule {
@@ -16,10 +19,36 @@ export interface SettingsModule {
   pages: SettingsModulePage[]
 }
 
+/** The permission each module page's route checks when it opens. */
+const MODULE_PAGE_PERMISSIONS = {
+  '/admin/settings/boards': PERMISSIONS.BOARD_MANAGE,
+  '/admin/settings/statuses': PERMISSIONS.STATUS_MANAGE,
+  '/admin/settings/tags': PERMISSIONS.TAG_MANAGE,
+  '/admin/settings/moderation': PERMISSIONS.SETTINGS_MODERATION,
+  '/admin/settings/channels': PERMISSIONS.SETTINGS_MANAGE,
+  '/admin/settings/channels/email': PERMISSIONS.CHANNEL_ACCOUNT_MANAGE,
+  '/admin/settings/channels/github': PERMISSIONS.CHANNEL_ACCOUNT_MANAGE,
+  '/admin/settings/macros': PERMISSIONS.CONVERSATION_MANAGE,
+  '/admin/settings/office-hours': PERMISSIONS.OFFICE_HOURS_MANAGE,
+  '/admin/settings/sla': PERMISSIONS.SLA_MANAGE,
+  '/admin/settings/ticket-types': PERMISSIONS.TICKET_MANAGE_TYPES,
+  '/admin/settings/ticket-statuses': PERMISSIONS.TICKET_MANAGE_TYPES,
+  '/admin/settings/help-center': PERMISSIONS.HELP_CENTER_MANAGE,
+  '/admin/settings/changelog': PERMISSIONS.CHANGELOG_MANAGE,
+  '/admin/settings/status': PERMISSIONS.STATUS_PAGE_MANAGE,
+} as const satisfies Partial<Record<SettingsPagePath, PermissionKey>>
+
+type ModulePagePath = keyof typeof MODULE_PAGE_PERMISSIONS
+
 /** A module page whose label and icon come from the page registry. */
-function modulePage(to: SettingsPagePath): SettingsModulePage {
+function modulePage(to: ModulePagePath): SettingsModulePage {
   const { label } = SETTINGS_PAGES[to]
-  return { label, to, icon: SETTINGS_PAGE_ICONS[to] }
+  return {
+    label,
+    to,
+    icon: SETTINGS_PAGE_ICONS[to],
+    permission: MODULE_PAGE_PERMISSIONS[to as ModulePagePath],
+  }
 }
 
 function moduleHead(to: SettingsPagePath) {
@@ -103,9 +132,44 @@ export function buildSettingsModules(flags?: Partial<FeatureFlags>): SettingsMod
   return modules
 }
 
-/** The page a module opens on: its first. */
-export function settingsModuleLandingPath(module: SettingsModule): string {
-  return module.pages[0]!.to
+/**
+ * The modules as a viewer with these permissions sees them: a page whose route
+ * would answer Access denied is left out, and a module left with no pages goes
+ * with it.
+ */
+export function settingsModulesFor(
+  modules: SettingsModule[],
+  permissions: ReadonlySet<PermissionKey>
+): SettingsModule[] {
+  return modules
+    .map((module) => ({
+      ...module,
+      pages: module.pages.filter((page) => permissions.has(page.permission)),
+    }))
+    .filter((module) => module.pages.length > 0)
+}
+
+/** The page a module opens on: its first, or undefined when it has none. */
+export function settingsModuleLandingPath(module: SettingsModule): string | undefined {
+  return module.pages[0]?.to
+}
+
+/**
+ * Where a module's hub URL goes: the first page of the module the viewer can
+ * open, or the settings root when the module is off or has none for them.
+ */
+export function settingsModuleRedirectPath(
+  id: string,
+  flags: Partial<FeatureFlags> | undefined,
+  permissions: ReadonlySet<PermissionKey>
+): string {
+  if (!isProductEnabled(flags, id as Parameters<typeof isProductEnabled>[1])) {
+    return '/admin/settings'
+  }
+  const module = settingsModulesFor(buildSettingsModules(flags), permissions).find(
+    (item) => item.id === id
+  )
+  return (module && settingsModuleLandingPath(module)) ?? '/admin/settings'
 }
 
 export function settingsModuleForPath(

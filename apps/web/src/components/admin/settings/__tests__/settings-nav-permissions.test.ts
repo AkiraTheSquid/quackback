@@ -79,10 +79,23 @@ describe('navSectionsFor', () => {
     expect(labels(sections, 'Workspace')).toContain('General')
   })
 
-  it('leaves the product modules as they are', () => {
-    const sections = buildNavSections({ supportInbox: true, helpCenter: true }, false, false)
-    expect(labels(navSectionsFor(sections, new Set()), 'Modules')).toEqual(
-      labels(sections, 'Modules')
+  it('shows a module only the pages the viewer can open', () => {
+    const flags = { supportInbox: true, supportTickets: true }
+    const sections = navSectionsFor(
+      buildNavSections(flags, false, false),
+      new Set<PermissionKey>([PERMISSIONS.OFFICE_HOURS_MANAGE])
     )
+    const modules = sections.find((s) => s.label === 'Modules')!.items
+    expect(modules).toHaveLength(1)
+    const support = modules[0] as unknown as { label: string; kids: { to: string }[] }
+    expect(support.kids.map((k) => k.to)).toEqual(['/admin/settings/office-hours'])
+  })
+
+  it('drops a module with no openable pages', () => {
+    const sections = navSectionsFor(
+      buildNavSections({ supportInbox: true }, false, false),
+      new Set<PermissionKey>([PERMISSIONS.MEMBER_VIEW])
+    )
+    expect(labels(sections, 'Modules')).toBeNull()
   })
 })

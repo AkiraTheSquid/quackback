@@ -1,15 +1,22 @@
 import { describe, it, expect } from 'vitest'
+import { SYSTEM_ROLE_PERMISSIONS } from '@/lib/shared/permissions'
 
 const feedback = (await import('../settings.feedback')).Route
 const support = (await import('../settings.support')).Route
 
-type Ctx = { context: { settings?: { featureFlags?: Record<string, boolean> } } }
+type Ctx = {
+  context: { settings?: { featureFlags?: Record<string, boolean> }; permissions?: string[] }
+}
 type BeforeLoad = (ctx: Ctx) => void
 
-function redirectOf(beforeLoad: unknown, flags: Record<string, boolean>): string {
+function redirectOf(
+  beforeLoad: unknown,
+  flags: Record<string, boolean>,
+  permissions: string[] = [...SYSTEM_ROLE_PERMISSIONS.owner]
+): string {
   let thrown: unknown
   try {
-    ;(beforeLoad as BeforeLoad)({ context: { settings: { featureFlags: flags } } })
+    ;(beforeLoad as BeforeLoad)({ context: { settings: { featureFlags: flags }, permissions } })
   } catch (e) {
     thrown = e
   }
@@ -37,11 +44,24 @@ describe('module hub routes', () => {
     )
   })
 
-  it('falls back to General when the product is off', () => {
-    expect(redirectOf(feedback.options.beforeLoad, { feedback: false })).toBe(
-      '/admin/settings/general'
+  it('falls back to the settings root when the product is off', () => {
+    expect(redirectOf(feedback.options.beforeLoad, { feedback: false })).toBe('/admin/settings')
+    expect(redirectOf(support.options.beforeLoad, {})).toBe('/admin/settings')
+  })
+
+  it('sends a viewer without settings.manage to a Support page they can open', () => {
+    const manager = [...SYSTEM_ROLE_PERMISSIONS.manager]
+    expect(manager).not.toContain('settings.manage')
+    expect(redirectOf(support.options.beforeLoad, { supportInbox: true }, manager)).not.toBe(
+      '/admin/settings/channels'
     )
-    expect(redirectOf(support.options.beforeLoad, {})).toBe('/admin/settings/general')
+  })
+
+  it('sends a viewer who can open none of the module to the settings root', () => {
+    expect(redirectOf(support.options.beforeLoad, { supportInbox: true }, [])).toBe(
+      '/admin/settings'
+    )
+    expect(redirectOf(feedback.options.beforeLoad, { feedback: true }, [])).toBe('/admin/settings')
   })
 
   it('renders no page of its own', () => {

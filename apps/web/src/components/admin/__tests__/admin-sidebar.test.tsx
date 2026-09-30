@@ -296,6 +296,7 @@ describe('AdminSidebar — rail', () => {
     const withCount = renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
     const feedback = withCount.container.querySelector('aside nav a[href="/admin/feedback"]')!
     expect(feedback.textContent).toContain('3')
+    expect(feedback.textContent).toContain('3 waiting for review')
     expect(
       withCount.container.querySelector('aside nav a[href="/admin/roadmap"]')!.textContent
     ).not.toMatch(/\d/)
