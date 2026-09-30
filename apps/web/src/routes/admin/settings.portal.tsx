@@ -47,11 +47,7 @@ import {
   useBrandingState,
   FONT_OPTIONS,
 } from '@/components/admin/settings/branding/use-branding-state'
-import {
-  primaryPresetIds,
-  themePresets,
-  type ThemeConfig,
-} from '@/lib/shared/theme'
+import { primaryPresetIds, themePresets, type ThemeConfig } from '@/lib/shared/theme'
 import { useUpdatePortalConfig } from '@/lib/client/mutations/settings'
 import { useImageUpload } from '@/lib/client/hooks/use-image-upload'
 import { UpgradeModal } from '@/components/admin/upgrade'
@@ -255,7 +251,6 @@ function PortalPage() {
 
   return (
     <SettingsPage page="/admin/settings/portal" width="wide">
-
       {/* Controls left, live portal preview right (sticky). */}
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(360px,460px)_minmax(0,1fr)] gap-6 items-start">
         <div className="space-y-4 min-w-0">
