@@ -174,6 +174,16 @@ describe('ConversationAttributesList', () => {
     expect(within(severityRow).queryByText('AI')).not.toBeInTheDocument()
   })
 
+  it('labels the usual-source hint with its display name, not the raw value', async () => {
+    hoisted.listConversationAttributesFn.mockResolvedValue([
+      { ...FIXTURE_ATTRIBUTES[1], sourceHint: 'workflow' },
+      { ...FIXTURE_ATTRIBUTES[0], sourceHint: 'ai', aiDetect: false },
+    ])
+    renderWithClient(<ConversationAttributesList />)
+    expect(await screen.findByText('Workflow')).toBeInTheDocument()
+    expect(screen.getByText('AI')).toBeInTheDocument()
+  })
+
   it('offers Edit and Archive in the row menu, Restore on an archived row', async () => {
     hoisted.listConversationAttributesFn.mockResolvedValue([
       FIXTURE_ATTRIBUTES[0],

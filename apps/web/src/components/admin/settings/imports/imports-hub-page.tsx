@@ -16,11 +16,16 @@ export function ImportsHubPage() {
         title="Export workspace data"
         description="Everything as one ZIP. Download links expire after 7 days."
         action={<ExportWorkspaceAction />}
+        contentClassName="p-0 sm:p-0"
       >
         <ExportHistoryList />
       </SettingsCard>
 
-      <SettingsCard title="Import history" description="Recent import runs and their results.">
+      <SettingsCard
+        title="Import history"
+        description="Recent import runs and their results."
+        contentClassName="p-0 sm:p-0"
+      >
         <ImportHistoryList />
       </SettingsCard>
     </SettingsPage>

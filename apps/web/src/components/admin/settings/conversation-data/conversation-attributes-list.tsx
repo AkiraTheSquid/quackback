@@ -716,8 +716,8 @@ export function ConversationAttributesList() {
       badges: (
         <>
           {attr.sourceHint && (
-            <Badge variant="outline" size="sm" className="capitalize">
-              {attr.sourceHint}
+            <Badge variant="outline" size="sm">
+              {SOURCE_HINTS.find((h) => h.value === attr.sourceHint)?.label ?? attr.sourceHint}
             </Badge>
           )}
           {attr.aiDetect && (
