@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect, useBlocker } from '@tanstack/react-router'
 import { useIntl } from 'react-intl'
-import { SparklesIcon } from '@heroicons/react/24/solid'
 import { z } from 'zod'
 import { AdditionalInstructionsCard } from '@/components/admin/automation/additional-instructions-card'
 import {
-  AssistantDeploymentCard,
+  AgentPauseControl,
+  useAgentStatusLine,
   type WidgetAssistantDeployment,
 } from '@/components/admin/automation/assistant-deployment-card'
 import {
@@ -18,9 +18,9 @@ import { AssistantVoiceCard } from '@/components/admin/automation/assistant-basi
 import { AgentKnowledgeCard } from '@/components/admin/automation/assistant-knowledge-card'
 import { GuidanceRulesCard } from '@/components/admin/automation/guidance-rules-card'
 
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DefaultErrorPage } from '@/components/shared/error-page'
-import { BackLink } from '@/components/ui/back-link'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { assistantQueries } from '@/lib/client/queries/assistant'
@@ -77,6 +77,7 @@ function AssistantAgentSettings() {
     enabled: initialDeployment?.enabled ?? true,
     respond: initialDeployment?.respond ?? true,
   })
+  const statusLine = useAgentStatusLine(deployment, Boolean(flags?.supportInbox))
   const unsavedLabel = intl.formatMessage({
     id: 'automation.agent.tabs.unsaved',
     defaultMessage: 'Unsaved changes',
@@ -97,34 +98,18 @@ function AssistantAgentSettings() {
 
   return (
     <>
-      <div className="max-w-3xl space-y-6">
-        <div className="lg:hidden">
-          <BackLink to="/admin/automation">
-            {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-          </BackLink>
-        </div>
-
-        <header className="flex items-start gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <SparklesIcon className="size-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {intl.formatMessage({
-                id: 'automation.agent.title',
-                defaultMessage: 'Quinn Agent',
-              })}
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {intl.formatMessage({
-                id: 'automation.agent.pageDescription',
-                defaultMessage:
-                  'The customer-facing agent. Replies in Messenger and anywhere else Quinn speaks for you.',
-              })}
-            </p>
-          </div>
-        </header>
-
+      <SettingsPage
+        area="automation"
+        page="/admin/automation/agent"
+        description={statusLine}
+        actions={
+          <AgentPauseControl
+            deployment={deployment}
+            available={Boolean(flags?.supportInbox)}
+            onChange={setDeployment}
+          />
+        }
+      >
         {settingsQuery.isPending ? (
           <div className="rounded-xl border border-border/50 bg-card p-6" role="status">
             <p className="text-sm text-muted-foreground">
@@ -153,12 +138,6 @@ function AssistantAgentSettings() {
           </div>
         ) : (
           <>
-            <AssistantDeploymentCard
-              deployment={deployment}
-              available={Boolean(flags?.supportInbox)}
-              onChange={setDeployment}
-            />
-
             <Tabs value={tab} onValueChange={setTab} variant="line" className="space-y-6">
               <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <TabsList className="w-max min-w-full">
@@ -167,7 +146,6 @@ function AssistantAgentSettings() {
                       id: 'automation.agent.tabs.basics',
                       defaultMessage: 'Basics',
                     })}
-                    {dirtyTabs.has('basics') && <UnsavedChangesIndicator label={unsavedLabel} />}
                   </TabsTrigger>
                   <TabsTrigger value="knowledge">
                     {intl.formatMessage({
@@ -196,7 +174,7 @@ function AssistantAgentSettings() {
               </TabsContent>
 
               <TabsContent value="guidance" keepMounted className="space-y-6">
-                <div className="max-w-2xl space-y-1">
+                <div className="space-y-1">
                   <h2 className="text-sm font-medium">
                     {intl.formatMessage({
                       id: 'automation.agent.guidanceLayers.title',
@@ -216,7 +194,7 @@ function AssistantAgentSettings() {
             </Tabs>
           </>
         )}
-      </div>
+      </SettingsPage>
 
       <ConfirmDialog
         open={navigationBlocker.status === 'blocked'}

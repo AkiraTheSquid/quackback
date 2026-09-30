@@ -1,19 +1,21 @@
 import { createFileRoute, redirect, useBlocker } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
-import { UserGroupIcon } from '@heroicons/react/24/solid'
 import { z } from 'zod'
 import {
   AssistantDirtyStateProvider,
   useAssistantDirtyState,
 } from '@/components/admin/automation/assistant-form'
-import { CopilotDeploymentCard } from '@/components/admin/automation/copilot-deployment-card'
+import {
+  CopilotPauseControl,
+  useCopilotStatusLine,
+} from '@/components/admin/automation/copilot-deployment-card'
 import { CopilotKnowledgeCard } from '@/components/admin/automation/assistant-knowledge-card'
 import { GuidanceRulesCard } from '@/components/admin/automation/guidance-rules-card'
 
+import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DefaultErrorPage } from '@/components/shared/error-page'
-import { BackLink } from '@/components/ui/back-link'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { assistantQueries } from '@/lib/client/queries/assistant'
@@ -61,6 +63,7 @@ function AssistantCopilotSettings() {
   const navigate = Route.useNavigate()
   const { dirtyTabs, hasUnsavedChanges } = useAssistantDirtyState()
   const tab: CopilotTab = requestedTab === 'actions' ? 'knowledge' : requestedTab
+  const statusLine = useCopilotStatusLine()
   const unsavedLabel = intl.formatMessage({
     id: 'automation.agent.tabs.unsaved',
     defaultMessage: 'Unsaved changes',
@@ -81,34 +84,12 @@ function AssistantCopilotSettings() {
 
   return (
     <>
-      <div className="max-w-3xl space-y-6">
-        <div className="lg:hidden">
-          <BackLink to="/admin/automation">
-            {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-          </BackLink>
-        </div>
-
-        <header className="flex items-start gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <UserGroupIcon className="size-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {intl.formatMessage({
-                id: 'automation.copilot.title',
-                defaultMessage: 'Quinn Copilot',
-              })}
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {intl.formatMessage({
-                id: 'automation.copilot.pageDescription',
-                defaultMessage:
-                  'The teammate-facing agent. Answers questions and drafts replies in the inbox.',
-              })}
-            </p>
-          </div>
-        </header>
-
+      <SettingsPage
+        area="automation"
+        page="/admin/automation/copilot"
+        description={statusLine}
+        actions={<CopilotPauseControl />}
+      >
         {settingsQuery.isPending ? (
           <div className="rounded-xl border border-border/50 bg-card p-6" role="status">
             <p className="text-sm text-muted-foreground">
@@ -137,8 +118,6 @@ function AssistantCopilotSettings() {
           </div>
         ) : (
           <>
-            <CopilotDeploymentCard />
-
             <Tabs value={tab} onValueChange={setTab} variant="line" className="space-y-6">
               <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <TabsList className="w-max min-w-full">
@@ -163,7 +142,7 @@ function AssistantCopilotSettings() {
               </TabsContent>
 
               <TabsContent value="guidance" keepMounted className="space-y-6">
-                <div className="max-w-2xl space-y-1">
+                <div className="space-y-1">
                   <h2 className="text-sm font-medium">
                     {intl.formatMessage({
                       id: 'automation.agent.guidanceLayers.title',
@@ -183,7 +162,7 @@ function AssistantCopilotSettings() {
             </Tabs>
           </>
         )}
-      </div>
+      </SettingsPage>
 
       <ConfirmDialog
         open={navigationBlocker.status === 'blocked'}

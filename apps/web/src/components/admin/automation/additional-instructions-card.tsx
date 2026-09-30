@@ -142,10 +142,7 @@ export function AdditionalInstructionsCard() {
           }}
         />
         <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-          <p
-            id="assistant-additional-instructions-help"
-            className="max-w-2xl text-xs text-muted-foreground"
-          >
+          <p id="assistant-additional-instructions-help" className="text-xs text-muted-foreground">
             {intl.formatMessage({
               id: 'automation.agent.instructions.help',
               defaultMessage:

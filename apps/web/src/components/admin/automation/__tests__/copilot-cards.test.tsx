@@ -60,7 +60,7 @@ vi.mock('@/lib/server/functions/assistant-settings', () => ({
 
 import { getAssistantSettingsFn } from '@/lib/server/functions/assistant-settings'
 import { AgentKnowledgeCard, CopilotKnowledgeCard } from '../assistant-knowledge-card'
-import { CopilotDeploymentCard } from '../copilot-deployment-card'
+import { CopilotPauseControl, useCopilotStatusLine } from '../copilot-deployment-card'
 
 afterEach(() => {
   cleanup()
@@ -157,49 +157,52 @@ describe('AgentKnowledgeCard', () => {
   })
 })
 
-describe('CopilotDeploymentCard', () => {
-  it('reads on/off from capabilities', async () => {
-    renderWithProviders(<CopilotDeploymentCard available />)
-    expect(await screen.findByText('On')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Turn off Copilot' })).toBeInTheDocument()
+function CopilotHeader({ available }: { available?: boolean }) {
+  const line = useCopilotStatusLine(available)
+  return (
+    <>
+      <p data-testid="line">{line}</p>
+      <CopilotPauseControl available={available} />
+    </>
+  )
+}
+
+describe('Copilot pause control', () => {
+  it('offers Pause Copilot and a quiet status line while on', async () => {
+    renderWithProviders(<CopilotHeader available />)
+    expect(await screen.findByRole('button', { name: 'Pause Copilot' })).toBeInTheDocument()
+    expect(screen.getByTestId('line')).toHaveTextContent('Available to teammates in the inbox')
   })
 
-  // The error styling used to be chosen by searching the message for the
-  // English words "could not", so a translated error rendered as a neutral
-  // status line.
-  it('announces a failed change as an alert in any locale', async () => {
+  it('pauses after confirming by turning the Q&A capability off', async () => {
+    renderWithProviders(<CopilotHeader available />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Pause Copilot' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(updateCopilotCapabilities).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Pause Copilot' }))
+    await waitFor(() => expect(updateCopilotCapabilities).toHaveBeenCalledTimes(1))
+    expect(updateCopilotCapabilities.mock.calls[0][0].data).toEqual({
+      expectedRevision: 4,
+      capabilities: { qa: false },
+    })
+  })
+
+  it('shows the one autosave toast on failure and keeps the dialog open', async () => {
     updateCopilotCapabilities.mockImplementationOnce(() => {
       throw new Error('boom')
     })
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(
-      <IntlProvider
-        locale="nl"
-        messages={{
-          'automation.copilot.deployment.error': 'Wijzigen mislukt. Probeer het opnieuw.',
-        }}
-        onError={() => {}}
-      >
-        <QueryClientProvider client={queryClient}>
-          <CopilotDeploymentCard available />
-        </QueryClientProvider>
-      </IntlProvider>
-    )
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Turn off Copilot' }))
+    renderWithProviders(<CopilotHeader available />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Pause Copilot' }))
     const dialog = await screen.findByRole('alertdialog')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Turn off Copilot' }))
-
-    // The confirm dialog stays open on failure, so the card behind it is aria-hidden.
-    const alert = await screen.findByRole('alert', { hidden: true })
-    expect(alert).toHaveTextContent('Wijzigen mislukt. Probeer het opnieuw.')
-    expect(alert).toHaveClass('text-destructive')
-    expect(alert).toHaveAttribute('aria-live', 'assertive')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Pause Copilot' }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
+    expect(toastError).toHaveBeenCalledWith("Couldn't save. Try again.")
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
   })
 
-  it('shows Unavailable when no AI model is configured', async () => {
-    renderWithProviders(<CopilotDeploymentCard available={false} />)
-    expect(await screen.findByText('Unavailable')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Turn off Copilot' })).not.toBeInTheDocument()
+  it('hides the control when no AI model is configured', async () => {
+    renderWithProviders(<CopilotHeader available={false} />)
+    expect(await screen.findByTestId('line')).toHaveTextContent(/Configure an AI model/)
+    expect(screen.queryByRole('button', { name: 'Pause Copilot' })).not.toBeInTheDocument()
   })
 })
