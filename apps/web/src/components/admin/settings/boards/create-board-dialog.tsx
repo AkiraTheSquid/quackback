@@ -19,11 +19,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { NewButton } from '@/components/shared/new-button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { GlobeAltIcon, LockClosedIcon, PlusIcon } from '@heroicons/react/24/solid'
+import { GlobeAltIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 import {
   Form,
   FormControl,
@@ -105,19 +106,14 @@ export function CreateBoardDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {(!isControlled || trigger) && (
         <DialogTrigger asChild>
-          {trigger ?? (
-            <Button>
-              <PlusIcon className="h-4 w-4" />
-              New board
-            </Button>
-          )}
+          {trigger ?? <NewButton noun="board" />}
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-lg">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Create new board</DialogTitle>
+              <DialogTitle>New board</DialogTitle>
               <DialogDescription>
                 Create a new feedback board to collect ideas from your users.
               </DialogDescription>

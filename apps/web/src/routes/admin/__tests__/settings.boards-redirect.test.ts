@@ -4,7 +4,7 @@ const { Route } = await import('../settings.boards.index')
 
 type BeforeLoadFn = (ctx: {
   context: { settings?: { featureFlags?: { feedback?: boolean } } }
-  search: { board?: string; tab?: 'general' | 'access' | 'moderation' | 'import' | 'export' }
+  search: { board?: string; tab?: 'general' | 'access' | 'moderation' | 'data' }
 }) => void
 
 const beforeLoad = Route.options.beforeLoad as BeforeLoadFn
