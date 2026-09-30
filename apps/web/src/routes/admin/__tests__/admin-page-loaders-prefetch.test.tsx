@@ -69,8 +69,8 @@ async function fetchesAfterLoader(
 }
 
 describe('admin list loaders', () => {
-  it('/admin/moderation warms the pending posts and comments', async () => {
-    const { warmed, afterMount } = await fetchesAfterLoader('@/routes/admin/moderation', {}, () => {
+  it('/admin/feedback/moderation warms the pending posts and comments', async () => {
+    const { warmed, afterMount } = await fetchesAfterLoader('@/routes/admin/feedback.moderation', {}, () => {
       useQuery(moderationQueueQueries.posts())
       useQuery(moderationQueueQueries.comments())
     })

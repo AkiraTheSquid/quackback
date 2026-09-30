@@ -28,7 +28,7 @@ const PAGES: { path: string; as: 'anon' | 'admin' }[] = [
   { path: '/admin/users?sort=newest', as: 'admin' },
   { path: '/admin/changelog', as: 'admin' },
   { path: '/admin/help-center', as: 'admin' },
-  { path: '/admin/moderation', as: 'admin' },
+  { path: '/admin/feedback/moderation', as: 'admin' },
   { path: '/admin/notifications', as: 'admin' },
   { path: '/admin/analytics', as: 'admin' },
   { path: '/admin/automation', as: 'admin' },
