@@ -31,6 +31,7 @@ import { cn } from '@/lib/shared/utils'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
+import { StateBadge } from '@/components/shared/state-badge'
 import { SettingsList, SettingsListRow, RowIcon } from '@/components/admin/settings/settings-list'
 import {
   WidgetConnectionRow,
@@ -1248,21 +1249,25 @@ function SortableHomeCardShell({
   )
 }
 
-function AssistantLinkCard({
+export function AssistantLinkCard({
   assistant,
 }: {
   assistant?: { enabled?: boolean; name?: string } | undefined
 }) {
+  const off = assistant?.enabled === false
   return (
-    <SettingsCard title="Assistant" contentClassName="p-0 sm:p-0">
+    <SettingsCard contentClassName="p-0 sm:p-0">
       <SettingsList>
         <SettingsListRow
           to="/admin/automation/agent"
           leading={<RowIcon icon={SparklesIcon} />}
-          title={
-            assistant?.enabled === false ? 'Assistant off' : assistant?.name?.trim() || 'Quinn'
+          title="Quinn"
+          badges={off ? <StateBadge state="off" /> : undefined}
+          meta={
+            off
+              ? 'Turn it on in AI & Automation'
+              : 'Answers visitors in the widget. Configure in AI & Automation'
           }
-          meta="Configure in AI & Automation"
         />
       </SettingsList>
     </SettingsCard>
