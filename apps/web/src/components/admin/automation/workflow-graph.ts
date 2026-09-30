@@ -801,7 +801,7 @@ export const TRIGGER_DESCRIPTIONS: Partial<Record<TriggerType, string>> = {
   'sla.breached':
     'Runs once when an applied SLA’s first response, next response, time to close, or linked ticket’s time to resolve clock passes its due date with nothing settling it.',
   'ticket.created':
-    'Only fires for a ticket that has a linked conversation — a standalone ticket with no linked conversation never triggers this.',
+    'Only fires for a ticket that has a linked conversation. A standalone ticket with no linked conversation never triggers this.',
   'ticket.status_changed':
     'Only fires for a ticket that has a linked conversation. Optionally restrict it to when the ticket enters a specific status category below.',
 }
@@ -858,7 +858,7 @@ export function audienceUnreachableFieldWarning(
   if (!audience) return null
   if (MESSAGE_CARRYING_TRIGGER_TYPES.includes(triggerType as TriggerType)) return null
   if (!conditionReferencesMessageField(audience)) return null
-  return `This audience checks the message, but "${triggerLabel(triggerType)}" never carries one — it will never match.`
+  return `This audience checks the message, but "${triggerLabel(triggerType)}" never carries one, so it will never match.`
 }
 
 export const WORKFLOW_CLASSES = [
@@ -2899,7 +2899,7 @@ export function actionIssue(action: GraphAction): string | null {
  *  server-side wording naming the mechanism (this step is already selected,
  *  so it doesn't need to be named again). */
 const CLASS_RESTRICTED_STEP_MESSAGE =
-  'Only allowed in a customer-facing workflow — a background run parked here could never resume'
+  'Only allowed in a customer-facing workflow. A background run parked here could never resume'
 
 /** Every step id in the tree with an unresolved issue, mapped to its message.
  *  Amendment 3 (PHASE-C-BLOCK-CONTRACT.md): a standalone disable_composer (no

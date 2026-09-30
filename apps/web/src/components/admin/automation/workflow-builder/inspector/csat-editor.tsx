@@ -126,8 +126,8 @@ export function CsatEditor({
           </DropdownMenu>
         )}
         <p className="mt-1 text-[11px] text-muted-foreground">
-          A rating with no path still records — the run just ends there. Add a path only where the
-          journey diverges (e.g. a low rating routes to an apology + hand-off).
+          A rating with no path still records, and the run just ends there. Add a path only where
+          the journey diverges (e.g. a low rating routes to an apology + hand-off).
         </p>
       </Field>
 

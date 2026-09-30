@@ -66,12 +66,12 @@ export function CollectDataEditor({
         {step.attributeKey && !isNeedsSetupRef(step.attributeKey) && !selectedDef && (
           <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-500">
             This attribute no longer supports collect_data (its field type changed or it was
-            archived) — choose another.
+            archived). Choose another.
           </p>
         )}
         {supported.length === 0 && (
           <p className="mt-1 text-[11px] text-muted-foreground">
-            No text, number, select, or date attributes yet — add one under Settings → Conversation
+            No text, number, select, or date attributes yet. Add one under Settings → Conversation
             data.
           </p>
         )}

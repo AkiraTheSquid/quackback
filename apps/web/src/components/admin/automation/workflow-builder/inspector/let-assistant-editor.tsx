@@ -47,7 +47,7 @@ export function LetAssistantAnswerEditor({
           className="min-h-20 text-sm"
         />
         <p className="text-[11px] text-muted-foreground">
-          Added to Quinn's prompt for this turn only — it never changes the workspace-wide
+          Added to Quinn's prompt for this turn only. It never changes the workspace-wide
           configuration.
         </p>
       </Field>

@@ -270,7 +270,7 @@ function RuleGroup({
           // (workflow-graph.ts's groupsToCondition), not treated as "matches
           // everything" — that would silently override the other groups.
           <p className="text-xs text-muted-foreground">
-            No rules in this group — it's ignored until you add one.
+            No rules in this group. It's ignored until you add one.
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">No rules yet, so everything matches.</p>

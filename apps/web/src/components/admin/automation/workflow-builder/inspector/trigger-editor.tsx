@@ -50,7 +50,7 @@ import {
  *  here rather than "use JSON mode", which doesn't exist for trigger
  *  settings. */
 const AUDIENCE_ADVANCED_FALLBACK =
-  'This audience condition is nested more deeply than this editor supports. It still applies as configured — remove it here to replace it.'
+  'This audience condition is nested more deeply than this editor supports. It still applies as configured. Remove it here to replace it.'
 
 export function TriggerEditor({
   triggerType,
@@ -204,8 +204,8 @@ export function TriggerEditor({
             onCommit={setBreachLeadMinutes}
           />
           <p className="text-[11px] text-muted-foreground">
-            With several live workflows on this trigger, the widest lead time governs — all of them
-            fire together at that earliest point.
+            With several live workflows on this trigger, the widest lead time governs, so all of
+            them fire together at that earliest point.
           </p>
         </>
       )}

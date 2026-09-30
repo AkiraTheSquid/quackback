@@ -118,7 +118,8 @@ export function ReplyButtonsEditor({
         </Button>
         {step.paths.length > BUTTON_SOFT_CAP && (
           <p className="text-xs text-amber-700 dark:text-amber-500">
-            {step.paths.length} buttons is a lot to scan at once — most journeys read best with 2–6.
+            {step.paths.length} buttons is a lot to scan at once. Most journeys read best with 2 to
+            6.
           </p>
         )}
       </Field>

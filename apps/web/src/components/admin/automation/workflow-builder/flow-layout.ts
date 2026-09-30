@@ -375,7 +375,7 @@ function buildStepNodeData(
         title: BLOCK_STEP_LABELS.show_reply_time,
         icon: 'show_reply_time',
         tone: 'pink',
-        meta: "We're online — typically replies in under an hour.",
+        meta: "We're online, typically replies in under an hour.",
       }
     case 'disable_composer':
       return {

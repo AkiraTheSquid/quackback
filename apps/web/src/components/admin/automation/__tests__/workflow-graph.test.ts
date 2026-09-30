@@ -2018,7 +2018,7 @@ describe('audienceUnreachableFieldWarning', () => {
 
   it('warns when a message.* rule is on a trigger whose event never carries a message', () => {
     expect(audienceUnreachableFieldWarning('conversation.created', messageRule)).toMatch(
-      /never carries one — it will never match/
+      /never carries one, so it will never match/
     )
   })
 
