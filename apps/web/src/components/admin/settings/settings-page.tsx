@@ -1,0 +1,81 @@
+import type { ReactNode } from 'react'
+import { useIntl } from 'react-intl'
+import { BackLink } from '@/components/ui/back-link'
+import { PageHeader, type PageCrumb } from '@/components/shared/page-header'
+import { cn } from '@/lib/shared/utils'
+import { SaveStatus } from './save-status'
+import {
+  AUTOMATION_PAGES,
+  SETTINGS_PAGES,
+  type AutomationPagePath,
+  type SettingsPagePath,
+} from './settings-pages'
+
+type PageTitle =
+  { page: SettingsPagePath | AutomationPagePath; title?: never } | { title: string; page?: never }
+
+type SettingsPageProps = PageTitle & {
+  description?: string
+  crumbs?: PageCrumb[]
+  actions?: ReactNode
+  /** `form` is a single column of settings; `wide` is for tables, card grids and live previews. */
+  width?: 'form' | 'wide'
+  area?: 'settings' | 'automation'
+  children?: ReactNode
+}
+
+const WIDTH_CLASS = { form: 'max-w-3xl', wide: 'max-w-5xl' } as const
+
+const BACK_LINK = {
+  settings: { to: '/admin/settings', label: 'Settings' },
+  automation: { to: '/admin/automation', label: 'AI & Automation' },
+} as const
+
+/**
+ * The shell of every settings and automation page: the header (title from the
+ * page registry, breadcrumbs, save status, actions), the mobile back link, and
+ * the page body at one of two widths.
+ */
+export function SettingsPage({
+  page,
+  title,
+  description,
+  crumbs,
+  actions,
+  width = 'form',
+  area = 'settings',
+  children,
+}: SettingsPageProps) {
+  const intl = useIntl()
+  if ((page === undefined) === (title === undefined)) {
+    throw new Error('SettingsPage takes exactly one of `page` or `title`')
+  }
+
+  let resolvedTitle = title
+  if (page !== undefined) {
+    if (page in AUTOMATION_PAGES) {
+      resolvedTitle = intl.formatMessage(AUTOMATION_PAGES[page as AutomationPagePath])
+    } else {
+      resolvedTitle = SETTINGS_PAGES[page as SettingsPagePath].label
+    }
+  }
+
+  const back = BACK_LINK[area]
+  return (
+    <div data-settings-page-body="" className={cn('space-y-6', WIDTH_CLASS[width])}>
+      {!crumbs?.length && (
+        <div className="lg:hidden">
+          <BackLink to={back.to}>{back.label}</BackLink>
+        </div>
+      )}
+      <PageHeader
+        title={resolvedTitle!}
+        description={description}
+        crumbs={crumbs}
+        status={<SaveStatus />}
+        actions={actions}
+      />
+      {children}
+    </div>
+  )
+}
