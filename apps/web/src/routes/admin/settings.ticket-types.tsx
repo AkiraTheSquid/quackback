@@ -1,8 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { assertRoutePermission } from '@/lib/shared/route-permission'
-import { BackLink } from '@/components/ui/back-link'
-import { PageHeader } from '@/components/shared/page-header'
+import { useState } from 'react'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { NewButton } from '@/components/shared/new-button'
 import { TicketTypesManager } from '@/components/admin/settings/tickets/ticket-types-manager'
 import { ticketTypesQuery } from '@/components/admin/settings/tickets/queries'
 
@@ -21,16 +22,15 @@ export const Route = createFileRoute('/admin/settings/ticket-types')({
 })
 
 function TicketTypesPage() {
+  const [creating, setCreating] = useState(false)
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="lg:hidden">
-        <BackLink to="/admin/settings/support">Support</BackLink>
-      </div>
-      <PageHeader
-        title="Ticket types"
-        description="Types define the fields a ticket captures. Each type belongs to a category — customer, back-office or tracker — which drives its behavior."
-      />
-      <TicketTypesManager />
-    </div>
+    <SettingsPage
+      page="/admin/settings/ticket-types"
+      description="The fields a ticket captures."
+      crumbs={[{ label: 'Support' }]}
+      actions={<NewButton noun="type" onClick={() => setCreating(true)} />}
+    >
+      <TicketTypesManager creating={creating} onCreatingChange={setCreating} />
+    </SettingsPage>
   )
 }
