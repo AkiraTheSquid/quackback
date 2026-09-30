@@ -301,6 +301,35 @@ describe('OverviewDashboard', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Couldn’t load this section.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-    expect(screen.queryByText('You’re all caught up.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nothing to review')).not.toBeInTheDocument()
+  })
+
+  it('is titled Home with the standard page header', () => {
+    const { container } = render(<OverviewDashboard />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeInTheDocument()
+    expect(container.querySelector('[data-page-header]')).not.toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Overview' })).not.toBeInTheDocument()
+  })
+
+  it('filters the list with standard line tabs', () => {
+    render(<OverviewDashboard />)
+    expect(screen.getByRole('tab', { name: 'All' }).closest('[data-variant="line"]')).not.toBeNull()
+    expect(screen.getByRole('tab', { name: 'Support' })).toBeInTheDocument()
+  })
+
+  it('says Nothing to review when the list is empty', () => {
+    state.data = {
+      ...state.data,
+      attention: [],
+      sections: {
+        support: { enabled: true, error: null },
+        feedback: { enabled: true, error: null },
+        changelog: { enabled: true, error: null },
+        helpCenter: { enabled: true, error: null },
+      },
+    }
+    render(<OverviewDashboard />)
+    expect(screen.getByText('Nothing to review')).toBeInTheDocument()
+    expect(screen.queryByText(/caught up/i)).not.toBeInTheDocument()
   })
 })

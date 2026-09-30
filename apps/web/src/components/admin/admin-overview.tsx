@@ -75,14 +75,14 @@ export function OverviewDashboard({
 
   return (
     <div className="min-w-0 space-y-6">
-      <PageHeader title="Overview" actions={actions} />
+      <PageHeader title="Home" actions={actions} />
 
       {banner}
 
       {overview.isError ? (
         <SettingsCard contentClassName="p-0 sm:p-0">
           <Quiet>
-            Couldn’t load the overview.{' '}
+            Couldn’t load Home.{' '}
             <RetryButton onClick={() => void overview.refetch()}>Try again</RetryButton>
           </Quiet>
         </SettingsCard>
@@ -142,7 +142,7 @@ export function OverviewDashboard({
                       <RetryButton onClick={() => void overview.refetch()}>Retry</RetryButton>
                     </Quiet>
                   ) : (
-                    <Quiet>You’re all caught up.</Quiet>
+                    <Quiet>Nothing to review</Quiet>
                   )}
                 </>
               )}
