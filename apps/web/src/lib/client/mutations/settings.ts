@@ -389,6 +389,7 @@ export function useUpdateHelpCenterLocaleChrome() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterLocaleChromeFn>[0]['data']) =>
       updateHelpCenterLocaleChromeFn({ data }),
     onSuccess: () =>
@@ -400,6 +401,7 @@ export function useUpdateHelpCenterAutoTranslate() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterAutoTranslateFn>[0]['data']) =>
       updateHelpCenterAutoTranslateFn({ data }),
     onSuccess: () =>
@@ -411,6 +413,8 @@ export function useUpdateHelpCenterDomain() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    // The server's reasons (a host already in use, say) are written for the person saving.
+    meta: { ...AUTOSAVE, showServerMessage: true },
     mutationFn: (domain: string | null) => updateHelpCenterDomainFn({ data: { domain } }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: settingsQueries.helpCenterConfig().queryKey }),
