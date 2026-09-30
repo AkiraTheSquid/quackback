@@ -23,7 +23,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/automation.skills.tsx',
     'routes/admin/settings.billing.tsx',
     'routes/admin/settings.billing_.checkout.tsx',
-    'routes/admin/settings.boards.$slug.tsx',
     'routes/admin/settings.changelog.tsx',
     'routes/admin/settings.channels.tsx',
     'routes/admin/settings.channels_.email.tsx',
@@ -74,7 +73,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/automation.workflows.tsx',
     'routes/admin/settings.billing.tsx',
     'routes/admin/settings.billing_.checkout.tsx',
-    'routes/admin/settings.boards.$slug.tsx',
     'routes/admin/settings.changelog.tsx',
     'routes/admin/settings.channels.tsx',
     'routes/admin/settings.channels_.email.tsx',
@@ -227,7 +225,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   ],
   'tab-icons': [
     'components/admin/settings/security/auth-settings.tsx',
-    'routes/admin/settings.boards.$slug.tsx',
     'routes/admin/settings.developers.tsx',
     'routes/admin/settings.help-center.tsx',
   ],

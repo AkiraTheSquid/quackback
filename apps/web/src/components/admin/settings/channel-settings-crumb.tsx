@@ -27,8 +27,3 @@ export function SettingsCrumb({
 export function ChannelSettingsCrumb({ page }: { page: string }) {
   return <SettingsCrumb to="/admin/settings/channels" parent="Channels" page={page} />
 }
-
-/** Breadcrumb for a board settings page nested under the Boards hub. */
-export function BoardSettingsCrumb({ page }: { page: string }) {
-  return <SettingsCrumb to="/admin/settings/boards" parent="Boards" page={page} />
-}
