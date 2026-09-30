@@ -8,6 +8,7 @@ import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest'
 import type { ReactElement } from 'react'
 import { Suspense } from 'react'
 import { render, screen, cleanup } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const FIXTURE_STATUSES = [
@@ -20,6 +21,18 @@ const FIXTURE_STATUSES = [
     position: 0,
     isDefault: true,
     publicStage: 'received',
+    createdAt: new Date(),
+    deletedAt: null,
+  },
+  {
+    id: 'ticket_status_3',
+    name: 'Escalated',
+    slug: 'escalated',
+    color: '#f97316',
+    category: 'open',
+    position: 1,
+    isDefault: false,
+    publicStage: 'in_progress',
     createdAt: new Date(),
     deletedAt: null,
   },
@@ -54,6 +67,7 @@ vi.mock('@/lib/server/functions/tickets', () => ({
   setTicketStageLabelsFn: vi.fn(),
 }))
 
+import { updateTicketStatusFn } from '@/lib/server/functions/tickets'
 import { TicketStatusList } from '../ticket-status-list'
 import { StageLabelsCard } from '../stage-labels-card'
 
@@ -77,15 +91,65 @@ function renderWithClient(ui: ReactElement) {
 }
 
 describe('TicketStatusList', () => {
+  const noop = () => {}
+
   it('renders a row per status from listTicketStatusesFn', async () => {
-    renderWithClient(<TicketStatusList />)
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
     expect(await screen.findByText('Triage')).toBeInTheDocument()
     expect(await screen.findByText('Done')).toBeInTheDocument()
   })
 
-  it('marks the default status', async () => {
-    renderWithClient(<TicketStatusList />)
-    expect(await screen.findByText('Default')).toBeInTheDocument()
+  it('groups statuses in a card per category headed by its SLA behaviour', async () => {
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await screen.findByText('Triage')
+    expect(screen.getByText('Open · SLA runs')).toBeInTheDocument()
+    expect(screen.getByText('Closed · SLA stops')).toBeInTheDocument()
+    // No table chrome: the category column and its chips are gone.
+    expect(screen.queryByText('Category')).toBeNull()
+  })
+
+  it('marks the default status with a lock, not a Default chip', async () => {
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await screen.findByText('Triage')
+    expect(screen.getByLabelText('Default status')).toBeInTheDocument()
+    expect(screen.queryByText('Default')).toBeNull()
+  })
+
+  it('offers Delete from the row menu for a removable status, never for the default', async () => {
+    const user = userEvent.setup()
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await user.click(await screen.findByRole('button', { name: 'Actions for Escalated' }))
+    expect(await screen.findByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Triage' }))
+    expect(await screen.findByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull()
+  })
+
+  it('saves a customer stage change as an autosave mutation', async () => {
+    const user = userEvent.setup()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={<div>loading</div>}>
+          <TicketStatusList creating={false} onCreatingChange={() => {}} />
+        </Suspense>
+      </QueryClientProvider>
+    )
+    await user.click(await screen.findByRole('combobox', { name: 'Customer stage for Escalated' }))
+    await user.click(await screen.findByRole('option', { name: 'Received' }))
+    await vi.waitFor(() => expect(updateTicketStatusFn).toHaveBeenCalled())
+    expect(updateTicketStatusFn).toHaveBeenCalledWith({
+      data: { id: 'ticket_status_3', publicStage: 'received' },
+    })
+    expect(queryClient.getMutationCache().getAll()[0]?.options.meta).toEqual({ autosave: true })
+  })
+
+  it('opens the create dialog when the page asks for a new status', async () => {
+    renderWithClient(<TicketStatusList creating onCreatingChange={noop} />)
+    expect(await screen.findByRole('heading', { name: 'New status' })).toBeInTheDocument()
   })
 })
 

@@ -37,7 +37,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/settings.security.authentication.tsx',
     'routes/admin/settings.security.sso_.new.tsx',
     'routes/admin/settings.status.tsx',
-    'routes/admin/settings.ticket-statuses.tsx',
   ],
   'page-width': [
     'components/admin/automation/additional-instructions-card.tsx',
@@ -73,7 +72,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/settings.security.authentication.tsx',
     'routes/admin/settings.security.sso_.new.tsx',
     'routes/admin/settings.status.tsx',
-    'routes/admin/settings.ticket-statuses.tsx',
     'routes/admin/settings/integrations/$type.tsx',
   ],
   'registry-pages': [
@@ -102,7 +100,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     '/admin/settings/security/authentication',
     '/admin/settings/status',
     '/admin/settings/support',
-    '/admin/settings/ticket-statuses',
     '/admin/settings/widget',
     '/admin/settings/widget/install',
   ],
@@ -267,7 +264,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/team/pending-invitations.tsx',
     'components/admin/settings/team/role-ui.ts',
     'components/admin/settings/team/seat-gate-panel.tsx',
-    'components/admin/settings/tickets/ticket-status-list.tsx',
     'components/admin/settings/user-attributes/user-attributes-list.tsx',
     'components/admin/settings/webhooks/edit-webhook-dialog.tsx',
     'components/admin/settings/webhooks/webhook-verification-guide.tsx',
