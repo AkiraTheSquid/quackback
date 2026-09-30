@@ -239,7 +239,7 @@ test.describe('Admin Users Segments', () => {
     const editDialog = page.getByRole('dialog')
     await expect(editDialog).toBeVisible({ timeout: 5000 })
 
-    // Edit dialog title should say "Edit Segment"
+    // Edit dialog title should say "Edit segment"
     await expect(editDialog.getByText(/edit segment/i)).toBeVisible()
 
     // Save button should say "Save changes"

@@ -13,8 +13,7 @@ import { cn } from '@/lib/shared/utils'
  *  opens the ticket (`?i=` only) — the unified thread's ticket adapter has no
  *  deep-link-jump capability yet (§2.5). */
 export type SavedMessageTarget =
-  | { conversationId: ConversationId; messageId: ConversationMessageId }
-  | { ticketId: TicketId }
+  { conversationId: ConversationId; messageId: ConversationMessageId } | { ticketId: TicketId }
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -68,7 +67,7 @@ export function SavedMessagesColumn({
           </div>
         ) : messages.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Nothing saved yet — flag a message to find it here.
+            Nothing saved yet. Flag a message to find it here.
           </div>
         ) : (
           messages.map((m) => (

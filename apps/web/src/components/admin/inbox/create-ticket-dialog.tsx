@@ -298,7 +298,7 @@ export function CreateTicketDialog({
         // The quiet fallback: retire the affordance for this session and
         // leave the plain Phase-4 form unchanged.
         setAutoFillHidden(true)
-        toast.info('AI suggestions are unavailable — the form is unchanged.')
+        toast.info('AI suggestions are unavailable. The form is unchanged.')
         return
       }
       // Snapshot the pre-suggestion form for "Undo suggestions", then apply.
@@ -317,7 +317,7 @@ export function CreateTicketDialog({
     } catch {
       // An unexpected failure (network, auth): the form stays unchanged and
       // the button stays (a transient error may succeed on retry).
-      toast.info('AI suggestions are unavailable — the form is unchanged.')
+      toast.info('AI suggestions are unavailable. The form is unchanged.')
     } finally {
       setAutoFillLoading(false)
     }
@@ -585,7 +585,7 @@ export function CreateTicketDialog({
               </div>
             ) : fromConversation ? (
               <p className="rounded-md border border-dashed border-border/60 px-3 py-2 text-xs text-muted-foreground">
-                Anonymous visitor — no portal account on file.
+                Anonymous visitor, no portal account on file.
               </p>
             ) : (
               <PortalUserPicker

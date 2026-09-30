@@ -515,7 +515,7 @@ export function SegmentFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Segment' : 'Create Segment'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit segment' : 'Create segment'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
