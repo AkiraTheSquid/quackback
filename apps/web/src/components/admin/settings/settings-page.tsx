@@ -43,7 +43,7 @@ export function SettingsPage({
   crumbs,
   actions,
   width = 'form',
-  area = 'settings',
+  area,
   children,
 }: SettingsPageProps) {
   const intl = useIntl()
@@ -60,10 +60,14 @@ export function SettingsPage({
     }
   }
 
-  const back = BACK_LINK[area]
+  const resolvedArea =
+    area ?? (page !== undefined && page in AUTOMATION_PAGES ? 'automation' : 'settings')
+  const back = BACK_LINK[resolvedArea]
+  // A linked crumb is itself the way back; module-only crumbs have no page to go to.
+  const hasBackCrumb = crumbs?.some((crumb) => crumb.to !== undefined) ?? false
   return (
     <div data-settings-page-body="" className={cn('space-y-6', WIDTH_CLASS[width])}>
-      {!crumbs?.length && (
+      {!hasBackCrumb && (
         <div className="lg:hidden">
           <BackLink to={back.to}>{back.label}</BackLink>
         </div>

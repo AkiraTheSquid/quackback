@@ -81,7 +81,7 @@ describe('SettingsPage', () => {
     )
   })
 
-  it('passes crumbs to the header and drops the back link', () => {
+  it('passes crumbs to the header and drops the back link when a crumb links up', () => {
     renderPage(
       <SettingsPage
         page="/admin/settings/channels/email"
@@ -91,6 +91,30 @@ describe('SettingsPage', () => {
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(nav).getByRole('link', { name: 'Channels' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull()
+  })
+
+  it('keeps the mobile back link when no crumb has a link', () => {
+    renderPage(<SettingsPage page="/admin/settings/macros" crumbs={[{ label: 'Support' }]} />)
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(nav).queryByRole('link')).toBeNull()
+    const link = screen.getByRole('link', { name: 'Settings' })
+    expect(link.getAttribute('href')).toBe('/admin/settings')
+    expect(link.parentElement?.className).toContain('lg:hidden')
+  })
+
+  it('derives the automation area from an automation page path', () => {
+    renderPage(<SettingsPage page="/admin/automation/skills" />)
+    expect(screen.getByRole('link', { name: 'AI & Automation' }).getAttribute('href')).toBe(
+      '/admin/automation'
+    )
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull()
+  })
+
+  it('lets an explicit area win over the page path', () => {
+    renderPage(<SettingsPage page="/admin/automation/skills" area="settings" />)
+    expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe(
+      '/admin/settings'
+    )
   })
 
   it('renders actions, the save status slot and children', () => {
