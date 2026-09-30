@@ -6,6 +6,7 @@ import { settingsQueries } from '@/lib/client/queries/settings'
 import { deleteTeamFn, type TeamDTO } from '@/lib/server/functions/teams'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
+import { Badge } from '@/components/ui/badge'
 import { NewButton } from '@/components/shared/new-button'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
@@ -90,6 +91,13 @@ export function TeamsTab() {
                   </div>
                 }
                 title={team.name}
+                badges={
+                  team.isDefault ? (
+                    <Badge size="sm" variant="secondary" shape="pill">
+                      Default
+                    </Badge>
+                  ) : undefined
+                }
                 meta={[
                   `${team.memberCount} ${team.memberCount === 1 ? 'member' : 'members'}`,
                   showAssignmentMethod
@@ -104,8 +112,8 @@ export function TeamsTab() {
                   {
                     label: 'Delete',
                     destructive: true,
-                    // The default team cannot be deleted.
                     disabled: team.isDefault,
+                    hint: team.isDefault ? 'The default team cannot be deleted' : undefined,
                     onSelect: () => setDeleting(team),
                   },
                 ]}

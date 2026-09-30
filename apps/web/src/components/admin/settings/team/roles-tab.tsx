@@ -68,6 +68,7 @@ export function RolesTab() {
 
 function RoleRow({ role }: { role: RoleWithMeta }) {
   const meta = [
+    role.description?.trim() || null,
     `${role.permissionKeys.length} permissions`,
     !role.isSystem && `${role.memberCount} member${role.memberCount === 1 ? '' : 's'}`,
     role.newPermissionKeys.length > 0 && `${role.newPermissionKeys.length} new`,

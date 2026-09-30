@@ -91,4 +91,12 @@ describe('RolesTab', () => {
     expect(within(custom).queryByText('Custom')).toBeNull()
     expect(within(custom).getByText(/12 permissions/)).toBeInTheDocument()
   })
+
+  it('shows a role description as the row meta, with the permission count', () => {
+    renderTab()
+    const rows = document.querySelectorAll('[data-slot="settings-list-row"]')
+    expect((rows[0] as HTMLElement).textContent).toMatch(/Everything · 88 permissions/)
+    // An empty description adds no separator.
+    expect((rows[1] as HTMLElement).textContent).not.toMatch(/^\s*·|· ·/)
+  })
 })

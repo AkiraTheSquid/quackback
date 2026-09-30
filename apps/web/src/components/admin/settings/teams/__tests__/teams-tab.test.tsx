@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import '@testing-library/jest-dom/vitest'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TeamsTab } from '../teams-tab'
 
@@ -47,11 +48,36 @@ describe('TeamsTab', () => {
     expect(screen.getAllByRole('button', { name: 'New team' }).length).toBeGreaterThan(0)
   })
 
-  it('lists teams as rows with an actions menu and no Default badge', () => {
+  it('lists teams as rows with an actions menu', () => {
     renderTab([team({ isDefault: true }), team({ id: 'team_2', name: 'Sales' })])
     expect(document.querySelectorAll('[data-slot="settings-list-row"]')).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'Actions for Support' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Actions for Sales' })).toBeInTheDocument()
-    expect(screen.queryByText('Default')).toBeNull()
+  })
+
+  it('marks only the default team with a Default badge', () => {
+    renderTab([team({ isDefault: true }), team({ id: 'team_2', name: 'Sales' })])
+    const rows = document.querySelectorAll('[data-slot="settings-list-row"]')
+    expect(within(rows[0] as HTMLElement).getByText('Default')).toBeInTheDocument()
+    expect(within(rows[1] as HTMLElement).queryByText('Default')).toBeNull()
+  })
+
+  it('disables Delete on the default team and says why', async () => {
+    const user = userEvent.setup()
+    renderTab([team({ isDefault: true })])
+    await user.click(screen.getByRole('button', { name: 'Actions for Support' }))
+    const del = screen.getByRole('menuitem', { name: /^Delete/ })
+    expect(del).toHaveAttribute('aria-disabled', 'true')
+    expect(del.textContent).toMatch(/default team cannot be deleted/i)
+  })
+
+  it('opens a delete confirmation for an ordinary team', async () => {
+    const user = userEvent.setup()
+    renderTab([team({ id: 'team_2', name: 'Sales' })])
+    await user.click(screen.getByRole('button', { name: 'Actions for Sales' }))
+    const del = screen.getByRole('menuitem', { name: 'Delete' })
+    expect(del).not.toHaveAttribute('aria-disabled', 'true')
+    await user.click(del)
+    expect(await screen.findByText('Delete team?')).toBeInTheDocument()
   })
 })
