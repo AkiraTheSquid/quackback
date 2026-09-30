@@ -27,7 +27,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/settings.index.tsx',
     'routes/admin/settings.integrations.index.tsx',
     'routes/admin/settings.people.tsx',
-    'routes/admin/settings.portal.tsx',
     'routes/admin/settings.security.sso_.new.tsx',
   ],
   'page-width': [
@@ -75,7 +74,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     '/admin/settings/integrations',
     '/admin/settings/labs',
     '/admin/settings/people',
-    '/admin/settings/portal',
     '/admin/settings/support',
     '/admin/settings/widget',
     '/admin/settings/widget/install',
@@ -144,7 +142,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/users/user-detail.tsx',
     'components/admin/users/user-segments.tsx',
     'routes/admin/notifications.tsx',
-    'routes/admin/settings.portal.tsx',
   ],
   'tab-icons': ['routes/admin/settings.developers.tsx'],
   'toggle-rows': [
