@@ -77,7 +77,9 @@ describe('WebhooksSettings create lock', () => {
     render(<WebhooksSettings webhooks={[hook]} entitled />)
     expect(screen.getByRole('heading', { name: 'Webhooks' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Delete webhook https/ })).toBeNull()
-    await user.click(screen.getByRole('button', { name: /Actions for https:\/\/example.com\/hook/ }))
+    await user.click(
+      screen.getByRole('button', { name: /Actions for https:\/\/example.com\/hook/ })
+    )
     await user.click(screen.getByRole('menuitem', { name: 'Edit' }))
     expect(screen.getByText('Editing https://example.com/hook')).toBeInTheDocument()
   })
@@ -85,7 +87,9 @@ describe('WebhooksSettings create lock', () => {
   it('opens the delete confirmation from the row menu', async () => {
     const user = userEvent.setup()
     render(<WebhooksSettings webhooks={[hook]} entitled />)
-    await user.click(screen.getByRole('button', { name: /Actions for https:\/\/example.com\/hook/ }))
+    await user.click(
+      screen.getByRole('button', { name: /Actions for https:\/\/example.com\/hook/ })
+    )
     await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
     expect(screen.getByText('Deleting https://example.com/hook')).toBeInTheDocument()
   })
@@ -94,8 +98,45 @@ describe('WebhooksSettings create lock', () => {
     const { rerender } = render(<WebhooksSettings webhooks={[hook]} entitled />)
     expect(screen.queryByText('Active')).toBeNull()
     rerender(
-      <WebhooksSettings webhooks={[{ ...hook, status: 'disabled', failureCount: 0 } as Webhook]} entitled />
+      <WebhooksSettings
+        webhooks={[{ ...hook, status: 'disabled', failureCount: 0 } as Webhook]}
+        entitled
+      />
     )
     expect(screen.getByText('Off')).toBeInTheDocument()
+  })
+
+  it('shows the failure count as visible text, not only a tooltip', () => {
+    render(
+      <WebhooksSettings
+        webhooks={[{ ...hook, failureCount: 3, lastError: 'HTTP 500' } as Webhook]}
+        entitled
+      />
+    )
+    expect(screen.getByText(/3 consecutive failures/)).toBeInTheDocument()
+    expect(screen.getByText(/HTTP 500/)).toBeInTheDocument()
+  })
+
+  it('says why a webhook was auto-disabled in visible text', () => {
+    render(
+      <WebhooksSettings
+        webhooks={[{ ...hook, status: 'disabled', failureCount: 50 } as Webhook]}
+        entitled
+      />
+    )
+    expect(screen.getByText(/Auto-disabled after 50 failures/)).toBeInTheDocument()
+  })
+
+  it('gives the reason next to New webhook once the 25 webhook limit is reached', () => {
+    const many = Array.from({ length: 25 }, (_, i) => ({
+      ...hook,
+      id: `w${i}`,
+      url: `https://e.test/${i}`,
+    }))
+    const { rerender } = render(<WebhooksSettings webhooks={many as Webhook[]} entitled />)
+    expect(screen.getByRole('button', { name: 'New webhook' })).toBeDisabled()
+    expect(screen.getByText(/25 webhooks/)).toBeInTheDocument()
+    rerender(<WebhooksSettings webhooks={[hook]} entitled />)
+    expect(screen.queryByText(/25 webhooks/)).toBeNull()
   })
 })

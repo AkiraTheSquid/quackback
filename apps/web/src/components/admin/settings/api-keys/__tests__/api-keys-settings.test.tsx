@@ -70,4 +70,17 @@ describe('ApiKeysSettings', () => {
     const never = screen.getByText(/Never used/)
     expect(never.className).not.toMatch(/amber|orange/)
   })
+
+  it('shows scopes on their own wrapping line so a long list is not cut off', () => {
+    render(
+      <ApiKeysSettings
+        apiKeys={[
+          key({ scopes: ['read:feedback', 'write:feedback'] as unknown as ApiKey['scopes'] }),
+        ]}
+      />
+    )
+    const scopes = screen.getByText(/Feedback \(read and write\)/)
+    expect(scopes.className).toMatch(/whitespace-normal/)
+    expect(scopes.className).not.toMatch(/truncate/)
+  })
 })

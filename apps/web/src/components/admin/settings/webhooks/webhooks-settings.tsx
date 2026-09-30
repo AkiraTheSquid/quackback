@@ -7,11 +7,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { NewButton } from '@/components/shared/new-button'
 import { StateBadge, type BadgeState } from '@/components/shared/state-badge'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import {
-  RowIcon,
-  SettingsList,
-  SettingsListRow,
-} from '@/components/admin/settings/settings-list'
+import { RowIcon, SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
 import { UpgradeModal } from '@/components/admin/upgrade'
 import { CreateWebhookDialog } from './create-webhook-dialog'
 import { EditWebhookDialog } from './edit-webhook-dialog'
@@ -24,6 +20,8 @@ const EVENT_LABELS: Record<string, string> = {
   'comment.created': 'New comment',
   'changelog.published': 'Changelog published',
 }
+
+const WEBHOOK_LIMIT = 25
 
 interface WebhooksSettingsProps {
   webhooks: Webhook[]
@@ -45,33 +43,34 @@ export function WebhooksSettings({ webhooks, entitled }: WebhooksSettingsProps) 
   }
 
   /** The default (active, no failures) state shows no badge. */
-  const getStatusBadge = (webhook: Webhook) => {
-    let state: BadgeState | null = null
-    let title: string | undefined
-    if (webhook.status === 'disabled') {
-      if (webhook.failureCount >= 50) {
-        state = 'error'
-        title = `Auto-disabled after ${webhook.failureCount} failures`
-      } else {
-        state = 'off'
-      }
-    } else if (webhook.failureCount >= 25) {
-      state = 'error'
-      title = `${webhook.failureCount} consecutive failures`
-    } else if (webhook.failureCount > 0) {
-      state = 'attention'
-      title = `${webhook.failureCount} consecutive failures`
-    }
-    if (!state) return null
-    return (
-      <span title={title}>
-        <StateBadge state={state} />
-      </span>
-    )
+  const getState = (webhook: Webhook): BadgeState | null => {
+    if (webhook.status === 'disabled') return webhook.failureCount >= 50 ? 'error' : 'off'
+    if (webhook.failureCount >= 25) return 'error'
+    if (webhook.failureCount > 0) return 'attention'
+    return null
   }
 
+  /** Visible failure context, so it never hides in a tooltip. */
+  const getFailureNote = (webhook: Webhook) => {
+    if (webhook.status === 'disabled' && webhook.failureCount >= 50) {
+      return `Auto-disabled after ${webhook.failureCount} failures`
+    }
+    if (webhook.failureCount > 0) {
+      return `${webhook.failureCount} consecutive ${webhook.failureCount === 1 ? 'failure' : 'failures'}`
+    }
+    return null
+  }
+
+  const atLimit = webhooks.length >= WEBHOOK_LIMIT
   const newWebhookButton = (
-    <NewButton noun="webhook" onClick={requestCreate} disabled={webhooks.length >= 25} />
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+      {atLimit && (
+        <span className="text-[13px] text-muted-foreground">
+          Limit of {WEBHOOK_LIMIT} webhooks reached
+        </span>
+      )}
+      <NewButton noun="webhook" onClick={requestCreate} disabled={atLimit} />
+    </div>
   )
 
   return (
@@ -97,19 +96,25 @@ export function WebhooksSettings({ webhooks, entitled }: WebhooksSettingsProps) 
                 key={webhook.id}
                 leading={<RowIcon icon={BoltIcon} />}
                 title={webhook.url}
-                badges={getStatusBadge(webhook)}
+                badges={getState(webhook) && <StateBadge state={getState(webhook)!} />}
                 meta={
-                  webhook.lastError && webhook.failureCount > 0 ? (
-                    <span className="text-destructive" title={webhook.lastError}>
-                      Error: {webhook.lastError}
-                    </span>
-                  ) : (
-                    <>
-                      {webhook.events.map((e) => EVENT_LABELS[e] || e).join(', ')}
-                      {webhook.lastTriggeredAt &&
-                        ` · Last fired ${formatDistanceToNow(webhook.lastTriggeredAt, { addSuffix: true })}`}
-                    </>
-                  )
+                  <>
+                    {getFailureNote(webhook) && (
+                      <span className="text-destructive">{getFailureNote(webhook)}</span>
+                    )}
+                    {getFailureNote(webhook) && ' · '}
+                    {webhook.lastError && webhook.failureCount > 0 ? (
+                      <span className="text-destructive" title={webhook.lastError}>
+                        Error: {webhook.lastError}
+                      </span>
+                    ) : (
+                      <>
+                        {webhook.events.map((e) => EVENT_LABELS[e] || e).join(', ')}
+                        {webhook.lastTriggeredAt &&
+                          ` · Last fired ${formatDistanceToNow(webhook.lastTriggeredAt, { addSuffix: true })}`}
+                      </>
+                    )}
+                  </>
                 }
                 actions={[
                   { label: 'Edit', onSelect: () => setEditWebhook(webhook) },

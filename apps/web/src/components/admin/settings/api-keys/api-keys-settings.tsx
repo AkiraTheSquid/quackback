@@ -5,11 +5,7 @@ import { KeyIcon } from '@heroicons/react/24/outline'
 import { EmptyState } from '@/components/shared/empty-state'
 import { NewButton } from '@/components/shared/new-button'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import {
-  RowIcon,
-  SettingsList,
-  SettingsListRow,
-} from '@/components/admin/settings/settings-list'
+import { RowIcon, SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
 import { CreateApiKeyDialog } from './create-api-key-dialog'
 import { ApiKeyRevealDialog } from './api-key-reveal-dialog'
 import { RevokeApiKeyDialog } from './revoke-api-key-dialog'
@@ -88,8 +84,9 @@ export function ApiKeysSettings({ apiKeys }: ApiKeysSettingsProps) {
                     {key.lastUsedAt
                       ? `Last used ${formatDistanceToNow(key.lastUsedAt, { addSuffix: true })}`
                       : 'Never used'}
-                    {' · '}
-                    {summarizeDomainAccess(key.scopes)}
+                    <span className="block whitespace-normal">
+                      {summarizeDomainAccess(key.scopes)}
+                    </span>
                   </>
                 }
                 actions={[
