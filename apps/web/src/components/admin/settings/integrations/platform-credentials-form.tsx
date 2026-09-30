@@ -99,7 +99,7 @@ export function PlatformCredentialsForm({
               <div key={field.key}>
                 <Label className="text-sm font-medium text-muted-foreground">{field.label}</Label>
                 <div className="mt-1 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm font-mono text-muted-foreground">
-                  {maskedFields?.[field.key] ?? '—'}
+                  {maskedFields?.[field.key] ?? 'Not set'}
                 </div>
               </div>
             ))}
@@ -122,7 +122,7 @@ export function PlatformCredentialsForm({
             <div key={field.key}>
               <Label className="text-sm font-medium text-muted-foreground">{field.label}</Label>
               <div className="mt-1 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm font-mono text-muted-foreground">
-                {maskedFields?.[field.key] ?? '—'}
+                {maskedFields?.[field.key] ?? 'Not set'}
               </div>
             </div>
           ))}

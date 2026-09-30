@@ -4,8 +4,8 @@
  * files. Each entry supplies only what varies per provider: catalog metadata,
  * brand icon, connect/disconnect actions, the not-connected setup copy, and
  * (when connected) a capability configuration panel. Everything
- * shared — the header, platform-credentials dialog, health panel, and setup
- * card chrome — lives in the route itself.
+ * shared (the header, platform-credentials dialog, health panel, and setup
+ * card chrome) lives in the route itself.
  *
  * Config panels and connection actions are `React.lazy` so opening one
  * provider's settings page never pulls the other 24 providers' panels into the
@@ -59,6 +59,11 @@ export interface IntegrationSettingsEntry {
    * so this config can own Connection / Health / product sections.
    */
   bareConfig?: boolean
+  /**
+   * The connect step needs typed input (a URL, key or token), so it renders in
+   * the setup card rather than as a single header button.
+   */
+  connectForm?: boolean
 }
 
 // ── lazy per-provider components ────────────────────────────────────────────
@@ -250,7 +255,7 @@ const ZendeskConnectionActions = lazy(() =>
 )
 
 /** Segment has no icon registered in `INTEGRATION_UI` (it isn't a tracker or a
- * feedback source badge) — its route renders an inline "S" glyph instead of a
+ * feedback source badge) - its route renders an inline "S" glyph instead of a
  * brand icon component. We keep that glyph here as a component so it fits the
  * `Icon: ComponentType<{ className?: string }>` shape the rest of the registry
  * expects. */
@@ -296,6 +301,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   azure_devops: {
     type: 'azure_devops',
+    connectForm: true,
     catalog: catalogs.azureDevOpsCatalog,
     Icon: getIntegrationIcon('azure_devops')!,
     ConnectionActions: AzureDevOpsConnectionActions,
@@ -407,6 +413,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   freshdesk: {
     type: 'freshdesk',
+    connectForm: true,
     catalog: catalogs.freshdeskCatalog,
     Icon: getIntegrationIcon('freshdesk')!,
     ConnectionActions: FreshdeskConnectionActions,
@@ -610,6 +617,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   make: {
     type: 'make',
+    connectForm: true,
     catalog: catalogs.makeCatalog,
     Icon: getIntegrationIcon('make')!,
     ConnectionActions: MakeConnectionActions,
@@ -676,6 +684,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   n8n: {
     type: 'n8n',
+    connectForm: true,
     catalog: catalogs.n8nCatalog,
     Icon: getIntegrationIcon('n8n')!,
     ConnectionActions: N8nConnectionActions,
@@ -742,6 +751,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   ntfy: {
     type: 'ntfy',
+    connectForm: true,
     catalog: catalogs.ntfyCatalog,
     Icon: getIntegrationIcon('ntfy')!,
     ConnectionActions: NtfyConnectionActions,
@@ -757,7 +767,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
         </p>,
         <p key="2">
           Paste the topic URL below. If your topic is protected, add an access token too. Click{' '}
-          <span className="font-medium text-foreground">Save</span> — Quackback will send a test
+          <span className="font-medium text-foreground">Save</span>. Quackback will send a test
           notification to verify the channel.
         </p>,
         <p key="3">
@@ -804,7 +814,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
   // NOTE: segment's route diverges from the standard shape in three ways,
   // preserved here: (1) no `getIntegrationIcon` entry exists for segment (it's
   // neither a tracker nor a feedback-source badge in integration-ui.tsx), so
-  // its route renders an inline "S" glyph rather than a brand icon — wrapped
+  // its route renders an inline "S" glyph rather than a brand icon - wrapped
   // in `SegmentIcon` above to fit the `Icon` contract; (2) it has no config
   // panel and no `PlatformCredentialsDialog`/credentials button at all, just
   // connect/disconnect actions; (3) "connected" for segment covers both
@@ -812,6 +822,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
   // union elsewhere, so no divergence in the shared route's rendering).
   segment: {
     type: 'segment',
+    connectForm: true,
     catalog: catalogs.segmentCatalog,
     Icon: SegmentIcon,
     ConnectionActions: SegmentConnectionActions,
@@ -831,6 +842,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   shortcut: {
     type: 'shortcut',
+    connectForm: true,
     catalog: catalogs.shortcutCatalog,
     Icon: getIntegrationIcon('shortcut')!,
     ConnectionActions: ShortcutConnectionActions,
@@ -895,6 +907,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   stripe: {
     type: 'stripe',
+    connectForm: true,
     catalog: catalogs.stripeCatalog,
     Icon: getIntegrationIcon('stripe')!,
     ConnectionActions: StripeConnectionActions,
@@ -988,6 +1001,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   zapier: {
     type: 'zapier',
+    connectForm: true,
     catalog: catalogs.zapierCatalog,
     Icon: getIntegrationIcon('zapier')!,
     ConnectionActions: ZapierConnectionActions,
@@ -1023,6 +1037,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
 
   zendesk: {
     type: 'zendesk',
+    connectForm: true,
     catalog: catalogs.zendeskCatalog,
     Icon: getIntegrationIcon('zendesk')!,
     ConnectionActions: ZendeskConnectionActions,
