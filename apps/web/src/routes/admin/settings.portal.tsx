@@ -72,8 +72,8 @@ import { useSessionContext, useWorkspaceSettings } from '@/lib/client/hooks/use-
 export const Route = createFileRoute('/admin/settings/portal')({
   loader: async ({ context }) => {
     // Portal config reads/writes require settings.branding, which non-admin
-    // team roles lack — gate the page like the old Portal page did instead
-    // of letting managers land on a shell full of 403s.
+    // team roles lack. Gate the page instead of letting managers land on a
+    // shell full of 403s.
     assertRoutePermission(context.permissions, PERMISSIONS.SETTINGS_BRANDING)
 
     const { ensureBillingCatalogue } = await import('@/lib/client/queries/billing')
@@ -116,7 +116,7 @@ function PortalPage() {
     baseline: settings?.visualTheme === 'refined' ? 'refined' : 'legacy',
   })
 
-  // Baselines for dirty tracking — captured once from the loaded values,
+  // Baselines for dirty tracking, captured once from the loaded values,
   // advanced after a successful save or an explicit discard.
   const themeBaseline = useRef({ css: state.cssText, mode: state.themeMode })
 
@@ -157,7 +157,7 @@ function PortalPage() {
 
   async function handleSave() {
     // Links with a typed-but-invalid URL would silently vanish from the
-    // portal nav — surface it instead of saving.
+    // portal nav, so surface it instead of saving.
     const brokenLink = navItems.find(
       (i) => i.type === 'link' && !!i.url && !isValidNavLinkUrl(i.url)
     )
@@ -183,9 +183,10 @@ function PortalPage() {
         navBaseline.current = JSON.stringify(navItems)
       }
 
-      toast.success('Portal saved')
       startTransition(() => router.invalidate())
     } catch (error) {
+      // A plan refusal opens the upgrade dialog. Any failure also raises the
+      // shared "Couldn't save" toast from the autosave mutations.
       if (isPlanRefusal(error)) {
         setUpgrade(
           describePlanRefusal(
@@ -193,8 +194,6 @@ function PortalPage() {
             describePlanUpgrade('Custom colours', 'business', { plural: true })
           )
         )
-      } else {
-        toast.error(error instanceof Error ? error.message : "Couldn't save portal. Try again.")
       }
     } finally {
       setSaving(false)
@@ -213,7 +212,7 @@ function PortalPage() {
   // ============================================
   const [viewport, setViewport] = useState<'desktop' | 'mobile'>('desktop')
 
-  // Which built-in tabs are currently unavailable (product/tab off) — the
+  // Which built-in tabs are currently unavailable (product/tab off), the
   // editor keeps their rows but renders them inert. Mirrors portal-header.
   const gatedTypes = useMemo(() => {
     const flags = settings?.featureFlags
@@ -306,7 +305,7 @@ function PortalPage() {
                   }}
                   onOpenChange={(open) => {
                     // Every option previews its own name in its own font, all
-                    // rendered at once — load every family the first time the
+                    // rendered at once, load every family the first time the
                     // menu opens rather than trying to lazily match hover.
                     if (open) {
                       for (const f of FONT_OPTIONS) loadBrandingFont(f.id)

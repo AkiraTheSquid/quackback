@@ -63,7 +63,7 @@ interface PortalNavEditorProps {
 
 /**
  * Draft editor for the portal top-nav: drag to reorder, toggle to hide,
- * click a label to rename, add external links. Pure controlled component —
+ * click a label to rename, add external links. Pure controlled component:
  * the page owns the draft array and commits it wholesale on Save.
  */
 export function PortalNavEditor({ items, onChange, gatedTypes, onReset }: PortalNavEditorProps) {
@@ -144,7 +144,7 @@ function NavRow({
   const defaultLabel = isLink
     ? 'Link'
     : builtInNavDefinition(item.type as PortalBuiltInNavType).defaultMessage
-  // Only flag once something was typed — a fresh empty row isn't an error yet.
+  // Only flag once something was typed, a fresh empty row isn't an error yet.
   const urlInvalid = isLink && !!item.url && !isValidNavLinkUrl(item.url)
 
   return (

@@ -489,6 +489,7 @@ export function useSaveBrandingTheme() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    meta: AUTOSAVE,
     mutationFn: async (input: {
       brandingConfig: Record<string, unknown>
       customCss: string
