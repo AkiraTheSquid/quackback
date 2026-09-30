@@ -138,6 +138,9 @@ export function HelpCenterFilterButton({
     if (!o) setActiveMenu(null)
   }
 
+  // With both filters set there is nothing left to add.
+  if (!canAddStatus && !canAddCategory) return null
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>

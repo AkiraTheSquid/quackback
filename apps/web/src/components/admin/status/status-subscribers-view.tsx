@@ -252,7 +252,7 @@ function AddSubscribersDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => setOpen(o)}>
       <DialogTrigger asChild>
-        <NewButton noun="subscriber" />
+        <NewButton noun="subscriber">Add subscribers</NewButton>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>

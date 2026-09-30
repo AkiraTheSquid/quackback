@@ -51,4 +51,30 @@ describe('HelpCenterFilterButton', () => {
     expect(screen.getByRole('button', { name: 'Status' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Category' })).toBeInTheDocument()
   })
+
+  it('is hidden when both filters are already set', () => {
+    render(
+      <HelpCenterFilterButton
+        canAddStatus={false}
+        canAddCategory={false}
+        categories={[{ id: 'c1', name: 'Guides' }]}
+        onSetStatus={vi.fn()}
+        onSetCategory={vi.fn()}
+      />
+    )
+    expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull()
+  })
+
+  it('stays when one filter can still be added', () => {
+    render(
+      <HelpCenterFilterButton
+        canAddStatus
+        canAddCategory={false}
+        categories={[]}
+        onSetStatus={vi.fn()}
+        onSetCategory={vi.fn()}
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeInTheDocument()
+  })
 })
