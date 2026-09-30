@@ -329,6 +329,7 @@ export function PortalAuthTab({ portalConfig, teamOpenSignup }: PortalAuthTabPro
               label="Allow anonymous interaction"
               description="When off, all boards require sign-in for voting, commenting, and submitting posts."
               htmlFor="allow-anonymous"
+              className="pb-0"
               control={
                 <Switch
                   id="allow-anonymous"
