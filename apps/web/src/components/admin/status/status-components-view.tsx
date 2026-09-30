@@ -27,10 +27,14 @@ import {
   EllipsisHorizontalIcon,
   PencilSquareIcon,
   PlusIcon,
+  ServerStackIcon,
   TrashIcon,
   UsersIcon,
 } from '@heroicons/react/24/solid'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/shared/empty-state'
+import { NewButton } from '@/components/shared/new-button'
+import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -391,25 +395,20 @@ export function StatusComponentsView() {
 
   return (
     <div className="max-w-4xl w-full flex flex-col flex-1 min-h-0">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-3 py-2.5 flex items-center gap-2 border-b border-border/40">
-        <h2 className="text-sm font-semibold px-1">Services</h2>
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search services…"
-          className="h-8 w-48 text-sm bg-muted/30 border-border/50"
-        />
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" onClick={() => setCreateGroupDialogOpen(true)}>
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            New group
-          </Button>
-          <Button size="sm" onClick={() => setCreateGroupId(null)}>
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            New service
-          </Button>
-        </div>
-      </div>
+      <AdminListHeader
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search services…"
+        action={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setCreateGroupDialogOpen(true)}>
+              <PlusIcon className="h-4 w-4" />
+              New group
+            </Button>
+            <NewButton noun="service" onClick={() => setCreateGroupId(null)} />
+          </>
+        }
+      />
 
       {isLoading ? (
         <div className="p-3 space-y-2">
@@ -505,15 +504,13 @@ export function StatusComponentsView() {
           </DndContext>
 
           {groups.length === 0 && ungrouped.length === 0 && (
-            <div className="text-center py-10 space-y-3">
-              <p className="text-sm font-medium text-foreground">Add a service</p>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Track a service so you can publish incidents, maintenance, and uptime.
-              </p>
-              <Button size="sm" onClick={() => setCreateGroupId(null)}>
-                Add service
-              </Button>
-            </div>
+            <EmptyState
+              icon={ServerStackIcon}
+              title="No services yet"
+              description="Track a service so you can publish incidents, maintenance, and uptime."
+              action={<NewButton noun="service" onClick={() => setCreateGroupId(null)} />}
+              size="compact"
+            />
           )}
 
           <p className="text-xs text-muted-foreground max-w-2xl">
@@ -918,7 +915,7 @@ function ComponentFormDialog({
               id="component-description"
               value={values.description}
               onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
-              placeholder="Optional — shown as a tooltip on the public page"
+              placeholder="Optional, shown as a tooltip on the public page"
             />
           </div>
 

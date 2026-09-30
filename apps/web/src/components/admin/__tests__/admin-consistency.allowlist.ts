@@ -34,9 +34,7 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     '/admin/settings/labs',
     '/admin/settings/support',
   ],
-  'create-labels': [
-    'components/admin/segments/segment-form.tsx',
-  ],
+  'create-labels': ['components/admin/segments/segment-form.tsx'],
   'no-dashes': [
     'components/admin/admin-author-hover-card.tsx',
     'components/admin/automation/attribute-breakdown-card.tsx',
@@ -64,8 +62,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/portal-privacy-dialog.tsx',
     'components/admin/settings/security/identity-providers/claims-table.tsx',
     'components/admin/settings/security/identity-providers/outcome-preview-rail.tsx',
-    'components/admin/status/status-components-view.tsx',
-    'components/admin/status/status-overview-view.tsx',
     'components/admin/update-banner.tsx',
     'components/admin/users/invite-people-dialog.tsx',
     'components/admin/users/user-detail.tsx',

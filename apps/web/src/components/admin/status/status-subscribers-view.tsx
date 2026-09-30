@@ -5,7 +5,6 @@ import {
   ArrowUpTrayIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  PlusIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/shared/spinner'
 import { EmptyState } from '@/components/shared/empty-state'
+import { NewButton } from '@/components/shared/new-button'
+import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { TimeAgo } from '@/components/ui/time-ago'
 import {
   Dialog,
@@ -154,22 +155,20 @@ export function StatusSubscribersView() {
 
   return (
     <div className="max-w-3xl w-full flex flex-col flex-1 min-h-0">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-3 py-2.5 flex items-center gap-2 border-b border-border/40">
-        <h2 className="text-sm font-semibold px-1">Subscribers</h2>
-        <Input
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search by name or email…"
-          className="h-8 w-56 text-sm bg-muted/30 border-border/50"
-        />
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-            <ArrowUpTrayIcon className="h-4 w-4 mr-1.5" />
-            {exporting ? 'Exporting…' : 'Export CSV'}
-          </Button>
-          <AddSubscribersDialog />
-        </div>
-      </div>
+      <AdminListHeader
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        searchPlaceholder="Search by name or email…"
+        action={
+          <>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+              <ArrowUpTrayIcon className="h-4 w-4" />
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </Button>
+            <AddSubscribersDialog />
+          </>
+        }
+      />
 
       <div className="p-4 space-y-4">
         <div className="flex gap-3">
@@ -253,10 +252,7 @@ function AddSubscribersDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => setOpen(o)}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <PlusIcon className="h-4 w-4 mr-1.5" />
-          Add subscribers
-        </Button>
+        <NewButton noun="subscriber" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
