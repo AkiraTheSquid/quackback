@@ -78,7 +78,7 @@ export function ModerationPage() {
       crumbs={[{ label: 'Feedback & Roadmaps' }]}
       actions={
         <Button asChild variant="outline" size="sm">
-          <Link to="/admin/moderation">
+          <Link to="/admin/feedback/moderation">
             <ArrowTopRightOnSquareIcon className="size-4" />
             Open queue
           </Link>

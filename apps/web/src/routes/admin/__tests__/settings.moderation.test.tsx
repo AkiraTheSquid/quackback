@@ -59,7 +59,7 @@ describe('Moderation page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Moderation' })).toBeInTheDocument()
     expect(screen.getByText('Feedback & Roadmaps')).toBeInTheDocument()
     const queue = screen.getByRole('link', { name: /open queue/i })
-    expect(queue.getAttribute('href')).toBe('/admin/moderation')
+    expect(queue.getAttribute('href')).toBe('/admin/feedback/moderation')
   })
 
   it('keeps approval and content-review cards as shared setting rows', () => {
