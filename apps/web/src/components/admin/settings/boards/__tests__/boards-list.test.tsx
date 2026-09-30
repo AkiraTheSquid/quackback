@@ -88,7 +88,7 @@ describe('BoardsList', () => {
     expect(document.querySelectorAll('[data-slot="settings-list-chevron"]')).toHaveLength(2)
   })
 
-  it('stays quiet for a board more open than the default, and marks one narrower without segments', () => {
+  it('has no third badge: a board narrower than the portal without segments stays quiet', () => {
     const OPEN: BoardAccess = {
       ...PUBLIC,
       vote: 'anonymous',
@@ -104,10 +104,16 @@ describe('BoardsList', () => {
         ]}
       />
     )
-    const open = screen.getByText('Open board').closest('a')!
-    expect(within(open).queryByText('Restricted')).toBeNull()
-    const signed = screen.getByText('Signed board').closest('a')!
-    expect(within(signed).getByText('Restricted')).toBeTruthy()
+    expect(screen.queryByText('Restricted')).toBeNull()
+  })
+
+  it('marks a board whose view is team only even when actions differ', () => {
+    render(
+      <BoardsList
+        boards={[board({ slug: 'staff', name: 'Staff', access: { ...PUBLIC, view: 'team' } })]}
+      />
+    )
+    expect(screen.getByText('Team only')).toBeTruthy()
   })
 
   it('treats the default access as open', () => {
