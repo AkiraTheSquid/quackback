@@ -52,22 +52,6 @@ export const CHANGELOG_SORT_OPTIONS: Array<{ value: ChangelogSort; label: string
   { value: 'oldest', label: 'Oldest' },
 ]
 
-interface SortableEntry {
-  displayDate?: string | null
-  publishedAt: string | null
-  createdAt: string
-}
-
-function entryTime(entry: SortableEntry): number {
-  return new Date(entry.displayDate ?? entry.publishedAt ?? entry.createdAt).getTime()
-}
-
-/** Orders entries by the date they show: the display date, else published, else created. */
-export function sortChangelogEntries<T extends SortableEntry>(entries: T[], sort: ChangelogSort): T[] {
-  const direction = sort === 'oldest' ? 1 : -1
-  return [...entries].sort((a, b) => direction * (entryTime(a) - entryTime(b)))
-}
-
 /** The Filter control for the list toolbar: picks an entry status. */
 export function ChangelogFilterButton({ status, onStatusChange }: ChangelogFiltersProps) {
   const [open, setOpen] = useState(false)

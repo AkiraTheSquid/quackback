@@ -17,7 +17,6 @@ import {
   ChangelogFiltersPanel,
   ChangelogFilterButton,
   CHANGELOG_SORT_OPTIONS,
-  sortChangelogEntries,
   type ChangelogSort,
 } from './changelog-filters'
 import { useChangelogFilters } from './use-changelog-filters'
@@ -98,7 +97,7 @@ export function ChangelogList() {
   })
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery(
-    changelogQueries.list({ status: filters.status })
+    changelogQueries.list({ status: filters.status, sort: filters.sort })
   )
 
   const loadMoreRef = useInfiniteScroll({
@@ -134,10 +133,10 @@ export function ChangelogList() {
 
   const allEntries = data?.pages.flatMap((page) => page.items) ?? []
 
-  // Client-side search filtering, then the chosen order
+  // Client-side search filtering; the server returns the chosen order
   const entries = useMemo(() => {
     const q = filters.search?.toLowerCase()
-    const matching = q
+    return q
       ? allEntries.filter(
           (e) =>
             e.title.toLowerCase().includes(q) ||
@@ -145,8 +144,7 @@ export function ChangelogList() {
             e.author?.name.toLowerCase().includes(q)
         )
       : allEntries
-    return sortChangelogEntries(matching, filters.sort)
-  }, [allEntries, filters.search, filters.sort])
+  }, [allEntries, filters.search])
 
   // Navigate to entry via URL for shareable links
   const handleEdit = useCallback(
