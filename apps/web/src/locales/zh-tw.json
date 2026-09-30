@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "營運",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "為 Quinn 提供來自外部 MCP 伺服器的工具。",
+  "automation.connectors.add": "新增連接器",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "會話開始時套用",
   "settings.sla.defaultPolicyNone": "無",
   "automation.builtinTools.title": "內建操作",
-  "automation.builtinTools.titleAgent": "內建操作（客服代理）",
-  "automation.builtinTools.titleCopilot": "內建操作（Copilot）",
-  "automation.builtinTools.description": "每個內建寫入工具在此代理上的權限。「從不」會將該工具從其回合中完全移除。",
   "automation.builtinTools.reset": "恢復預設設定",
-  "automation.builtinTools.default": "預設",
-  "automation.builtinTools.saving": "儲存中…",
-  "automation.builtinTools.saveError": "無法更新工具權限。",
   "automation.builtinTools.loadError": "無法載入工具目錄。",
   "widget.shell.tab.changelog.unread": "{count, plural, other {# 則新動態}}",
   "widget.launcher.popularArticles": "熱門文章",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "仍有疑問？",
   "widget.help.article.askQuestion": "向我們提問",
   "widget.changelog.new": "新",
-  "widget.shell.tab.messages.unread": "{count} 則未讀"
+  "widget.shell.tab.messages.unread": "{count} 則未讀",
+  "automation.connectors.empty.title": "還沒有連接器",
+  "automation.builtinTools.agent": "Agent"
 }

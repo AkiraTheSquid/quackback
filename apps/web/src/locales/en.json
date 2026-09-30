@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Operations",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "Give Quinn tools from external MCP servers.",
+  "automation.connectors.add": "New connector",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Applied when a conversation starts",
   "settings.sla.defaultPolicyNone": "None",
   "automation.builtinTools.title": "Built-in actions",
-  "automation.builtinTools.titleAgent": "Built-in actions (Agent)",
-  "automation.builtinTools.titleCopilot": "Built-in actions (Copilot)",
-  "automation.builtinTools.description": "What each built-in write tool may do on this agent. \"Never\" removes the tool from its turns entirely.",
   "automation.builtinTools.reset": "Reset to defaults",
-  "automation.builtinTools.default": "Default",
-  "automation.builtinTools.saving": "Saving…",
-  "automation.builtinTools.saveError": "Tool permissions could not be updated.",
   "automation.builtinTools.loadError": "Could not load the tool catalogue.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# new update} other {# new updates}}",
   "widget.launcher.popularArticles": "Popular articles",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "Still stuck?",
   "widget.help.article.askQuestion": "Ask us a question",
   "widget.changelog.new": "New",
-  "widget.shell.tab.messages.unread": "{count} unread"
+  "widget.shell.tab.messages.unread": "{count} unread",
+  "automation.connectors.empty.title": "No connectors yet",
+  "automation.builtinTools.agent": "Agent"
 }

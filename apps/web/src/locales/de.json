@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Betrieb",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Gib Quinn Werkzeuge von externen MCP-Servern. Ein Katalog, zugeordnet zu jedem Agenten.",
-  "automation.connectors.add": "Connector hinzufügen",
+  "automation.connectors.description": "Gib Quinn Werkzeuge von externen MCP-Servern.",
+  "automation.connectors.add": "Neuer Connector",
   "automation.connectors.add.title": "Connector hinzufügen",
   "automation.connectors.add.description": "Verbinde Quinn mit einem externen MCP-Server. Werkzeuge werden automatisch erkannt.",
   "automation.connectors.add.advanced": "Erweitert · Authentifizierung",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Gilt ab Beginn einer Unterhaltung",
   "settings.sla.defaultPolicyNone": "Keine",
   "automation.builtinTools.title": "Integrierte Aktionen",
-  "automation.builtinTools.titleAgent": "Integrierte Aktionen (Agent)",
-  "automation.builtinTools.titleCopilot": "Integrierte Aktionen (Copilot)",
-  "automation.builtinTools.description": "Was jedes integrierte Schreibwerkzeug bei diesem Agenten tun darf. „Nie“ entfernt das Werkzeug komplett aus seinen Antworten.",
   "automation.builtinTools.reset": "Auf Standard zurücksetzen",
-  "automation.builtinTools.default": "Standard",
-  "automation.builtinTools.saving": "Wird gespeichert …",
-  "automation.builtinTools.saveError": "Die Werkzeugberechtigungen konnten nicht aktualisiert werden.",
   "automation.builtinTools.loadError": "Der Werkzeugkatalog konnte nicht geladen werden.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# neues Update} other {# neue Updates}}",
   "widget.launcher.popularArticles": "Beliebte Artikel",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "Kommst du nicht weiter?",
   "widget.help.article.askQuestion": "Stell uns eine Frage",
   "widget.changelog.new": "Neu",
-  "widget.shell.tab.messages.unread": "{count} ungelesen"
+  "widget.shell.tab.messages.unread": "{count} ungelesen",
+  "automation.connectors.empty.title": "Noch keine Connectors",
+  "automation.builtinTools.agent": "Agent"
 }

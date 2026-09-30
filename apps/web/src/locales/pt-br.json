@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Operações",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "Dê ao Quinn ferramentas de servidores MCP externos.",
+  "automation.connectors.add": "Novo conector",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Aplicada quando uma conversa começa",
   "settings.sla.defaultPolicyNone": "Nenhuma",
   "automation.builtinTools.title": "Ações integradas",
-  "automation.builtinTools.titleAgent": "Ações integradas (Agente)",
-  "automation.builtinTools.titleCopilot": "Ações integradas (Copilot)",
-  "automation.builtinTools.description": "O que cada ferramenta de escrita integrada pode fazer neste agente. “Nunca” remove a ferramenta completamente de seus turnos.",
   "automation.builtinTools.reset": "Restaurar padrões",
-  "automation.builtinTools.default": "Padrão",
-  "automation.builtinTools.saving": "Salvando…",
-  "automation.builtinTools.saveError": "Não foi possível atualizar as permissões da ferramenta.",
   "automation.builtinTools.loadError": "Não foi possível carregar o catálogo de ferramentas.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# nova atualização} other {# novas atualizações}}",
   "widget.launcher.popularArticles": "Artigos populares",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "Ainda com dúvidas?",
   "widget.help.article.askQuestion": "Faça uma pergunta",
   "widget.changelog.new": "Novo",
-  "widget.shell.tab.messages.unread": "{count} não lida(s)"
+  "widget.shell.tab.messages.unread": "{count} não lida(s)",
+  "automation.connectors.empty.title": "Nenhum conector ainda",
+  "automation.builtinTools.agent": "Agent"
 }

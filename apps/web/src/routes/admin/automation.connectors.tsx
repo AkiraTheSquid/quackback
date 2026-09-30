@@ -3,14 +3,16 @@ import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
-import { ChevronRightIcon, LinkIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, LinkIcon } from '@heroicons/react/24/outline'
 import { AddConnectorDialog } from '@/components/admin/automation/connectors/add-connector-dialog'
 import { UpdateBearerDialog } from '@/components/admin/automation/connectors/update-bearer-dialog'
 import { ConnectorMark } from '@/components/admin/automation/connectors/connector-mark'
 import { ConnectorStatusBadge } from '@/components/admin/automation/connectors/connector-status-badge'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
+import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { EmptyState } from '@/components/shared/empty-state'
+import { NewButton } from '@/components/shared/new-button'
 import { DefaultErrorPage } from '@/components/shared/error-page'
-import { BackLink } from '@/components/ui/back-link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { connectorQueries } from '@/lib/client/queries/assistant-connectors'
@@ -54,40 +56,22 @@ function ConnectorsPage() {
   const startOAuth = useStartConnectorOAuth()
   const connectors = list.data?.connectors ?? []
 
-  return (
-    <div className="max-w-3xl space-y-6">
-      <div className="lg:hidden">
-        <BackLink to="/admin/automation">
-          {intl.formatMessage({ id: 'automation.nav.label', defaultMessage: 'AI & Automation' })}
-        </BackLink>
-      </div>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <LinkIcon className="size-[18px]" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold">
-              {intl.formatMessage({
-                id: 'automation.connectors.title',
-                defaultMessage: 'Connectors',
-              })}
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {intl.formatMessage({
-                id: 'automation.connectors.description',
-                defaultMessage:
-                  'Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.',
-              })}
-            </p>
-          </div>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <PlusIcon className="size-4" />
-          {intl.formatMessage({ id: 'automation.connectors.add', defaultMessage: 'Add connector' })}
-        </Button>
-      </div>
+  const addButton = (
+    <NewButton noun="connector" onClick={() => setAddOpen(true)}>
+      {intl.formatMessage({ id: 'automation.connectors.add', defaultMessage: 'New connector' })}
+    </NewButton>
+  )
 
+  return (
+    <SettingsPage
+      page="/admin/automation/connectors"
+      area="automation"
+      description={intl.formatMessage({
+        id: 'automation.connectors.description',
+        defaultMessage: 'Give Quinn tools from external MCP servers.',
+      })}
+      actions={addButton}
+    >
       {list.isPending ? (
         <p className="text-sm text-muted-foreground">
           {intl.formatMessage({
@@ -104,6 +88,22 @@ function ConnectorsPage() {
         </p>
       ) : (
         <SettingsCard contentClassName="p-0">
+          {connectors.length === 0 && (
+            <EmptyState
+              size="compact"
+              icon={LinkIcon}
+              title={intl.formatMessage({
+                id: 'automation.connectors.empty.title',
+                defaultMessage: 'No connectors yet',
+              })}
+              description={intl.formatMessage({
+                id: 'automation.connectors.trust',
+                defaultMessage:
+                  'Connectors call external servers from your workspace. Only connect servers you trust.',
+              })}
+              action={addButton}
+            />
+          )}
           {connectors.map((connector, index) => (
             <Link
               key={connector.id}
@@ -176,15 +176,7 @@ function ConnectorsPage() {
           ))}
         </SettingsCard>
       )}
-      <p className="text-xs text-muted-foreground">
-        {intl.formatMessage({
-          id: 'automation.connectors.trust',
-          defaultMessage:
-            'Connectors call external servers from your workspace. Only connect servers you trust.',
-        })}
-      </p>
-      <BuiltInToolsCard agent="agent" />
-      <BuiltInToolsCard agent="copilot" />
+      <BuiltInToolsCard />
       <AddConnectorDialog open={addOpen} onOpenChange={setAddOpen} />
       <UpdateBearerDialog
         connectorId={tokenConnectorId}
@@ -193,6 +185,6 @@ function ConnectorsPage() {
           if (!open) setTokenConnectorId(null)
         }}
       />
-    </div>
+    </SettingsPage>
   )
 }

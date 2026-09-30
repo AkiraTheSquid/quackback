@@ -7,7 +7,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/labs/labs-settings.tsx',
     'components/admin/settings/security/identity-providers/provider-create-page.tsx',
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
-    'routes/admin/automation.connectors.tsx',
     'routes/admin/automation.connectors_.$connectorId.tsx',
     'routes/admin/automation.index.tsx',
     'routes/admin/automation.performance.tsx',
@@ -25,7 +24,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/settings/labs/labs-settings.tsx',
     'components/admin/settings/security/identity-providers/provider-create-page.tsx',
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
-    'routes/admin/automation.connectors.tsx',
     'routes/admin/automation.connectors_.$connectorId.tsx',
     'routes/admin/automation.performance.tsx',
     'routes/admin/automation.skills.tsx',
@@ -36,7 +34,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'routes/admin/settings.security.sso_.new.tsx',
   ],
   'registry-pages': [
-    '/admin/automation/connectors',
     '/admin/automation/performance',
     '/admin/automation/skills',
     '/admin/automation/workflows',
@@ -120,7 +117,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
   palette: [
     'components/admin/automation/connectors/connector-mark.tsx',
     'components/admin/automation/connectors/connector-status-badge.tsx',
-    'components/admin/automation/connectors/policy-dial.tsx',
     'components/admin/automation/who-replies-first-card.tsx',
     'components/admin/automation/workflow-builder/canvas.tsx',
     'components/admin/automation/workflow-builder/inspector/collect-data-editor.tsx',

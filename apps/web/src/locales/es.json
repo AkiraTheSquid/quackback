@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Operaciones",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "Da a Quinn herramientas de servidores MCP externos.",
+  "automation.connectors.add": "Nuevo conector",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Se aplica cuando empieza una conversación",
   "settings.sla.defaultPolicyNone": "Ninguna",
   "automation.builtinTools.title": "Acciones integradas",
-  "automation.builtinTools.titleAgent": "Acciones integradas (Agente)",
-  "automation.builtinTools.titleCopilot": "Acciones integradas (Copilot)",
-  "automation.builtinTools.description": "Qué puede hacer cada herramienta de escritura integrada en este agente. «Nunca» retira la herramienta por completo de sus turnos.",
   "automation.builtinTools.reset": "Restablecer valores predeterminados",
-  "automation.builtinTools.default": "Predeterminado",
-  "automation.builtinTools.saving": "Guardando…",
-  "automation.builtinTools.saveError": "No se pudieron actualizar los permisos de la herramienta.",
   "automation.builtinTools.loadError": "No se pudo cargar el catálogo de herramientas.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# novedad} other {# novedades}}",
   "widget.launcher.popularArticles": "Artículos populares",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "¿Sigues atascado?",
   "widget.help.article.askQuestion": "Haznos una pregunta",
   "widget.changelog.new": "Nuevo",
-  "widget.shell.tab.messages.unread": "{count} sin leer"
+  "widget.shell.tab.messages.unread": "{count} sin leer",
+  "automation.connectors.empty.title": "Aún no hay conectores",
+  "automation.builtinTools.agent": "Agent"
 }

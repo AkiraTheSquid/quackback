@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Exploitation",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "Donnez à Quinn des outils issus de serveurs MCP externes.",
+  "automation.connectors.add": "Nouveau connecteur",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Appliquée au démarrage d'une conversation",
   "settings.sla.defaultPolicyNone": "Aucune",
   "automation.builtinTools.title": "Actions intégrées",
-  "automation.builtinTools.titleAgent": "Actions intégrées (Agent)",
-  "automation.builtinTools.titleCopilot": "Actions intégrées (Copilot)",
-  "automation.builtinTools.description": "Ce que chaque outil d’écriture intégré peut faire sur cet agent. « Jamais » retire entièrement l’outil de ses tours.",
   "automation.builtinTools.reset": "Rétablir les valeurs par défaut",
-  "automation.builtinTools.default": "Par défaut",
-  "automation.builtinTools.saving": "Enregistrement…",
-  "automation.builtinTools.saveError": "Impossible de mettre à jour les autorisations de l’outil.",
   "automation.builtinTools.loadError": "Impossible de charger le catalogue d’outils.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# nouvelle mise à jour} other {# nouvelles mises à jour}}",
   "widget.launcher.popularArticles": "Articles populaires",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "Toujours bloqué ?",
   "widget.help.article.askQuestion": "Posez-nous une question",
   "widget.changelog.new": "Nouveau",
-  "widget.shell.tab.messages.unread": "{count} non lu(s)"
+  "widget.shell.tab.messages.unread": "{count} non lu(s)",
+  "automation.connectors.empty.title": "Aucun connecteur pour l'instant",
+  "automation.builtinTools.agent": "Agent"
 }

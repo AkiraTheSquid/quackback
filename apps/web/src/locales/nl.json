@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "Operaties",
   "automation.connectors.title": "Koppelingen",
-  "automation.connectors.description": "Geef Quinn tools vanuit externe MCP-servers. Eén catalogus, toegewezen aan elke agent.",
-  "automation.connectors.add": "Koppeling toevoegen",
+  "automation.connectors.description": "Geef Quinn tools van externe MCP-servers.",
+  "automation.connectors.add": "Nieuwe connector",
   "automation.connectors.add.title": "Koppeling toevoegen",
   "automation.connectors.add.description": "Verbind Quinn met een externe MCP-server. Tools worden automatisch gevonden.",
   "automation.connectors.add.advanced": "Geavanceerd · Authenticatie",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "Wordt toegepast zodra een gesprek begint",
   "settings.sla.defaultPolicyNone": "Geen",
   "automation.builtinTools.title": "Ingebouwde acties",
-  "automation.builtinTools.titleAgent": "Ingebouwde acties (Agent)",
-  "automation.builtinTools.titleCopilot": "Ingebouwde acties (Copilot)",
-  "automation.builtinTools.description": "Wat elke ingebouwde schrijftool bij deze agent mag doen. \"Never\" haalt de tool uit elke beurt van deze agent.",
   "automation.builtinTools.reset": "Standaard herstellen",
-  "automation.builtinTools.default": "Standaard",
-  "automation.builtinTools.saving": "Opslaan…",
-  "automation.builtinTools.saveError": "Toolrechten konden niet worden bijgewerkt.",
   "automation.builtinTools.loadError": "Toolcatalogus kon niet worden geladen.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {# nieuwe update} other {# nieuwe updates}}",
   "widget.launcher.popularArticles": "Populaire artikelen",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "Kom je er niet uit?",
   "widget.help.article.askQuestion": "Stel ons een vraag",
   "widget.changelog.new": "Nieuw",
-  "widget.shell.tab.messages.unread": "{count} ongelezen"
+  "widget.shell.tab.messages.unread": "{count} ongelezen",
+  "automation.connectors.empty.title": "Nog geen connectors",
+  "automation.builtinTools.agent": "Agent"
 }

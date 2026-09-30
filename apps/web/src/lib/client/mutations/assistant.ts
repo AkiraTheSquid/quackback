@@ -21,6 +21,7 @@ import {
 import { AUTOSAVE } from '@/lib/client/autosave'
 import { assistantKeys } from '@/lib/client/queries/assistant'
 import { settingsQueries } from '@/lib/client/queries/settings'
+import { AUTOSAVE } from '@/lib/client/autosave'
 
 export interface GuidanceRuleInput {
   name: string
@@ -119,6 +120,7 @@ export function useUpdateAssistantToolRules() {
   return useMutation({
     mutationFn: (data: Parameters<typeof updateAssistantToolRulesFn>[0]['data']) =>
       updateAssistantToolRulesFn({ data }),
+    meta: AUTOSAVE,
     onSuccess: (result) => setAssistantConfig(queryClient, result),
   })
 }

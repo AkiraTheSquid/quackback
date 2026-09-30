@@ -1038,8 +1038,8 @@
   "automation.nav.group.agents": "Agents",
   "automation.nav.group.operations": "العمليات",
   "automation.connectors.title": "Connectors",
-  "automation.connectors.description": "Give Quinn tools from external MCP servers. One catalog, mapped onto each agent.",
-  "automation.connectors.add": "Add connector",
+  "automation.connectors.description": "امنح Quinn أدوات من خوادم MCP خارجية.",
+  "automation.connectors.add": "موصل جديد",
   "automation.connectors.add.title": "Add connector",
   "automation.connectors.add.description": "Connect Quinn to an external MCP server. Tools are discovered automatically.",
   "automation.connectors.add.advanced": "Advanced · Authentication",
@@ -1128,13 +1128,7 @@
   "settings.sla.defaultPolicyHint": "تُطبَّق عند بدء محادثة",
   "settings.sla.defaultPolicyNone": "لا شيء",
   "automation.builtinTools.title": "الإجراءات المدمجة",
-  "automation.builtinTools.titleAgent": "الإجراءات المدمجة (الوكيل)",
-  "automation.builtinTools.titleCopilot": "الإجراءات المدمجة (Copilot)",
-  "automation.builtinTools.description": "ما يمكن لكل أداة كتابة مدمجة فعله لدى هذا الوكيل. «أبدًا» يزيل الأداة كليًا من جولاته.",
   "automation.builtinTools.reset": "إعادة التعيين إلى الافتراضي",
-  "automation.builtinTools.default": "افتراضي",
-  "automation.builtinTools.saving": "جارٍ الحفظ…",
-  "automation.builtinTools.saveError": "تعذّر تحديث أذونات الأدوات.",
   "automation.builtinTools.loadError": "تعذّر تحميل قائمة الأدوات.",
   "widget.shell.tab.changelog.unread": "{count, plural, one {تحديث جديد واحد} other {# تحديثات جديدة}}",
   "widget.launcher.popularArticles": "مقالات شائعة",
@@ -1162,5 +1156,7 @@
   "widget.help.article.stillStuck": "ما زلت بحاجة إلى مساعدة؟",
   "widget.help.article.askQuestion": "اطرح علينا سؤالًا",
   "widget.changelog.new": "جديد",
-  "widget.shell.tab.messages.unread": "{count} غير مقروءة"
+  "widget.shell.tab.messages.unread": "{count} غير مقروءة",
+  "automation.connectors.empty.title": "لا توجد موصلات بعد",
+  "automation.builtinTools.agent": "Agent"
 }
