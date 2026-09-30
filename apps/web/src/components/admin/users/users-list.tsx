@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { PlusIcon, TagIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/solid'
+import { TagIcon, UsersIcon, ViewColumnsIcon } from '@heroicons/react/24/solid'
 import { useInfiniteScroll } from '@/lib/client/hooks/use-infinite-scroll'
 import { useDebouncedSearch } from '@/lib/client/hooks/use-debounced-search'
 import { EmptyState } from '@/components/shared/empty-state'
-import { SearchInput } from '@/components/shared/search-input'
+import { AdminListHeader } from '@/components/admin/admin-list-header'
+import { NewButton } from '@/components/shared/new-button'
 import { Spinner } from '@/components/shared/spinner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -48,7 +49,7 @@ interface UsersListProps {
   selectedSegmentIds: string[]
   onSelectSegment: (segmentId: string, shiftKey: boolean) => void
   onClearSegments: () => void
-  /** Opens the "New person" dialog; absent when the viewer can't manage people. */
+  /** Opens the "New user" dialog; absent when the viewer can't manage people. */
   onNewPerson?: () => void
   /** Kept so callers do not change; list rows no longer multi-select. */
   canManage?: boolean
@@ -57,13 +58,13 @@ interface UsersListProps {
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
   { value: 'oldest', label: 'Oldest' },
-  { value: 'most_active', label: 'Most Active' },
-  { value: 'last_active', label: 'Last Active' },
-  { value: 'most_posts', label: 'Most Posts' },
-  { value: 'most_comments', label: 'Most Comments' },
-  { value: 'most_votes', label: 'Most Votes' },
+  { value: 'most_active', label: 'Most active' },
+  { value: 'last_active', label: 'Last active' },
+  { value: 'most_posts', label: 'Most posts' },
+  { value: 'most_comments', label: 'Most comments' },
+  { value: 'most_votes', label: 'Most votes' },
   { value: 'name', label: 'Name A-Z' },
-] as const
+]
 
 const SHOW_COUNTRY_STORAGE_KEY = 'quackback:users-list:show-country'
 
@@ -176,7 +177,7 @@ function UserTagFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-8 text-xs gap-1.5',
+            'font-normal',
             selectedTagIds.length > 0 && 'border-primary/40 text-primary'
           )}
         >
@@ -296,9 +297,9 @@ export function UsersList({
   }, [users, selectedUserId, onSelectUser])
 
   const headerContent = (
-    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-3 py-2.5">
+    <>
       {/* Mobile segment selector - only visible below lg */}
-      <div className="lg:hidden mb-2">
+      <div className="lg:hidden px-3 pt-2.5">
         <MobileSegmentSelector
           segments={segments}
           selectedSegmentIds={selectedSegmentIds}
@@ -307,72 +308,60 @@ export function UsersList({
         />
       </div>
 
-      {/* Search and Sort Row */}
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={searchValue}
-          onChange={setSearchValue}
-          placeholder="Search users..."
-          data-search-input
-        />
-        <div className="flex items-center gap-1 flex-wrap">
-          {SORT_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={cn(
-                'px-2.5 py-1 rounded-full text-[13px] transition-colors cursor-pointer whitespace-nowrap',
-                sort === opt.value
-                  ? 'bg-muted text-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-muted/50'
-              )}
-              onClick={() => handleSortChange(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
+      <AdminListHeader
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        searchPlaceholder="Search users..."
+        sortOptions={SORT_OPTIONS}
+        activeSort={sort}
+        onSortChange={(value) => handleSortChange(value as UsersFilters['sort'])}
+        filters={
+          <>
+            <UserTagFilterDropdown
+              selectedTagIds={filters.tagIds ?? []}
+              onChange={(tagIds) =>
+                onFiltersChange({ tagIds: tagIds.length > 0 ? tagIds : undefined })
+              }
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="font-normal">
+                  <ViewColumnsIcon className={MENU_ICON} />
+                  Columns
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuCheckboxItem checked={showCountry} onCheckedChange={setShowCountry}>
+                  Country
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+        action={
+          onNewPerson && (
+            <NewButton noun="user" onClick={onNewPerson}>
+              {intl.formatMessage({ id: 'admin.people.new.trigger', defaultMessage: 'New user' })}
+            </NewButton>
+          )
+        }
+      >
+        {/* Active Filters Bar - Always visible */}
+        <div className="mt-2">
+          <UsersActiveFiltersBar
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            onClearFilters={onClearFilters}
+          />
         </div>
-        <div className="flex-1" />
-        <UserTagFilterDropdown
-          selectedTagIds={filters.tagIds ?? []}
-          onChange={(tagIds) => onFiltersChange({ tagIds: tagIds.length > 0 ? tagIds : undefined })}
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-              <ViewColumnsIcon className={MENU_ICON} />
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem checked={showCountry} onCheckedChange={setShowCountry}>
-              Country
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {onNewPerson && (
-          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={onNewPerson}>
-            <PlusIcon className="h-3.5 w-3.5" />
-            {intl.formatMessage({ id: 'admin.people.new.trigger', defaultMessage: 'New person' })}
-          </Button>
-        )}
-      </div>
 
-      {/* Active Filters Bar - Always visible */}
-      <div className="mt-2">
-        <UsersActiveFiltersBar
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={onClearFilters}
-        />
-      </div>
-
-      <div className="mt-2 flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">
-          {total} {total === 1 ? 'user' : 'users'}
-        </span>
-      </div>
-    </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {total} {total === 1 ? 'user' : 'users'}
+          </span>
+        </div>
+      </AdminListHeader>
+    </>
   )
 
   if (isLoading) {

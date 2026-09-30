@@ -109,6 +109,25 @@ describe('<UsersList>', () => {
   })
 })
 
+describe('<UsersList> toolbar', () => {
+  it('orders the list through one Sort menu instead of a row of pills', async () => {
+    const changes: Array<Partial<UsersFilters>> = []
+    renderList(USERS, { onFiltersChange: (u) => changes.push(u) })
+    expect(screen.queryByRole('button', { name: 'Oldest' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Sort: Newest/ }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Most active' }))
+    expect(changes).toContainEqual({ sort: 'most_active' })
+  })
+
+  it('names the create action New user and runs it', () => {
+    let opened = 0
+    renderList(USERS, { onNewPerson: () => opened++ })
+    expect(screen.queryByRole('button', { name: 'New person' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'New user' }))
+    expect(opened).toBe(1)
+  })
+})
+
 describe('<UsersList> metric column headers', () => {
   it('labels the post, comment and vote counts as scannable table columns', () => {
     renderList()

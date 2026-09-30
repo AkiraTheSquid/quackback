@@ -49,7 +49,7 @@ export function InvitePeopleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Invite people to the portal</DialogTitle>
+          <DialogTitle>Invite users to the portal</DialogTitle>
           <DialogDescription>
             They&apos;ll get a magic link to sign in and access the portal, no password needed.
           </DialogDescription>

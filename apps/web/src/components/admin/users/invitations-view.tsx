@@ -31,7 +31,7 @@ const EMPTY_COPY: Record<InvitesStatus, { title: string; body: string }> = {
   },
   all: {
     title: 'No invitations yet',
-    body: 'Use "Invite people" to send the first portal invitation.',
+    body: 'Use "Invite users" to send the first portal invitation.',
   },
 }
 
@@ -82,7 +82,7 @@ export function InvitationsView({ status }: InvitationsViewProps) {
           </div>
           <Button type="button" size="sm" onClick={portal.openDialog}>
             <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-            Invite people
+            Invite users
           </Button>
         </div>
 
@@ -151,7 +151,7 @@ export function InvitationsView({ status }: InvitationsViewProps) {
               onClick={portal.openDialog}
             >
               <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-              Invite people
+              Invite users
             </Button>
           </div>
         ) : (

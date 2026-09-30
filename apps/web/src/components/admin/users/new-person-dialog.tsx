@@ -1,5 +1,5 @@
 /**
- * "New person" dialog — ad-hoc contact creation from the Users view.
+ * "New user" dialog — ad-hoc contact creation from the Users view.
  *
  * Cloned from NewCompanyDialog's conventions (companies-view.tsx). Email is
  * optional; the "Email is verified" checkbox asserts trust (it grants the
@@ -154,7 +154,7 @@ export function NewPersonDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {intl.formatMessage({ id: 'admin.people.new.title', defaultMessage: 'New person' })}
+            {intl.formatMessage({ id: 'admin.people.new.title', defaultMessage: 'New user' })}
           </DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -320,7 +320,7 @@ export function NewPersonDialog({
                     })
                   : intl.formatMessage({
                       id: 'admin.people.new.create',
-                      defaultMessage: 'Create person',
+                      defaultMessage: 'Create user',
                     })}
             </Button>
           </DialogFooter>
