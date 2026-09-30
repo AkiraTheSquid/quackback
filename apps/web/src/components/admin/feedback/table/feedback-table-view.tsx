@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { InboxEmptyState } from '@/components/admin/feedback/inbox-empty-state'
-import { ActiveFiltersBar } from '@/components/admin/feedback/active-filters-bar'
+import { ActiveFiltersBar, AddFilterButton } from '@/components/admin/feedback/active-filters-bar'
 import { FeedbackRow } from './feedback-row'
 import type { PostListItem, PostStatusEntity, Board, PostTag } from '@/lib/shared/db-types'
 import type { TeamMember } from '@/lib/shared/types'
@@ -31,6 +31,9 @@ interface FeedbackTableViewProps {
   onLoadMore: () => void
   hasActiveFilters: boolean
   onClearFilters: () => void
+  /** Extra controls after the Filter control (e.g. saved views) */
+  headerFilters?: React.ReactNode
+  /** The primary action, on the right of the toolbar */
   headerAction?: React.ReactNode
   onToggleStatus: (slug: string) => void
   onToggleBoard: (id: string) => void
@@ -42,7 +45,7 @@ interface FeedbackTableViewProps {
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
   { value: 'oldest', label: 'Oldest' },
-  { value: 'votes', label: 'Top Votes' },
+  { value: 'votes', label: 'Top votes' },
   { value: 'priority', label: 'Priority' },
 ]
 
@@ -50,6 +53,7 @@ interface FeedbackListHeaderProps {
   search: string | undefined
   sort: InboxFilters['sort']
   onFiltersChange: (updates: Partial<InboxFilters>) => void
+  filters?: ReactNode
   action?: ReactNode
   children?: ReactNode
 }
@@ -62,6 +66,7 @@ function FeedbackListHeader({
   search,
   sort,
   onFiltersChange,
+  filters,
   action,
   children,
 }: FeedbackListHeaderProps) {
@@ -81,6 +86,7 @@ function FeedbackListHeader({
       sortOptions={SORT_OPTIONS}
       activeSort={sort}
       onSortChange={handleSortChange}
+      filters={filters}
       action={action}
     >
       {children}
@@ -143,6 +149,7 @@ export function FeedbackTableView({
   onLoadMore,
   hasActiveFilters,
   onClearFilters,
+  headerFilters,
   headerAction,
   onToggleStatus,
   onToggleBoard,
@@ -190,24 +197,35 @@ export function FeedbackTableView({
       search={filters.search}
       sort={filters.sort}
       onFiltersChange={onFiltersChange}
+      filters={
+        <>
+          <AddFilterButton
+            filters={filters}
+            boards={boards}
+            tags={tags}
+            statuses={statuses}
+            members={members}
+            segments={segments}
+            onToggleStatus={onToggleStatus}
+            onToggleBoard={onToggleBoard}
+            onToggleSegment={onToggleSegment}
+            onFiltersChange={onFiltersChange}
+          />
+          {headerFilters}
+        </>
+      }
       action={headerAction}
     >
-      {/* Active Filters Bar - Always visible */}
-      <div className="mt-2">
-        <ActiveFiltersBar
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearAll={onClearFilters}
-          boards={boards}
-          tags={tags}
-          statuses={statuses}
-          members={members}
-          segments={segments}
-          onToggleStatus={onToggleStatus}
-          onToggleBoard={onToggleBoard}
-          onToggleSegment={onToggleSegment}
-        />
-      </div>
+      <ActiveFiltersBar
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        onClearAll={onClearFilters}
+        boards={boards}
+        tags={tags}
+        statuses={statuses}
+        members={members}
+        segments={segments}
+      />
     </FeedbackListHeader>
   )
 

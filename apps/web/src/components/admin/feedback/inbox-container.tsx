@@ -168,21 +168,21 @@ export function InboxContainer({
         onToggleBoard={toggleBoard}
         onToggleSegment={toggleSegment}
         duplicateCountByPostId={duplicateCountByPostId}
+        headerFilters={
+          <SavedViewsMenu
+            filters={filters}
+            hasActiveFilters={hasActiveFilters}
+            onApply={applyView}
+          />
+        }
         headerAction={
-          <div className="flex items-center gap-2">
-            <SavedViewsMenu
-              filters={filters}
-              hasActiveFilters={hasActiveFilters}
-              onApply={applyView}
-            />
-            <CreatePostDialog
-              boards={boards}
-              tags={tags}
-              statuses={statuses}
-              currentUser={currentUser}
-              onPostCreated={refetchPosts}
-            />
-          </div>
+          <CreatePostDialog
+            boards={boards}
+            tags={tags}
+            statuses={statuses}
+            currentUser={currentUser}
+            onPostCreated={refetchPosts}
+          />
         }
       />
     </InboxLayout>

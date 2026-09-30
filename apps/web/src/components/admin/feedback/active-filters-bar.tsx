@@ -60,9 +60,6 @@ interface ActiveFiltersBarProps {
   statuses: PostStatusEntity[]
   members: TeamMember[]
   segments?: SegmentListItem[]
-  onToggleStatus: (slug: string) => void
-  onToggleBoard: (id: string) => void
-  onToggleSegment?: (id: string) => void
 }
 
 type FilterCategory =
@@ -100,7 +97,8 @@ const COMMENT_THRESHOLDS = [
   { value: 50, label: '50+ comments' },
 ]
 
-function AddFilterButton({
+/** The Filter control that opens the category menu; lives in the list toolbar. */
+export function AddFilterButton({
   filters,
   boards,
   tags,
@@ -200,7 +198,7 @@ function AddFilterButton({
           )}
         >
           <PlusIcon className="h-3 w-3" />
-          Add filter
+          Filter
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-48 p-0">
@@ -672,34 +670,21 @@ export function ActiveFiltersBar({
   statuses,
   members,
   segments,
-  onToggleStatus,
-  onToggleBoard,
-  onToggleSegment,
 }: ActiveFiltersBarProps) {
   const activeFilters = useMemo(
     () => computeActiveFilters(filters, boards, tags, statuses, members, segments, onFiltersChange),
     [filters, boards, tags, statuses, members, segments, onFiltersChange]
   )
 
+  if (activeFilters.length === 0) return null
+
   return (
-    <div className="bg-card/50" role="region" aria-label="Active filters">
+    <div className="mt-2 bg-card/50" role="region" aria-label="Active filters">
       <div className="flex flex-wrap gap-1 items-center">
         {activeFilters.map(({ key, type, ...filterProps }) => (
           <FilterChip key={key} icon={getFilterIcon(type)} {...filterProps} />
         ))}
 
-        <AddFilterButton
-          filters={filters}
-          boards={boards}
-          tags={tags}
-          statuses={statuses}
-          members={members}
-          segments={segments}
-          onToggleStatus={onToggleStatus}
-          onToggleBoard={onToggleBoard}
-          onToggleSegment={onToggleSegment}
-          onFiltersChange={onFiltersChange}
-        />
 
         {activeFilters.length > 1 && (
           <button

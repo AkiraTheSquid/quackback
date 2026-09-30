@@ -27,6 +27,7 @@ vi.mock('@/components/public/post-card', () => ({
 
 let filterBarRenders = 0
 vi.mock('@/components/admin/feedback/active-filters-bar', () => ({
+  AddFilterButton: () => null,
   ActiveFiltersBar: () => {
     filterBarRenders++
     return null

@@ -123,7 +123,7 @@ test.describe('Post images stay inline', () => {
     await expect(page.getByRole('heading', { name: 'Feedback', level: 1 })).toBeVisible({
       timeout: 15000,
     })
-    const create = page.getByTitle('Create new post')
+    const create = page.getByRole('button', { name: 'New post' })
     await expect(create).toBeVisible()
     await expect(async () => {
       if (
