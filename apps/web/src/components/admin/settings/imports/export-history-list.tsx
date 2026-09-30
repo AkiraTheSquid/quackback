@@ -27,11 +27,11 @@ const STATUS_LABEL: Record<ExportRunListItem['status'], string> = {
 
 const STATUS_VARIANT: Record<
   ExportRunListItem['status'],
-  'secondary' | 'default' | 'destructive' | 'outline'
+  'secondary' | 'default' | 'destructive' | 'success'
 > = {
   pending: 'secondary',
   running: 'default',
-  completed: 'outline',
+  completed: 'success',
   failed: 'destructive',
 }
 
@@ -44,7 +44,7 @@ export function formatBytes(bytes: number): string {
 /** "1,204 posts · 86 companies · 5,632 votes +4 more" */
 export function summarizeEntityCounts(counts: Record<string, number>): string {
   const entries = Object.entries(counts)
-  if (entries.length === 0) return '—'
+  if (entries.length === 0) return '-'
   const shown = entries
     .slice(0, 3)
     .map(([key, count]) => `${count.toLocaleString()} ${key.replace(/_/g, ' ')}`)
@@ -99,7 +99,7 @@ export function ExportHistoryList() {
                 <TimeAgo date={run.createdAt} />
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {run.sizeBytes != null ? formatBytes(run.sizeBytes) : '—'}
+                {run.sizeBytes != null ? formatBytes(run.sizeBytes) : '-'}
               </TableCell>
               <TableCell
                 className="max-w-[260px] truncate text-sm text-muted-foreground"
@@ -111,7 +111,7 @@ export function ExportHistoryList() {
                   ? (run.error ?? 'Export failed')
                   : run.entityCounts
                     ? summarizeEntityCounts(run.entityCounts)
-                    : '—'}
+                    : '-'}
               </TableCell>
               <TableCell>
                 <Badge variant={STATUS_VARIANT[run.status]}>{STATUS_LABEL[run.status]}</Badge>
@@ -127,7 +127,7 @@ export function ExportHistoryList() {
                 ) : run.status === 'completed' && isExpired(run) ? (
                   <span className="text-sm text-muted-foreground">Expired</span>
                 ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
+                  <span className="text-sm text-muted-foreground">-</span>
                 )}
               </TableCell>
             </TableRow>

@@ -28,12 +28,12 @@ const STATUS_LABEL: Record<ImportRunListItem['status'], string> = {
 
 const STATUS_VARIANT: Record<
   ImportRunListItem['status'],
-  'secondary' | 'default' | 'destructive' | 'outline'
+  'secondary' | 'default' | 'destructive' | 'success'
 > = {
   pending: 'secondary',
   dry_run: 'secondary',
   running: 'default',
-  completed: 'outline',
+  completed: 'success',
   failed: 'destructive',
 }
 
@@ -74,7 +74,7 @@ export function ImportHistoryList() {
       <EmptyState
         icon={ArchiveBoxIcon}
         title="No imports yet"
-        description="Runs you launch from the wizard above show up here with their status and counts."
+        description="Runs you start above show up here with their status and counts."
         className="py-8"
       />
     )
@@ -111,7 +111,7 @@ export function ImportHistoryList() {
                     {run.totals.skipped > 0 && `, ${run.totals.skipped} skipped`}
                   </>
                 ) : (
-                  '—'
+                  '-'
                 )}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">

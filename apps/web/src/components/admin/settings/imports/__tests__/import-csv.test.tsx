@@ -115,10 +115,24 @@ afterEach(() => {
 })
 
 describe('<ImportCsv>', () => {
-  it('explains how author_email and author_name are applied', () => {
+  it('states the column rules in the dropzone hint', () => {
     renderCsv()
-    expect(screen.getByText(/Every row needs author_email or author_name/)).toBeTruthy()
-    expect(screen.getByText(/name-only contact/)).toBeTruthy()
+    expect(screen.getByText(/Needs title and content columns/)).toBeTruthy()
+    expect(screen.getByText(/Each row needs author_email or author_name/)).toBeTruthy()
+    expect(screen.getByText(/Keep source_id filled/)).toBeTruthy()
+  })
+
+  it('offers the source choices in a Source select, defaulting to the feedback portal CSV', () => {
+    renderCsv()
+    const source = screen.getByLabelText('Source') as HTMLSelectElement
+    expect(source.value).toBe('feedback_portal')
+    expect(Array.from(source.options).map((o) => o.textContent)).toEqual([
+      'Feedback portal CSV',
+      'Support suite CSV',
+      'Help center CSV',
+    ])
+    fireEvent.change(source, { target: { value: 'help_center' } })
+    expect(source.value).toBe('help_center')
   })
 
   it('walks upload -> dry-run review -> commit -> done', async () => {

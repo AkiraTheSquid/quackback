@@ -52,6 +52,13 @@ interface PreviewResponse {
   updatedCount: number
 }
 
+/** The kind of CSV being brought in; every source follows the same template. */
+const IMPORT_SOURCES = [
+  { value: 'feedback_portal', label: 'Feedback portal CSV' },
+  { value: 'support_suite', label: 'Support suite CSV' },
+  { value: 'help_center', label: 'Help center CSV' },
+] as const
+
 const IN_FLIGHT_RUN_STATUSES = new Set(['pending', 'dry_run', 'running'])
 
 function downloadTemplate() {
@@ -67,13 +74,14 @@ function downloadTemplate() {
 /**
  * Template-driven CSV import: download the template, fill it in, upload,
  * review the dry-run (counts + what would be auto-created), commit. The
- * server contract is the template itself — no column-mapping step.
+ * server contract is the template itself, with no column-mapping step.
  */
 export function ImportCsv() {
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<Step>('idle')
   const [file, setFile] = useState<File | null>(null)
+  const [source, setSource] = useState<string>(IMPORT_SOURCES[0].value)
   const [boardId, setBoardId] = useState<string>('')
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [runId, setRunId] = useState<string | null>(null)
@@ -172,6 +180,21 @@ export function ImportCsv() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
+        <label>
+          <span className="sr-only">Source</span>
+          <Select value={source} onValueChange={setSource}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORT_SOURCES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
         <Select value={boardId} onValueChange={setBoardId}>
           <SelectTrigger className="w-[240px]">
             <SelectValue placeholder="Default board (optional)" />
@@ -201,9 +224,8 @@ export function ImportCsv() {
                 : 'Drop your CSV here, or click to browse'}
           </span>
           <span className="text-xs text-muted-foreground">
-            Must use the template columns — title and content are required. Up to 10MB / 10,000
-            rows. Every row needs author_email or author_name: email matches or creates a person;
-            name without an email creates a name-only contact.
+            Needs title and content columns, up to 10MB and 10,000 rows. Each row needs author_email
+            or author_name. Keep source_id filled to re-run without duplicates.
           </span>
           <input
             ref={fileInputRef}
@@ -270,7 +292,7 @@ function ImportReview({
         </p>
         {creations.length > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Will create: {creations.join(', ')} — anything not already in your workspace is created
+            Will create: {creations.join(', ')}. Anything not already in your workspace is created
             on import.
           </p>
         )}
@@ -377,7 +399,7 @@ function ImportProgress({
           {run.totals.created} created
           {run.totals.updated > 0 && `, ${run.totals.updated} updated`}
           {run.totals.skipped > 0 && `, ${run.totals.skipped} skipped`}
-          {run.totals.errors > 0 && ` (${run.totals.errors} row errors — see import history)`}.
+          {run.totals.errors > 0 && ` (${run.totals.errors} row errors, see import history)`}.
         </p>
         <Button variant="outline" size="sm" onClick={onReset}>
           Import another file

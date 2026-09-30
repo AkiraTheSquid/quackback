@@ -32,7 +32,7 @@ export function ExportWorkspaceAction() {
     try {
       const res = await fetch('/api/export/workspace', { method: 'POST' })
       if (res.status === 202) {
-        toast.success('Export started — it will appear below in a moment.')
+        toast.success('Export started. It will appear below in a moment.')
       } else if (res.status === 409) {
         toast.info('An export is already running.')
       } else if (res.status === 402) {
