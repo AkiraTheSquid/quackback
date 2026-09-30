@@ -68,7 +68,7 @@ describe('useAssistantAutosave', () => {
   }) {
     const [value, setValue] = useState(initial)
     const [saved, setSaved] = useState(initial)
-    const { conflict, clearConflict } = useAssistantAutosave({
+    const { conflict, clearConflict, touch } = useAssistantAutosave({
       dirty: value !== saved,
       valid,
       signature: value,
@@ -84,6 +84,7 @@ describe('useAssistantAutosave', () => {
         <input aria-label={label} value={value} onChange={(e) => setValue(e.target.value)} />
         <output>{conflict ? 'conflict' : 'ok'}</output>
         <button onClick={clearConflict}>clear {label}</button>
+        <button onClick={touch}>touch {label}</button>
       </div>
     )
   }
@@ -219,5 +220,65 @@ describe('useAssistantAutosave', () => {
     release()
     await flush(0)
     expect(order).toEqual(['slow:start', 'slow:end', 'fast:start'])
+  })
+
+  it('sends the same values again after a failure once the user acts on the field again', async () => {
+    const save = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValue(undefined)
+    render(<Harness save={save} />)
+    type('field', 'b')
+    await flush(500)
+    expect(save).toHaveBeenCalledTimes(1)
+    await flush(5000)
+    expect(save).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByText('touch field'))
+    await flush(500)
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(save).toHaveBeenLastCalledWith('b')
+  })
+
+  it('does nothing when touched with nothing failed or changed', async () => {
+    const save = vi.fn(async () => {})
+    render(<Harness save={save} />)
+    fireEvent.click(screen.getByText('touch field'))
+    await flush(5000)
+    expect(save).not.toHaveBeenCalled()
+  })
+
+  it('flushes an edit typed while a save was in flight when the page is left', async () => {
+    let release = () => {}
+    const save = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (release = resolve)))
+      .mockResolvedValue(undefined)
+    const view = render(<Harness save={save} delayMs={0} />)
+    type('field', 'b')
+    await flush(0)
+    expect(save).toHaveBeenCalledTimes(1)
+    type('field', 'bc')
+    view.unmount()
+    release()
+    await flush(10)
+    await flush(10)
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(save).toHaveBeenLastCalledWith('bc')
+  })
+
+  it('does not save the in-flight value a second time when the page is left', async () => {
+    let release = () => {}
+    const save = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (release = resolve)))
+      .mockResolvedValue(undefined)
+    const view = render(<Harness save={save} delayMs={0} />)
+    type('field', 'b')
+    await flush(0)
+    view.unmount()
+    release()
+    await flush(10)
+    await flush(10)
+    expect(save).toHaveBeenCalledTimes(1)
   })
 })

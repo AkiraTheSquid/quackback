@@ -11,8 +11,9 @@ import {
 import { useIntl } from 'react-intl'
 import { Button } from '@/components/ui/button'
 import { isRevisionConflict } from '@/lib/client/autosave'
+import { enqueueAssistantSave } from './assistant-save-queue'
 
-export type AssistantSettingsTab = 'basics' | 'guidance' | 'actions'
+export type AssistantSettingsTab = 'basics' | 'knowledge' | 'guidance' | 'actions'
 
 interface AssistantDirtyState {
   dirtyTabs: ReadonlySet<AssistantSettingsTab>
@@ -118,22 +119,13 @@ export function AssistantConflictNotice({ onReload }: { onReload: () => void | P
   )
 }
 
-// Saves to the shared assistant configuration run one at a time, so each one
-// reads the revision the previous one produced.
-let saveQueue: Promise<unknown> = Promise.resolve()
-
-function enqueueSave(save: () => Promise<void>): Promise<void> {
-  const run = saveQueue.then(save, save)
-  saveQueue = run.catch(() => {})
-  return run
-}
-
 /**
  * Saves a draft as it changes. Text fields pass a debounce delay, tile choices
- * pass 0. A failed save is not retried until the draft changes again (the
- * mutation's autosave meta shows the toast), a revision conflict stops saving
- * until `clearConflict` is called after reloading, and a pending draft is saved
- * when the page is left.
+ * pass 0. Saves join the shared queue (see `enqueueAssistantSave`). A failed
+ * save is not retried until the draft changes or `touch` reports the user acting
+ * on the field again (the mutation's autosave meta shows the toast), a revision
+ * conflict stops saving until `clearConflict` is called after reloading, and a
+ * draft that is unsaved or still changing is saved when the page is left.
  */
 export function useAssistantAutosave({
   dirty,
@@ -144,25 +136,28 @@ export function useAssistantAutosave({
 }: {
   dirty: boolean
   valid?: boolean
-  /** Identifies the current draft; a failed save is retried only once this changes. */
+  /** Identifies the current draft; a failed save is retried only once this changes or `touch` runs. */
   signature: string
   delayMs: number
   save: () => Promise<void>
 }) {
   const [conflict, setConflict] = useState(false)
   const [settledCount, setSettledCount] = useState(0)
+  const [touchCount, setTouchCount] = useState(0)
   const saveRef = useRef(save)
   saveRef.current = save
   const inFlight = useRef(false)
+  const sentSignature = useRef<string | null>(null)
   const failedSignature = useRef<string | null>(null)
   const canSave = dirty && valid && !conflict
-  const pendingRef = useRef(false)
-  pendingRef.current = canSave && !inFlight.current
+  const latest = useRef({ canSave, signature })
+  latest.current = { canSave, signature }
 
   const run = useCallback(async (attempted: string) => {
     inFlight.current = true
+    sentSignature.current = attempted
     try {
-      await enqueueSave(() => saveRef.current())
+      await enqueueAssistantSave(() => saveRef.current())
       failedSignature.current = null
     } catch (error) {
       if (isRevisionConflict(error)) setConflict(true)
@@ -177,14 +172,26 @@ export function useAssistantAutosave({
     if (!canSave || inFlight.current || failedSignature.current === signature) return
     const timer = setTimeout(() => void run(signature), delayMs)
     return () => clearTimeout(timer)
-  }, [canSave, signature, delayMs, run, settledCount])
+  }, [canSave, signature, delayMs, run, settledCount, touchCount])
 
   useEffect(
     () => () => {
-      if (pendingRef.current) void enqueueSave(() => saveRef.current()).catch(() => {})
+      const { canSave: unsaved, signature: current } = latest.current
+      if (!unsaved || failedSignature.current === current) return
+      if (inFlight.current && sentSignature.current === current) return
+      void enqueueAssistantSave(() => saveRef.current()).catch(() => {})
     },
     []
   )
 
-  return { conflict, clearConflict: useCallback(() => setConflict(false), []) }
+  return {
+    conflict,
+    clearConflict: useCallback(() => setConflict(false), []),
+    /** Reports the user acting on the field again, so a failed save is sent once more. */
+    touch: useCallback(() => {
+      if (failedSignature.current === null) return
+      failedSignature.current = null
+      setTouchCount((count) => count + 1)
+    }, []),
+  }
 }
