@@ -2,24 +2,14 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
 import { slugify } from '../../../src/lib/shared/utils/slugify'
 
 /**
- * Select an access preset and persist it. The save dock is a `fixed bottom-0`
- * bar that only slides into view (translate-y-0) — and accepts pointer events —
- * while the form is dirty, so we save only when the click was a real change
- * (clicking the already-active preset is a no-op and leaves the dock hidden).
+ * Select an access preset. Access changes autosave after a short pause, so the
+ * change has persisted once the header shows "Saved".
  * State-agnostic: callers don't need to know the board's starting preset.
  */
 async function setPresetAndSave(page: Page, preset: Locator): Promise<void> {
   await preset.click()
   await expect(preset).toHaveAttribute('aria-pressed', 'true')
-
-  const dock = page.locator('[aria-label="Save changes"]')
-  // A real change makes the form dirty and slides the dock into view.
-  await expect(dock).toHaveClass(/translate-y-0/, { timeout: 3000 })
-  await dock.getByRole('button', { name: 'Save changes' }).click()
-  // The dock slides back out (translate-y-full) only after the save round-trips
-  // and the form re-baselines — a reliable "persisted" signal that beats
-  // networkidle, which can resolve in the lull before the mutation fires.
-  await expect(dock).toHaveClass(/translate-y-full/, { timeout: 10000 })
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 10000 })
 }
 
 /**
@@ -56,7 +46,7 @@ async function openFirstBoard(page: Page): Promise<void> {
 async function createBoardOnAccessTab(page: Page, name: string): Promise<void> {
   await createBoard(page, name)
   await page.getByRole('tab', { name: 'Access' }).click()
-  await expect(page.getByText('Access Control')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText('Per-action permissions')).toBeVisible({ timeout: 5000 })
   // New boards default to the Public preset; wait for the matrix to settle on it
   // (the optimistic insert can briefly show defaults before the refetch lands).
   await expect(page.getByRole('button', { name: 'Public', exact: true })).toHaveAttribute(
@@ -69,9 +59,11 @@ async function createBoardOnAccessTab(page: Page, name: string): Promise<void> {
 /** Delete the board currently open in settings (type-to-confirm danger zone). */
 async function deleteCurrentBoard(page: Page, name: string): Promise<void> {
   await page.getByRole('tab', { name: 'General' }).click()
-  await expect(page.getByText('Danger Zone')).toBeVisible({ timeout: 5000 })
-  await page.getByPlaceholder(name).fill(name)
-  const del = page.getByRole('button', { name: 'Delete board', exact: true })
+  await expect(page.getByText('Danger zone')).toBeVisible({ timeout: 5000 })
+  await page.getByRole('button', { name: 'Delete board', exact: true }).click()
+  const dialog = page.getByRole('alertdialog')
+  await dialog.getByPlaceholder(name).fill(name)
+  const del = dialog.getByRole('button', { name: 'Delete board', exact: true })
   await expect(del).toBeEnabled()
   await del.click()
   await expect(page).toHaveURL(/\/admin\/settings\/boards\/?(\?|$)/, { timeout: 10000 })
@@ -90,7 +82,7 @@ test.describe('Admin Board Management', () => {
   test('can access board general settings', async ({ page }) => {
     await openFirstBoard(page)
     await expect(page.getByRole('tab', { name: 'General' })).toHaveAttribute('data-active')
-    await expect(page.getByRole('textbox', { name: 'Board name', exact: true })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible()
     await expect(page.getByTestId('board-switcher')).toHaveCount(0)
   })
@@ -98,21 +90,16 @@ test.describe('Admin Board Management', () => {
   test('can edit board name', async ({ page }) => {
     await openFirstBoard(page)
     // Find the board name input in the General Settings section (first input, not the delete confirmation)
-    const nameInput = page.getByRole('textbox', { name: 'Board name', exact: true })
+    const nameInput = page.getByRole('textbox', { name: 'Name', exact: true })
 
     if ((await nameInput.count()) > 0) {
       // Clear and type new name
       await nameInput.clear()
       await nameInput.fill('Test Board Name')
 
-      // Find and click save button - use exact match for "Save changes"
-      const saveButton = page.getByRole('button', { name: 'Save changes' })
-      if ((await saveButton.count()) > 0) {
-        await saveButton.click()
-
-        // Should show success message or the name should persist
-        await page.waitForLoadState('networkidle')
-      }
+      // The form saves when the field loses focus
+      await nameInput.blur()
+      await page.waitForLoadState('networkidle')
     }
   })
 
@@ -126,14 +113,9 @@ test.describe('Admin Board Management', () => {
       await descInput.first().clear()
       await descInput.first().fill('Updated board description for testing')
 
-      // Find and click save button - use exact match for "Save changes"
-      const saveButton = page.getByRole('button', { name: 'Save changes' })
-      if ((await saveButton.count()) > 0) {
-        await saveButton.click()
-
-        // Wait for save to complete
-        await page.waitForLoadState('networkidle')
-      }
+      // The form saves when the field loses focus
+      await descInput.first().blur()
+      await page.waitForLoadState('networkidle')
     }
   })
 
@@ -160,7 +142,7 @@ test.describe('Admin Board Management', () => {
   test('shows danger zone with delete option', async ({ page }) => {
     await openFirstBoard(page)
     // Should show danger zone section
-    const dangerZone = page.getByText('Danger Zone')
+    const dangerZone = page.getByText('Danger zone')
     await expect(dangerZone).toBeVisible({ timeout: 10000 })
 
     const deleteButton = page.getByRole('button', { name: 'Delete board', exact: true })
@@ -235,7 +217,7 @@ test.describe('Board Access Settings', () => {
 
     // Switch to the Access tab (sets ?tab=access).
     await page.getByRole('tab', { name: 'Access' }).click()
-    await expect(page.getByText('Access Control')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Per-action permissions')).toBeVisible({ timeout: 5000 })
   })
 
   test('displays the access matrix with presets and per-action permissions', async ({ page }) => {
@@ -267,7 +249,7 @@ test.describe('Board Access Settings', () => {
     // Reload — the URL keeps ?tab=access — and confirm the saved preset is active.
     await page.reload()
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Access Control')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Per-action permissions')).toBeVisible({ timeout: 10000 })
     await expect(privatePreset).toHaveAttribute('aria-pressed', 'true')
 
     await deleteCurrentBoard(page, name)
@@ -552,7 +534,7 @@ test.describe('Create Board Dialog', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Board Settings Tabs (General / Access / Import Data / Export Data)
+// Board Settings Tabs (General / Access / Moderation / Data)
 // ---------------------------------------------------------------------------
 
 test.describe('Board Settings Tabs', () => {
@@ -568,18 +550,18 @@ test.describe('Board Settings Tabs', () => {
     await openFirstBoard(page)
   })
 
-  test('General tab shows the board form and Danger Zone', async ({ page }) => {
-    await expect(page.getByRole('textbox', { name: 'Board name', exact: true })).toBeVisible({
+  test('General tab shows the board form and Danger zone', async ({ page }) => {
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeVisible({
       timeout: 10000,
     })
-    await expect(page.getByText('Danger Zone')).toBeVisible()
+    await expect(page.getByText('Danger zone')).toBeVisible()
   })
 
-  test('settings nav shows General, Access, Import Data, Export Data buttons', async ({ page }) => {
+  test('settings nav shows General, Access, Moderation, Data tabs', async ({ page }) => {
     await expect(page.getByRole('tab', { name: 'General' })).toBeVisible({ timeout: 5000 })
     await expect(page.getByRole('tab', { name: 'Access' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Import Data' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Export Data' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Moderation' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Data' })).toBeVisible()
   })
 
   test('clicking Access tab switches to Access Control view', async ({ page }) => {
@@ -587,29 +569,18 @@ test.describe('Board Settings Tabs', () => {
     if ((await accessTab.count()) === 0) return
 
     await accessTab.click()
-    await expect(page.getByText('Access Control')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Per-action permissions')).toBeVisible({ timeout: 5000 })
     // URL should reflect the tab change
     await expect(page).toHaveURL(/tab=access/)
   })
 
-  test('clicking Import Data tab switches to import view', async ({ page }) => {
-    const importTab = page.getByRole('tab', { name: 'Import Data' })
-    if ((await importTab.count()) === 0) return
+  test('clicking Data tab shows the Import and Export cards', async ({ page }) => {
+    const dataTab = page.getByRole('tab', { name: 'Data' })
+    if ((await dataTab.count()) === 0) return
 
-    await importTab.click()
-    await expect(page.getByText('Import Data')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText('Import posts from a CSV file into this board')).toBeVisible()
-  })
-
-  test('clicking Export Data tab switches to export view and shows Export CSV button', async ({
-    page,
-  }) => {
-    const exportTab = page.getByRole('tab', { name: 'Export Data' })
-    if ((await exportTab.count()) === 0) return
-
-    await exportTab.click()
-    await expect(page.getByText('Export Data')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText('Download all posts from this board as CSV')).toBeVisible()
+    await dataTab.click()
+    await expect(page.getByText('Import posts')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Export posts')).toBeVisible()
     await expect(page.getByRole('button', { name: /export csv/i })).toBeVisible()
   })
 
@@ -660,7 +631,7 @@ test.describe('Board Slug', () => {
   })
 
   test('General form shows Board name and Description fields', async ({ page }) => {
-    const boardNameInput = page.getByRole('textbox', { name: 'Board name', exact: true })
+    const boardNameInput = page.getByRole('textbox', { name: 'Name', exact: true })
     const descInput = page.getByLabel('Description')
 
     if ((await boardNameInput.count()) > 0) {
@@ -670,7 +641,7 @@ test.describe('Board Slug', () => {
   })
 
   test('board name field is pre-populated with the current board name', async ({ page }) => {
-    const boardNameInput = page.getByRole('textbox', { name: 'Board name', exact: true })
+    const boardNameInput = page.getByRole('textbox', { name: 'Name', exact: true })
     if ((await boardNameInput.count()) === 0) return
 
     // Should not be empty
@@ -685,8 +656,9 @@ test.describe('Board Slug', () => {
     await createBoard(page, createName)
 
     const updatedName = `Renamed ${Date.now()}`
-    await page.getByRole('textbox', { name: 'Board name', exact: true }).fill(updatedName)
-    await page.getByRole('button', { name: 'Save changes' }).click()
+    const nameField = page.getByRole('textbox', { name: 'Name', exact: true })
+    await nameField.fill(updatedName)
+    await nameField.blur()
 
     await expect(page).toHaveURL(
       new RegExp(`/admin/settings/boards/${slugify(updatedName)}(?:\\?|$)`),
