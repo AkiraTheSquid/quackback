@@ -124,9 +124,7 @@ test.describe('Admin Feedback Page (Dashboard Content)', () => {
 
   test('shows sort selector', async ({ page }) => {
     // The inbox has a sort control (newest/oldest/votes)
-    const sortControl = page
-      .getByRole('combobox')
-      .filter({ hasText: /newest|oldest|votes/i })
+    const sortControl = page.getByRole('button', { name: /^sort: / })
 
     if ((await sortControl.count()) > 0) {
       await expect(sortControl.first()).toBeVisible()
