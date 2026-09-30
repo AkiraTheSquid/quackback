@@ -94,13 +94,42 @@ describe('NotificationMatrixForm', () => {
   })
 
   it('saves a toggled cell with the full matrix', async () => {
-    updateNotificationPreferencesFn.mockResolvedValue({ ...preferences, emailMuted: true })
+    updateNotificationPreferencesFn.mockResolvedValue({ ...preferences })
     render(<NotificationMatrixForm surface="admin" initialPreferences={preferences} />)
 
-    fireEvent.click(screen.getByLabelText('Pause all email notifications'))
+    const cell = screen
+      .getAllByRole('switch')
+      .find((el) => / - Email$/.test(el.getAttribute('aria-label') ?? ''))!
+    expect(cell.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(cell)
 
-    await waitFor(() =>
-      expect(updateNotificationPreferencesFn).toHaveBeenCalledWith({ data: { emailMuted: true } })
-    )
+    await waitFor(() => expect(updateNotificationPreferencesFn).toHaveBeenCalledTimes(1))
+    const { data } = updateNotificationPreferencesFn.mock.calls[0][0] as {
+      data: { matrix: Record<string, { email?: boolean; inApp?: boolean }> }
+    }
+    const entries = Object.values(data.matrix)
+    expect(entries).toHaveLength(1)
+    expect(entries[0].email).toBe(false)
+  })
+
+  it('shows its own saving indicator on the portal, where there is no page header', async () => {
+    let resolve!: (v: unknown) => void
+    updateNotificationPreferencesFn.mockReturnValue(new Promise((r) => (resolve = r)))
+    render(<NotificationMatrixForm surface="portal" initialPreferences={preferences} />)
+    expect(screen.queryByRole('status', { name: 'Saving' })).toBeNull()
+
+    fireEvent.click(screen.getByLabelText('Pause all email notifications'))
+    expect(await screen.findByRole('status', { name: 'Saving' })).toBeTruthy()
+
+    resolve({ ...preferences, emailMuted: true })
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Saving' })).toBeNull())
+  })
+
+  it('leaves the saving indicator to the page header on the admin surface', async () => {
+    updateNotificationPreferencesFn.mockReturnValue(new Promise(() => {}))
+    render(<NotificationMatrixForm surface="admin" initialPreferences={preferences} />)
+    fireEvent.click(screen.getByLabelText('Pause all email notifications'))
+    await waitFor(() => expect(updateNotificationPreferencesFn).toHaveBeenCalled())
+    expect(screen.queryByRole('status', { name: 'Saving' })).toBeNull()
   })
 })

@@ -152,6 +152,9 @@ export function NotificationMatrixForm({
   }
 
   const busy = save.isPending
+  // The admin page header shows the save status; the portal has none, so the
+  // pause switch carries its own.
+  const savingEmailMuted = busy && !!save.variables && 'emailMuted' in save.variables
 
   return (
     <div className="space-y-6">
@@ -161,12 +164,19 @@ export function NotificationMatrixForm({
           label="Pause all email"
           description="Turn off email delivery for every notification type below. In-app notifications keep working."
           control={
-            <Switch
-              aria-label="Pause all email notifications"
-              checked={preferences.emailMuted}
-              onCheckedChange={setEmailMuted}
-              disabled={busy}
-            />
+            <>
+              {surface === 'portal' && savingEmailMuted && (
+                <span role="status" aria-label="Saving" className="inline-flex">
+                  <ArrowPathIcon className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                </span>
+              )}
+              <Switch
+                aria-label="Pause all email notifications"
+                checked={preferences.emailMuted}
+                onCheckedChange={setEmailMuted}
+                disabled={busy}
+              />
+            </>
           }
           className="py-0"
         />
