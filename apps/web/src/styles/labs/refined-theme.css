@@ -362,6 +362,12 @@
   color: var(--foreground);
 }
 
+/* A setting row's label is the standard 14px medium, not the form-field label style above. */
+[data-visual-theme='refined'] [data-settings-page] [data-slot='setting-row'] [data-slot='label'] {
+  font-size: 14px;
+  font-weight: 500;
+}
+
 [data-visual-theme='refined'] [data-settings-page] p.text-xs,
 [data-visual-theme='refined'] [data-settings-page] .text-xs.text-muted-foreground {
   font-size: 13px;
