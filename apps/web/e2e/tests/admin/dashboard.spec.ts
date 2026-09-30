@@ -123,12 +123,14 @@ test.describe('Admin Feedback Page (Dashboard Content)', () => {
   })
 
   test('shows sort selector', async ({ page }) => {
-    // The inbox has a sort control (newest/oldest/votes)
-    const sortControl = page.getByRole('button', { name: /^sort: / })
+    // The inbox has a sort control (newest/oldest/votes) that changes the order
+    const sortControl = page.getByRole('button', { name: /^Sort: / }).first()
+    await expect(sortControl).toBeVisible({ timeout: 10000 })
+    await expect(sortControl).toHaveText(/Sort: Newest/)
 
-    if ((await sortControl.count()) > 0) {
-      await expect(sortControl.first()).toBeVisible()
-    }
+    await sortControl.click()
+    await page.getByRole('menuitemradio', { name: 'Oldest' }).click()
+    await expect(page.getByRole('button', { name: /^Sort: Oldest/ }).first()).toBeVisible()
   })
 
   test('shows filter controls or boards sidebar', async ({ page }) => {
