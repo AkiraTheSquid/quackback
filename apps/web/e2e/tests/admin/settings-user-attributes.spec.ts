@@ -255,25 +255,24 @@ test.describe('Admin User Attributes Settings', () => {
       .filter({ has: page.getByText(attrLabel, { exact: true }) })
     const actionsButton = attrRow.first().getByRole('button', { name: /^actions for/i })
 
-    if ((await actionsButton.count()) > 0) {
-      await actionsButton.click()
-      await page.getByRole('menuitem', { name: 'Edit' }).click()
+    await expect(actionsButton).toHaveCount(1)
+    await actionsButton.click()
+    await page.getByRole('menuitem', { name: 'Edit' }).click()
 
-      dialog = page.getByRole('dialog')
-      await expect(dialog).toBeVisible({ timeout: 5000 })
+    dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
 
-      // Edit dialog title should say "Edit attribute"
-      await expect(dialog.getByText('Edit attribute')).toBeVisible()
+    // Edit dialog title should say "Edit attribute"
+    await expect(dialog.getByText('Edit attribute')).toBeVisible()
 
-      // Key field should be disabled in edit mode
-      await expect(dialog.locator('#attr-key')).toBeDisabled()
+    // Key field should be disabled in edit mode
+    await expect(dialog.locator('#attr-key')).toBeDisabled()
 
-      // Save button should say "Save changes"
-      await expect(dialog.getByRole('button', { name: /save changes/i })).toBeVisible()
+    // Save button should say "Save changes"
+    await expect(dialog.getByRole('button', { name: /save changes/i })).toBeVisible()
 
-      await dialog.getByRole('button', { name: /cancel/i }).click()
-      await expect(dialog).toBeHidden({ timeout: 5000 })
-    }
+    await dialog.getByRole('button', { name: /cancel/i }).click()
+    await expect(dialog).toBeHidden({ timeout: 5000 })
   })
 
   test('can delete an attribute with confirmation', async ({ page }) => {
@@ -300,23 +299,22 @@ test.describe('Admin User Attributes Settings', () => {
       .filter({ has: page.getByText(attrLabel, { exact: true }) })
     const actionsButton = attrRow.first().getByRole('button', { name: /^actions for/i })
 
-    if ((await actionsButton.count()) > 0) {
-      await actionsButton.click()
-      await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await expect(actionsButton).toHaveCount(1)
+    await actionsButton.click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
 
-      // Confirmation dialog should appear
-      const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
-      await expect(confirmDialog).toBeVisible({ timeout: 5000 })
+    // Confirmation dialog should appear
+    const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 })
 
-      // Should mention the attribute label
-      await expect(confirmDialog.getByText(attrLabel)).toBeVisible()
+    // Should mention the attribute label
+    await expect(confirmDialog.getByText(attrLabel)).toBeVisible()
 
-      // Confirm deletion
-      await confirmDialog.getByRole('button', { name: /^delete attribute$/i }).click()
+    // Confirm deletion
+    await confirmDialog.getByRole('button', { name: /^delete attribute$/i }).click()
 
-      // Attribute should no longer appear
-      await expect(page.getByText(attrLabel)).toBeHidden({ timeout: 10000 })
-    }
+    // Attribute should no longer appear
+    await expect(page.getByText(attrLabel)).toBeHidden({ timeout: 10000 })
   })
 
   test('delete confirmation dialog can be cancelled', async ({ page }) => {
@@ -342,18 +340,17 @@ test.describe('Admin User Attributes Settings', () => {
       .filter({ has: page.getByText(attrLabel, { exact: true }) })
     const actionsButton = attrRowCancel.first().getByRole('button', { name: /^actions for/i })
 
-    if ((await actionsButton.count()) > 0) {
-      await actionsButton.click()
-      await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await expect(actionsButton).toHaveCount(1)
+    await actionsButton.click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
 
-      const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
-      await expect(confirmDialog).toBeVisible({ timeout: 5000 })
+    const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
+    await expect(confirmDialog).toBeVisible({ timeout: 5000 })
 
-      // Cancel — attribute should still be there
-      await confirmDialog.getByRole('button', { name: /cancel/i }).click()
-      await expect(confirmDialog).toBeHidden({ timeout: 5000 })
-      await expect(page.getByText(attrLabel)).toBeVisible()
-    }
+    // Cancel — attribute should still be there
+    await confirmDialog.getByRole('button', { name: /cancel/i }).click()
+    await expect(confirmDialog).toBeHidden({ timeout: 5000 })
+    await expect(page.getByText(attrLabel)).toBeVisible()
   })
 
   test('currency type selector shows currency code picker', async ({ page }) => {

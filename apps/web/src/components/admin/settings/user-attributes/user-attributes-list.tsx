@@ -23,7 +23,7 @@ const COPY: ScalarAttributeCopy = {
   externalSystem: 'CDP',
   externalPlaceholder: 'monthly_recurring_revenue',
   externalHint:
-    "Maps an external attribute name (e.g. from Segment) to this attribute's internal key. Leave blank to use the key above.",
+    "Maps an external attribute name to this attribute's internal key. Leave blank to use the key above.",
   deleteDescription:
     "This removes the attribute definition. Existing segment rules using this attribute key keep working but won't show the friendly label.",
 }

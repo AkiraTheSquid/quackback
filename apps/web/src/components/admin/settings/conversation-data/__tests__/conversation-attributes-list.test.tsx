@@ -174,14 +174,36 @@ describe('ConversationAttributesList', () => {
     expect(within(severityRow).queryByText('AI')).not.toBeInTheDocument()
   })
 
-  it('labels the usual-source hint with its display name, not the raw value', async () => {
+  it('words the usual-source hint as muted meta text, not a badge', async () => {
     hoisted.listConversationAttributesFn.mockResolvedValue([
       { ...FIXTURE_ATTRIBUTES[1], sourceHint: 'workflow' },
       { ...FIXTURE_ATTRIBUTES[0], sourceHint: 'ai', aiDetect: false },
     ])
     renderWithClient(<ConversationAttributesList />)
-    expect(await screen.findByText('Workflow')).toBeInTheDocument()
-    expect(screen.getByText('AI')).toBeInTheDocument()
+    expect(await screen.findByText('Usually set by a workflow')).toBeInTheDocument()
+    expect(screen.getByText('Usually set by AI')).toBeInTheDocument()
+    expect(screen.queryByText('AI')).not.toBeInTheDocument()
+  })
+
+  it('keeps one AI badge when the source hint is ai and AI detect is on', async () => {
+    hoisted.listConversationAttributesFn.mockResolvedValue([
+      { ...FIXTURE_ATTRIBUTES[0], sourceHint: 'ai', aiDetect: true },
+    ])
+    renderWithClient(<ConversationAttributesList />)
+    const row = (await screen.findByText('Issue type')).closest(
+      '[data-slot="settings-list-row"]'
+    ) as HTMLElement
+    expect(within(row).getAllByText('AI')).toHaveLength(1)
+    expect(within(row).getByText('Usually set by AI')).toBeInTheDocument()
+  })
+
+  it('shows Required to close as a muted badge, not the warning tone', async () => {
+    hoisted.listConversationAttributesFn.mockResolvedValue([
+      { ...FIXTURE_ATTRIBUTES[1], requiredToClose: true },
+    ])
+    renderWithClient(<ConversationAttributesList />)
+    const badge = await screen.findByText('Required to close')
+    expect(badge.className).not.toMatch(/warning/)
   })
 
   it('offers Edit and Archive in the row menu, Restore on an archived row', async () => {

@@ -147,7 +147,6 @@ export const ALLOWLIST: Record<RuleName, string[]> = {
     'components/admin/automation/workflow-templates.ts',
     'components/admin/automation/workflows-manager.tsx',
     'components/admin/settings/billing/free-downgrade-dialog.tsx',
-    'components/admin/settings/conversation-data/conversation-attributes-list.tsx',
     'components/admin/settings/help-center/domains-languages-tab.tsx',
     'components/admin/settings/imports/import-csv.tsx',
     'components/admin/settings/integrations/integration-ui.tsx',

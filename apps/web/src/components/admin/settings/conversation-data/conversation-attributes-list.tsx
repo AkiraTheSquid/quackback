@@ -58,9 +58,9 @@ const FIELD_TYPES = [
 type FieldType = (typeof FIELD_TYPES)[number]['value']
 
 const SOURCE_HINTS = [
-  { value: 'agent', label: 'Agent' },
-  { value: 'workflow', label: 'Workflow' },
-  { value: 'ai', label: 'AI' },
+  { value: 'agent', label: 'Agent', usually: 'an agent' },
+  { value: 'workflow', label: 'Workflow', usually: 'a workflow' },
+  { value: 'ai', label: 'AI', usually: 'AI' },
 ] as const
 
 const isSelectType = (t: FieldType) => t === 'select' || t === 'multi_select'
@@ -481,7 +481,7 @@ function AttributeFormDialog({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-5 shrink-0 px-1 text-amber-700 dark:text-amber-500"
+                    className="h-5 shrink-0 px-1 text-warning"
                     onClick={() => setOtherHintDismissed(true)}
                     title="Dismiss"
                   >
@@ -716,9 +716,10 @@ export function ConversationAttributesList() {
       badges: (
         <>
           {attr.sourceHint && (
-            <Badge variant="outline" size="sm">
-              {SOURCE_HINTS.find((h) => h.value === attr.sourceHint)?.label ?? attr.sourceHint}
-            </Badge>
+            <span className="text-[13px] font-normal text-muted-foreground">
+              Usually set by{' '}
+              {SOURCE_HINTS.find((h) => h.value === attr.sourceHint)?.usually ?? attr.sourceHint}
+            </span>
           )}
           {attr.aiDetect && (
             <Badge
@@ -734,7 +735,7 @@ export function ConversationAttributesList() {
             </Badge>
           )}
           {attr.requiredToClose && (
-            <Badge variant="warning" size="sm">
+            <Badge variant="outline" size="sm">
               Required to close
             </Badge>
           )}
