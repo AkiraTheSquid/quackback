@@ -123,7 +123,9 @@ test.describe('Help Center category management', () => {
   })
 
   test('offers New article in the header and New category in the pane', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'New article' }).first()).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: 'New article' }).first()).toBeVisible({
+      timeout: 10000,
+    })
     await expect(page.getByRole('button', { name: 'New category' })).toBeVisible()
   })
 
@@ -314,10 +316,7 @@ test.describe('Help Center article author', () => {
     await expect(articleCards.first()).toBeVisible()
   })
 
-  test('article editor remains stable after setting author via API', async ({
-    page,
-    request,
-  }) => {
+  test('article editor remains stable after setting author via API', async ({ page, request }) => {
     const url = await createAndOpenArticle(page)
     if (!url) return
 
@@ -481,9 +480,13 @@ test.describe('Help Center article SEO description', () => {
     await page.getByRole('button', { name: /save changes/i }).click()
     // Wait for save
     await expect(
-      page.getByRole('button', { name: /saving/i }).or(page.getByRole('button', { name: /save changes/i }))
+      page
+        .getByRole('button', { name: /saving/i })
+        .or(page.getByRole('button', { name: /save changes/i }))
     ).toBeVisible({ timeout: 5000 })
-    await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible({
+      timeout: 10000,
+    })
 
     // Reload and verify the description was persisted
     await page.reload()
@@ -640,7 +643,9 @@ test.describe('Help Center article list filtering - status', () => {
     await page.waitForLoadState('networkidle')
 
     await expect(
-      page.getByText('No articles match your search').or(page.getByText('No articles match your filters'))
+      page
+        .getByText('No articles match your search')
+        .or(page.getByText('No articles match your filters'))
     ).toBeVisible({ timeout: 10000 })
   })
 })
@@ -728,9 +733,7 @@ test.describe('Help Center article list item actions', () => {
       await ellipsisButton.last().click()
 
       await expect(page.getByRole('menuitem', { name: /edit/i })).toBeVisible({ timeout: 3000 })
-      await expect(
-        page.getByRole('menuitem', { name: /delete/i })
-      ).toBeVisible()
+      await expect(page.getByRole('menuitem', { name: /delete/i })).toBeVisible()
 
       await page.keyboard.press('Escape')
     }

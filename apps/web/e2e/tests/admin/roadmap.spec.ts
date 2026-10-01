@@ -296,7 +296,9 @@ test.describe('Admin Roadmap - CRUD', () => {
           // ConfirmDialog renders as an alertdialog or dialog
           const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
           await expect(confirmDialog).toBeVisible({ timeout: 5000 })
-          await expect(confirmDialog.getByRole('heading', { name: /delete roadmap/i })).toBeVisible()
+          await expect(
+            confirmDialog.getByRole('heading', { name: /delete roadmap/i })
+          ).toBeVisible()
 
           // Cancel — do not actually delete
           const cancelBtn = confirmDialog.getByRole('button', { name: /cancel/i })

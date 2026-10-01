@@ -50,9 +50,7 @@ test.describe('Admin Notifications — Empty State', () => {
   test('empty state includes description text', async ({ page }) => {
     await expect(page.locator('[class*="animate-spin"]')).toBeHidden({ timeout: 10000 })
 
-    const description = page.getByText(
-      /you'll see notifications here|status changes|subscribed/i
-    )
+    const description = page.getByText(/you'll see notifications here|status changes|subscribed/i)
     if ((await description.count()) > 0) {
       await expect(description.first()).toBeVisible()
     }

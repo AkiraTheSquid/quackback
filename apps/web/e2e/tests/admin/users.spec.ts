@@ -300,8 +300,7 @@ test.describe('Admin Users - Filters Panel', () => {
     const mobileFiltersButton = page.getByRole('button', { name: 'Filters', exact: true })
 
     // At least one should exist in the DOM
-    const hasFiltersUI =
-      (await desktopAside.count()) > 0 || (await mobileFiltersButton.count()) > 0
+    const hasFiltersUI = (await desktopAside.count()) > 0 || (await mobileFiltersButton.count()) > 0
 
     expect(hasFiltersUI).toBe(true)
   })
@@ -719,9 +718,9 @@ test.describe('Admin Users - Advanced Filters', () => {
     await page.waitForLoadState('networkidle')
 
     // Locate the remove (×) button on the email filter chip
-    const filterChip = page.locator('[class*="FilterChip"]').or(
-      page.locator('button').filter({ hasText: /verified/i })
-    )
+    const filterChip = page
+      .locator('[class*="FilterChip"]')
+      .or(page.locator('button').filter({ hasText: /verified/i }))
     // Find the close/remove icon button near the chip
     const removeButton = page.locator('button[aria-label*="remove"], button[aria-label*="clear"]')
     if ((await removeButton.count()) > 0) {
