@@ -16,6 +16,8 @@ import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { NewButton } from '@/components/shared/new-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MENU_LABEL } from '@/components/ui/menu'
+import { cn } from '@/lib/shared/utils'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -578,12 +580,15 @@ export function CompaniesView({
         ) : (
           <div className="rounded-xl overflow-hidden shadow-sm divide-y divide-border/50 bg-card border border-border/50">
             {/* Column header */}
-            <div className="hidden sm:flex items-center gap-3 px-3 py-2 text-xs font-medium text-muted-foreground">
-              <span className="flex-1 min-w-0">Company</span>
-              <span className="w-24 text-left">Plan</span>
-              <span className="w-28 text-right whitespace-nowrap">Monthly spend</span>
-              <span className="w-16 text-right">Users</span>
-              <span className="w-16 text-right">Source</span>
+            <div className="hidden sm:flex items-center gap-3 px-3 py-2">
+              <div className="h-9 w-9 shrink-0" aria-hidden="true" />
+              <span className={cn('min-w-0 flex-1', MENU_LABEL)}>Company</span>
+              <span className={cn('w-24 text-left', MENU_LABEL)}>Plan</span>
+              <span className={cn('w-28 whitespace-nowrap text-right', MENU_LABEL)}>
+                Monthly spend
+              </span>
+              <span className={cn('w-16 text-right', MENU_LABEL)}>Users</span>
+              <span className={cn('w-16 text-right', MENU_LABEL)}>Source</span>
             </div>
             {companies.map((company) => (
               <button
@@ -610,7 +615,12 @@ export function CompaniesView({
                     <span className="text-xs text-muted-foreground/60">-</span>
                   )}
                 </span>
-                <span className="w-28 shrink-0 text-right text-xs tabular-nums text-foreground hidden sm:block">
+                <span
+                  className={cn(
+                    'w-28 shrink-0 text-right text-xs tabular-nums hidden sm:block',
+                    company.mrrCents == null ? 'text-muted-foreground/60' : 'text-foreground'
+                  )}
+                >
                   {formatMonthlySpend(company.mrrCents)}
                 </span>
                 <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-foreground">

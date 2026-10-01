@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { MENU_LABEL } from '@/components/ui/menu'
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -68,11 +69,11 @@ describe('<CompaniesView> toolbar', () => {
 })
 
 describe('<CompaniesView> table', () => {
-  it('uses sentence-case column headers', () => {
+  it('uses the same header style as the users list', () => {
     renderView(ROWS)
     for (const header of ['Company', 'Plan', 'Monthly spend', 'Users', 'Source']) {
       const el = screen.getByText(header, { selector: 'span' })
-      expect(el.className).not.toMatch(/uppercase/)
+      expect(el.className).toContain(MENU_LABEL)
     }
   })
 
