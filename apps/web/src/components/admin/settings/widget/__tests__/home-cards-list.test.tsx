@@ -114,10 +114,31 @@ describe('HomeCardsList', () => {
     expect(screen.queryByRole('menuitem', { name: 'Remove' })).toBeNull()
   })
 
-  it('toggles a built-in card from its row switch', async () => {
+  it('shows an Off badge on a hidden built-in card and none on a shown one', () => {
+    setup()
+    const rows = document.querySelectorAll('[data-slot="settings-list-row"]')
+    expect(within(rows[1] as HTMLElement).getByText('Off')).toBeInTheDocument()
+    expect(within(rows[0] as HTMLElement).queryByText('Off')).toBeNull()
+  })
+
+  it('shows a hidden built-in card from its row menu', async () => {
     const { onChange, user } = setup()
-    await user.click(screen.getByRole('switch', { name: 'New conversation card' }))
+    await user.click(screen.getByRole('button', { name: 'Actions for New conversation' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Show' }))
     expect(onChange).toHaveBeenCalledWith([cards[0], { ...cards[1], enabled: true }, cards[2]])
+  })
+
+  it('hides a shown built-in card and offers no Hide on a link card', async () => {
+    const { onChange, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Actions for Feedback' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Hide' }))
+    expect(onChange).toHaveBeenCalledWith([{ ...cards[0], enabled: false }, cards[1], cards[2]])
+
+    cleanup()
+    const second = setup()
+    await second.user.click(screen.getByRole('button', { name: 'Actions for Pricing' }))
+    await screen.findByRole('menuitem', { name: 'Edit' })
+    expect(screen.queryByRole('menuitem', { name: 'Hide' })).toBeNull()
   })
 
   it('adds a blank link card', async () => {

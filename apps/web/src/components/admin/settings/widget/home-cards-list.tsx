@@ -22,7 +22,7 @@ import { SettingsList, SettingsListRow } from '@/components/admin/settings/setti
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { StateBadge } from '@/components/shared/state-badge'
 import {
   Dialog,
   DialogContent,
@@ -134,19 +134,20 @@ export function HomeCardsList({ cards, onChange, disabled = false }: HomeCardsLi
                       grip={grip}
                       title={rowTitle(card)}
                       meta={rowMeta(card)}
-                      trailing={
-                        card.type === 'link' ? undefined : (
-                          <Switch
-                            checked={card.enabled !== false}
-                            onCheckedChange={(checked) => updateCard(card.id, { enabled: checked })}
-                            disabled={disabled}
-                            aria-label={`${CARD_TYPE_LABEL[card.type]} card`}
-                          />
-                        )
-                      }
+                      badges={card.enabled === false ? <StateBadge state="off" /> : undefined}
                       actionsLabel={rowTitle(card)}
                       actions={[
                         { label: 'Edit', onSelect: () => setEditingId(card.id) },
+                        ...(card.type === 'link'
+                          ? []
+                          : [
+                              {
+                                label: card.enabled === false ? 'Show' : 'Hide',
+                                disabled,
+                                onSelect: () =>
+                                  updateCard(card.id, { enabled: card.enabled === false }),
+                              },
+                            ]),
                         ...(card.type === 'link'
                           ? [
                               {
