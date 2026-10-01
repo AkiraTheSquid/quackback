@@ -17,6 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 const fns = vi.hoisted(() => ({
   updateDomain: vi.fn(),
+  verifyDomain: vi.fn(),
   updateChrome: vi.fn(),
   updateAutoTranslate: vi.fn(),
   deleteRule: vi.fn(),
@@ -24,7 +25,7 @@ const fns = vi.hoisted(() => ({
 
 vi.mock('@/lib/server/functions/help-center-domain', () => ({
   updateHelpCenterDomainFn: fns.updateDomain,
-  verifyHelpCenterDomainFn: vi.fn(),
+  verifyHelpCenterDomainFn: fns.verifyDomain,
   getHelpCenterDomainStatusFn: vi.fn(),
 }))
 vi.mock('@/lib/server/functions/help-center-settings', () => ({
@@ -80,7 +81,7 @@ const config = {
   },
 }
 
-function renderTab() {
+function renderTab(domain: { domain: string | null; verifiedAt: string | null } = config.domain) {
   const client = new QueryClient({
     mutationCache: createAutosaveMutationCache(),
     defaultOptions: { queries: { retry: false } },
@@ -88,7 +89,7 @@ function renderTab() {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  return render(<DomainsLanguagesTab config={config} />, { wrapper: Wrapper })
+  return render(<DomainsLanguagesTab config={{ ...config, domain }} />, { wrapper: Wrapper })
 }
 
 function typeAndBlur(input: HTMLElement, value: string) {
@@ -143,6 +144,39 @@ describe('Help Center domains and languages autosave', () => {
       fireEvent.blur(input)
       await new Promise((resolve) => setTimeout(resolve, 30))
       expect(fns.updateDomain).toHaveBeenCalledTimes(1)
+    })
+
+    it('queues a Verify click behind the save the click itself starts', async () => {
+      let resolveUpdate!: (value: unknown) => void
+      fns.updateDomain.mockReturnValue(new Promise((r) => (resolveUpdate = r)))
+      fns.verifyDomain.mockResolvedValue({})
+      renderTab({ domain: 'old.acme.com', verifiedAt: null })
+      fireEvent.change(screen.getByLabelText('Domain'), { target: { value: 'new.acme.com' } })
+      fireEvent.blur(screen.getByLabelText('Domain'))
+      // A real click lands after the mousedown that blurred the field has rendered.
+      await waitFor(() => expect(fns.updateDomain).toHaveBeenCalledTimes(1))
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      fireEvent.click(screen.getByRole('button', { name: 'Verify' }))
+      await new Promise((resolve) => setTimeout(resolve, 30))
+      expect(fns.updateDomain).toHaveBeenCalledTimes(1)
+      expect(fns.verifyDomain).not.toHaveBeenCalled()
+      resolveUpdate({})
+      await waitFor(() => expect(fns.verifyDomain).toHaveBeenCalledTimes(1))
+    })
+
+    it('queues a Verify click behind the save the click itself starts', async () => {
+      let resolveUpdate!: (value: unknown) => void
+      fns.updateDomain.mockReturnValue(new Promise((r) => (resolveUpdate = r)))
+      fns.verifyDomain.mockResolvedValue({})
+      renderTab({ domain: 'old.acme.com', verifiedAt: null })
+      fireEvent.change(screen.getByLabelText('Domain'), { target: { value: 'new.acme.com' } })
+      fireEvent.blur(screen.getByLabelText('Domain'))
+      fireEvent.click(screen.getByRole('button', { name: 'Verify' }))
+      await new Promise((resolve) => setTimeout(resolve, 30))
+      expect(fns.updateDomain).toHaveBeenCalledTimes(1)
+      expect(fns.verifyDomain).not.toHaveBeenCalled()
+      resolveUpdate({})
+      await waitFor(() => expect(fns.verifyDomain).toHaveBeenCalledTimes(1))
     })
 
     it.each([

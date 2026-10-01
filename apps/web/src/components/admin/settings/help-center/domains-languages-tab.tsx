@@ -146,7 +146,7 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
   })
 
   const busy = verifyDomain.isPending
-  const verifyDisabled = busy || updateDomain.isPending
+  const verifyDisabled = busy
 
   useEffect(() => {
     setSavedDomain(domain.domain ?? '')
