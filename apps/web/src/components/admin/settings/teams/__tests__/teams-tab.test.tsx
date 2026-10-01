@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import '@testing-library/jest-dom/vitest'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TeamsTab } from '../teams-tab'
@@ -55,11 +55,9 @@ describe('TeamsTab', () => {
     expect(screen.getByRole('button', { name: 'Actions for Sales' })).toBeInTheDocument()
   })
 
-  it('marks only the default team with a Default badge', () => {
+  it('shows no Default badge on the default team', () => {
     renderTab([team({ isDefault: true }), team({ id: 'team_2', name: 'Sales' })])
-    const rows = document.querySelectorAll('[data-slot="settings-list-row"]')
-    expect(within(rows[0] as HTMLElement).getByText('Default')).toBeInTheDocument()
-    expect(within(rows[1] as HTMLElement).queryByText('Default')).toBeNull()
+    expect(screen.queryByText('Default')).toBeNull()
   })
 
   it('disables Delete on the default team and says why', async () => {

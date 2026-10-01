@@ -212,12 +212,13 @@ function ActorCell({ row }: { row: AuditEventRow }) {
   // actorType + authMethod columns; request_id stays in the CSV.
   const primary = row.actorEmail ?? (row.actorType ? `(${row.actorType})` : null)
   if (!primary) return <span className="text-muted-foreground">None</span>
-  const subtitle = [row.actorRole, row.authMethod].filter(Boolean).join(' · ')
+  const role = row.actorRole ? row.actorRole.charAt(0).toUpperCase() + row.actorRole.slice(1) : null
+  const subtitle = [role, row.authMethod].filter(Boolean).join(' · ')
   return (
     <div className="flex flex-col">
       <span className="truncate">{primary}</span>
       {subtitle ? (
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">{subtitle}</span>
+        <span className="text-xs text-muted-foreground">{subtitle}</span>
       ) : null}
     </div>
   )

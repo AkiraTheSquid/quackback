@@ -75,7 +75,10 @@ function AuthenticationPage() {
   const { ssoEntitled, auditEntitled } = Route.useLoaderData()
 
   return (
-    <SettingsPage page="/admin/settings/security/authentication" width="wide">
+    <SettingsPage
+      page="/admin/settings/security/authentication"
+      width={tab === 'audit-log' ? 'wide' : 'form'}
+    >
       <AuthSettings
         tab={tab}
         teamAuthConfig={authConfigQuery.data}

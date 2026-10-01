@@ -85,7 +85,7 @@ export function IdentityProvidersSection({
           not a technical dependency: they're the account break-glass for when
           SSO is unavailable and also back up TOTP/2FA, so they stay shown
           regardless of the custom-OIDC tier. */}
-      <div className="p-4 sm:p-6">
+      <div className="border-t border-border/50 p-4 sm:p-6">
         <RecoveryCodesSection />
       </div>
     </SettingsCard>

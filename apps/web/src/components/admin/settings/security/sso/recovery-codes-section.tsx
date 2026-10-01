@@ -72,7 +72,7 @@ export function RecoveryCodesSection() {
   })
 
   return (
-    <div className="mt-6 border-t border-border/50 pt-6">
+    <div>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
           <KeyIcon className="h-5 w-5 text-muted-foreground" />
@@ -83,9 +83,7 @@ export function RecoveryCodesSection() {
             One-time break-glass codes to sign in when single sign-on is unavailable.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <Badge variant={activeCount > 0 ? 'secondary' : 'destructive'}>
-              {activeCount} active
-            </Badge>
+            {activeCount > 0 && <Badge variant="secondary">{activeCount} active</Badge>}
             {latest ? (
               <span className="text-muted-foreground">
                 Last generated {new Date(latest.createdAt).toLocaleDateString()}
