@@ -800,8 +800,7 @@ export const AgentMessageBubble = memo(function AgentMessageBubble({
         )}
 
         {/* Attribution below the bubble, matching VisitorMessageBubble: name
-            (assistant messages get a subtle sparkle + "AI" suffix as one
-            cohesive label), Internal-note badge, via-email icon, time, and the
+            (assistant messages get a subtle sparkle before it), Internal-note badge, via-email icon, time, and the
             flagged bookmark glyph — flag state is a meta-line glyph now, not
             a row tint. */}
         <div
@@ -812,10 +811,7 @@ export const AgentMessageBubble = memo(function AgentMessageBubble({
         >
           <span className="flex min-w-0 items-center gap-1">
             {message.isAssistant && <SparklesIcon className="h-3 w-3 shrink-0" aria-hidden />}
-            <span className="truncate">
-              {authorName}
-              {message.isAssistant ? ' AI' : ''}
-            </span>
+            <span className="truncate">{authorName}</span>
           </span>
           {isNote && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
