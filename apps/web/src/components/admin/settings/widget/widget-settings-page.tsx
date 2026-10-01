@@ -1,31 +1,8 @@
 import { useRouter, useHydrated, Link, Outlet, useChildMatches } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { useState, useTransition, useMemo, type ReactNode } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { useTheme } from 'next-themes'
-import {
-  SparklesIcon,
-  TrashIcon,
-  ArrowRightIcon,
-  PhotoIcon,
-  Bars3Icon,
-} from '@heroicons/react/24/solid'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { SparklesIcon, TrashIcon, ArrowRightIcon, PhotoIcon } from '@heroicons/react/24/solid'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/shared/utils'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
@@ -37,7 +14,7 @@ import {
   WidgetConnectionRow,
   type WidgetConnectionStatus,
 } from '@/components/admin/settings/widget/widget-connection-row'
-import { NewButton } from '@/components/shared/new-button'
+import { HomeCardsList } from '@/components/admin/settings/widget/home-cards-list'
 import { WidgetPreview } from '@/components/admin/settings/widget/widget-preview'
 import { PreviewToggleButton } from '@/components/admin/settings/preview-toggle'
 import { Label } from '@/components/ui/label'
@@ -58,13 +35,7 @@ import {
   useUploadWidgetHeroImage,
   useDeleteWidgetHeroImage,
 } from '@/lib/client/mutations/settings'
-import type {
-  FeatureFlags,
-  WidgetHomeCard,
-  WidgetHomeCardType,
-  WidgetCardAudience,
-  WidgetHomeConfig,
-} from '@/lib/shared/types/settings'
+import type { FeatureFlags, WidgetHomeCard, WidgetHomeConfig } from '@/lib/shared/types/settings'
 import { widgetInstallPresence } from '@/lib/shared/widget/widget-origin'
 import { DEFAULT_WIDGET_HOME_CARDS } from '@/lib/shared/types/settings'
 import { WIDGET_HERO_PATTERNS, heroBackdropStyle } from '@/lib/shared/widget/hero-style'
@@ -717,14 +688,6 @@ function HeroColorSwatch({
   )
 }
 
-const CARD_TYPE_LABEL: Record<WidgetHomeCardType, string> = {
-  feedback: 'Feedback',
-  new_conversation: 'New conversation',
-  article_search: 'Article search',
-  latest_updates: 'Latest updates',
-  link: 'Link',
-}
-
 function HomeCustomizationCard({
   home,
   heroImageUrl,
@@ -744,10 +707,6 @@ function HomeCustomizationCard({
 
   const isBusy = saving || isPending || uploadHero.isPending || deleteHero.isPending
   const cards = home.cards?.length ? home.cards : DEFAULT_WIDGET_HOME_CARDS
-  const cardSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
 
   async function handleHeroFile(file: File | undefined) {
     if (!file) return
@@ -787,20 +746,6 @@ function HomeCustomizationCard({
   /** Persist a full replacement of the cards array (order matters). */
   function commitCards(next: WidgetHomeCard[]) {
     commit({ cards: next })
-  }
-
-  function handleCardDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldIndex = cards.findIndex((c) => c.id === active.id)
-    const newIndex = cards.findIndex((c) => c.id === over.id)
-    if (oldIndex < 0 || newIndex < 0) return
-    commitCards(arrayMove(cards, oldIndex, newIndex))
-  }
-
-  function updateCard(index: number, patch: Partial<WidgetHomeCard>) {
-    const next = cards.map((c, i) => (i === index ? { ...c, ...patch } : c))
-    commitCards(next)
   }
 
   return (
@@ -851,11 +796,7 @@ function HomeCustomizationCard({
           {/* Visual radio tiles: every style is visible at a glance (no
               dropdown to open), and the options panel below reads as attached
               to the selected tile: one bordered group, morphing per choice. */}
-          <div
-            className="rounded-lg border border-border/50 p-2"
-            role="radiogroup"
-            aria-label="Home background style"
-          >
+          <div role="radiogroup" aria-label="Home background style">
             <div className="grid grid-cols-4 gap-2">
               {(
                 [
@@ -913,7 +854,7 @@ function HomeCustomizationCard({
             </div>
 
             {home.headerStyle === 'pattern' && (
-              <div className="mt-2 space-y-1.5 border-t border-border/50 pt-2.5">
+              <div className="mt-3 space-y-1.5">
                 <Label className="text-[13px] font-medium">Pattern</Label>
                 <div className="grid grid-cols-4 gap-2">
                   {WIDGET_HERO_PATTERNS.map((preset) => {
@@ -951,7 +892,7 @@ function HomeCustomizationCard({
             )}
 
             {(home.headerStyle === 'gradient' || home.headerStyle === 'pattern') && (
-              <div className="mt-2 space-y-1.5 border-t border-border/50 pt-2.5">
+              <div className="mt-3 space-y-1.5">
                 <Label className="text-[13px] font-medium">Colors</Label>
                 <div className="flex items-center gap-2">
                   <HeroColorSwatch
@@ -978,9 +919,6 @@ function HomeCustomizationCard({
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Empty swatches follow your theme&apos;s primary color
-                </p>
               </div>
             )}
           </div>
@@ -1077,175 +1015,9 @@ function HomeCustomizationCard({
           />
         </SettingRows>
 
-        {/* Ordered card list */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-[13px] font-medium">Home cards</Label>
-            <NewButton
-              noun="link card"
-              disabled={isBusy || cards.length >= 8}
-              onClick={() => {
-                commitCards([
-                  ...cards,
-                  { id: crypto.randomUUID(), type: 'link', title: '', url: '' },
-                ])
-              }}
-            />
-          </div>
-
-          <DndContext
-            sensors={cardSensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleCardDragEnd}
-          >
-            <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-              <div className="divide-y divide-border/50">
-                {cards.map((card, index) => (
-                  <SortableHomeCardShell key={card.id} id={card.id}>
-                    {(dragHandle) => (
-                      <div className="space-y-2 py-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {dragHandle}
-                            <span className="text-xs font-medium text-foreground truncate">
-                              {CARD_TYPE_LABEL[card.type] ?? card.type}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {card.type === 'link' ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive"
-                                disabled={isBusy}
-                                onClick={() => commitCards(cards.filter((_, i) => i !== index))}
-                                aria-label="Remove card"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </Button>
-                            ) : (
-                              <Switch
-                                checked={card.enabled !== false}
-                                onCheckedChange={(checked) =>
-                                  updateCard(index, { enabled: checked })
-                                }
-                                disabled={isBusy}
-                                aria-label={`${CARD_TYPE_LABEL[card.type]} card`}
-                                className="ms-1"
-                              />
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            defaultValue={card.title ?? ''}
-                            maxLength={80}
-                            placeholder="Title (default)"
-                            className="h-8 text-xs"
-                            onBlur={(e) => {
-                              const value = e.target.value.trim()
-                              if (value === (card.title ?? '')) return
-                              updateCard(index, { title: value || undefined })
-                            }}
-                            disabled={isBusy}
-                          />
-                          <Input
-                            defaultValue={card.subtitle ?? ''}
-                            maxLength={160}
-                            placeholder="Subtitle (default)"
-                            className="h-8 text-xs"
-                            onBlur={(e) => {
-                              const value = e.target.value.trim()
-                              if (value === (card.subtitle ?? '')) return
-                              updateCard(index, { subtitle: value || undefined })
-                            }}
-                            disabled={isBusy}
-                          />
-                        </div>
-
-                        {card.type === 'link' && (
-                          <Input
-                            defaultValue={card.url ?? ''}
-                            maxLength={2000}
-                            placeholder="https://example.com"
-                            className="h-8 text-xs"
-                            onBlur={(e) => {
-                              const value = e.target.value.trim()
-                              if (value === (card.url ?? '')) return
-                              updateCard(index, { url: value })
-                            }}
-                            disabled={isBusy}
-                          />
-                        )}
-
-                        <Select
-                          value={card.audience ?? 'everyone'}
-                          onValueChange={(val: WidgetCardAudience) =>
-                            updateCard(index, { audience: val === 'everyone' ? undefined : val })
-                          }
-                          disabled={isBusy}
-                        >
-                          <SelectTrigger size="sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="everyone">Show to everyone</SelectItem>
-                            <SelectItem value="anonymous">Signed-out visitors only</SelectItem>
-                            <SelectItem value="identified">Signed-in users only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </SortableHomeCardShell>
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          <p className="text-[13px] text-muted-foreground">
-            Drag to reorder. Built-in cards hide when their section is off. Custom titles override
-            the defaults; leave blank to keep them.
-          </p>
-        </div>
+        <HomeCardsList cards={cards} onChange={commitCards} disabled={isBusy} />
       </div>
     </SettingsCard>
-  )
-}
-
-/**
- * Sortable wrapper for one Home card editor block. Render-prop hands the drag
- * handle in so the card keeps its own layout; keyboard reorder works via the
- * handle (dnd-kit KeyboardSensor).
- */
-function SortableHomeCardShell({
-  id,
-  children,
-}: {
-  id: string
-  children: (dragHandle: ReactNode) => ReactNode
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
-  })
-  const dragHandle = (
-    <button
-      type="button"
-      className="cursor-grab touch-none p-0.5 text-muted-foreground/60 hover:text-muted-foreground"
-      aria-label="Reorder card"
-      {...attributes}
-      {...listeners}
-    >
-      <Bars3Icon className="size-3.5" />
-    </button>
-  )
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn(isDragging && 'relative z-10 opacity-60')}
-    >
-      {children(dragHandle)}
-    </div>
   )
 }
 
@@ -1263,11 +1035,7 @@ export function AssistantLinkCard({
           leading={<RowIcon icon={SparklesIcon} />}
           title="Quinn"
           badges={off ? <StateBadge state="off" /> : undefined}
-          meta={
-            off
-              ? 'Turn it on in AI & Automation'
-              : 'Answers visitors in the widget. Configure in AI & Automation'
-          }
+          meta={off ? 'Turn it on in AI & Automation' : 'Configure in AI & Automation'}
         />
       </SettingsList>
     </SettingsCard>

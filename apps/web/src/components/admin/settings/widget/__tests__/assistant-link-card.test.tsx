@@ -50,7 +50,7 @@ describe('AssistantLinkCard', () => {
   it('describes the live state when it is on', () => {
     renderCard({ enabled: true })
     const row = document.querySelector('[data-slot="settings-list-row"]') as HTMLElement
-    expect(row).toHaveTextContent('Answers visitors in the widget. Configure in AI & Automation')
+    expect(row).toHaveTextContent('Configure in AI & Automation')
     expect(row).not.toHaveTextContent('Off')
   })
 })

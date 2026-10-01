@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -67,6 +68,7 @@ interface PortalNavEditorProps {
  * the page owns the draft array and commits it wholesale on Save.
  */
 export function PortalNavEditor({ items, onChange, gatedTypes, onReset }: PortalNavEditorProps) {
+  const dndId = useId()
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -99,7 +101,12 @@ export function PortalNavEditor({ items, onChange, gatedTypes, onReset }: Portal
   return (
     <TooltipProvider delay={200}>
       <div className="divide-y divide-border/50">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          id={dndId}
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {items.map((item) => (
               <NavRow
