@@ -62,7 +62,7 @@ function MembersPage() {
       description="Who has access to your workspace."
       width="wide"
     >
-      <Tabs value={tab} onValueChange={setTab} variant="line">
+      <Tabs value={tab} onValueChange={setTab} variant="line" className="space-y-6">
         <TabsList>
           <TabsTrigger value="members">Members</TabsTrigger>
           {canManageTeams && <TabsTrigger value="teams">Teams</TabsTrigger>}

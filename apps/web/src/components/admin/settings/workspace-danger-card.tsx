@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import { SettingRow } from '@/components/admin/settings/setting-row'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { wipeCloudWorkspaceFn } from '@/lib/server/functions/workspace-wipe'
 
@@ -28,20 +28,22 @@ export function WorkspaceDangerCard({ cloudEnabled }: { cloudEnabled: boolean })
 
   return (
     <SettingsCard variant="danger" title="Danger zone">
-      <SettingRow
-        label="Delete workspace"
-        description="Takes this workspace offline. It can be restored until it is purged."
-        control={
-          <Button
-            size="sm"
-            variant="outline-destructive"
-            disabled={busy}
-            onClick={() => setWipeOpen(true)}
-          >
-            Delete workspace
-          </Button>
-        }
-      />
+      <SettingRows>
+        <SettingRow
+          label="Delete workspace"
+          description="Takes this workspace offline. It can be restored until it is purged."
+          control={
+            <Button
+              size="sm"
+              variant="outline-destructive"
+              disabled={busy}
+              onClick={() => setWipeOpen(true)}
+            >
+              Delete workspace
+            </Button>
+          }
+        />
+      </SettingRows>
       {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
       <ConfirmDialog
         open={wipeOpen}

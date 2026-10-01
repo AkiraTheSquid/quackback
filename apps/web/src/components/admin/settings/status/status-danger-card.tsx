@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
-import { SettingRow } from '@/components/admin/settings/setting-row'
+import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { useClearStatusHistory } from '@/lib/client/mutations/status'
@@ -29,15 +29,17 @@ export function StatusDangerCard() {
 
   return (
     <SettingsCard title="Danger zone" variant="danger">
-      <SettingRow
-        label="Clear incident history"
-        description="Deletes resolved incidents, their updates and uptime history"
-        control={
-          <Button variant="outline-destructive" size="sm" onClick={() => setConfirmOpen(true)}>
-            Clear history
-          </Button>
-        }
-      />
+      <SettingRows>
+        <SettingRow
+          label="Clear incident history"
+          description="Deletes resolved incidents, their updates and uptime history"
+          control={
+            <Button variant="outline-destructive" size="sm" onClick={() => setConfirmOpen(true)}>
+              Clear history
+            </Button>
+          }
+        />
+      </SettingRows>
 
       <ConfirmDialog
         open={confirmOpen}

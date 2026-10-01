@@ -184,6 +184,7 @@ export function NotificationMatrixForm({
 
       <Tabs
         variant="line"
+        className="space-y-6"
         value={activeGroup}
         onValueChange={(value) => setActiveGroup(value as NotificationGroup)}
       >
