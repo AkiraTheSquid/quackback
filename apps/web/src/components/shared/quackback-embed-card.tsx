@@ -58,7 +58,7 @@ function InteractiveVoteBox({
         voteBoxCls,
         'transition-colors',
         hasVoted
-          ? 'border-post-card-voted/60 bg-post-card-voted/15 text-post-card-voted'
+          ? 'border-post-card-voted/60 bg-post-card-voted/15 bg-clip-padding text-post-card-voted'
           : 'border-border/50 bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground/80',
         isPending && 'cursor-wait opacity-70'
       )}
