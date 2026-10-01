@@ -9,6 +9,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   RouterProvider,
   createMemoryHistory,
@@ -38,9 +39,14 @@ vi.mock('@/components/shared/document-head', () => ({
 }))
 vi.mock('@/components/shared/ott-handler', () => ({ OttHandler: () => null }))
 vi.mock('@/components/shared/visitor-beacon', () => ({ VisitorBeacon: () => null }))
+vi.mock('@tanstack/react-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-router')>()),
+  HeadContent: () => null,
+}))
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
 
 const { Route: RootRoute } = await import('../__root')
+const { MinimalDocument } = await import('@/components/shared/minimal-document')
 const { expireRouteContext } = await import('@/lib/client/route-context-memo')
 
 afterEach(() => {
@@ -131,5 +137,16 @@ describe('root document renders', () => {
     bootstrap('dark', settings)
     await mount()
     expect(document.documentElement.getAttribute('data-visual-theme')).toBe('refined')
+  })
+})
+
+describe('crash fallback document', () => {
+  it('carries the refined visual theme marker', () => {
+    const html = renderToStaticMarkup(
+      <MinimalDocument>
+        <p>fallback</p>
+      </MinimalDocument>
+    )
+    expect(html).toContain('data-visual-theme="refined"')
   })
 })

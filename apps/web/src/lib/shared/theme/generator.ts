@@ -471,7 +471,11 @@ export function generateThemeCSS(config: ThemeConfig): string {
 
   const bodyDeclarations: string[] = []
   if (lightVars.fontSans) bodyDeclarations.push(`--font-sans: ${lightVars.fontSans}`)
-  if (lightVars.radius) bodyDeclarations.push(`--radius: ${lightVars.radius}`)
+  // The body restates a radius only when the config sets one, because a body
+  // declaration beats a :root one and would hide a radius kept in custom CSS.
+  // The stylesheet supplies the default otherwise.
+  const radiusConfigured = typeof config.light?.radius === 'string' && config.light.radius.trim()
+  if (lightVars.radius && radiusConfigured) bodyDeclarations.push(`--radius: ${lightVars.radius}`)
   if (bodyDeclarations.length > 0) {
     parts.push(`body { ${bodyDeclarations.join('; ')}; }`)
   }

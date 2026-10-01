@@ -135,7 +135,7 @@
   border-radius: 0;
 }
 
-/* Admin rail — labeled rows when the experiment is on. */
+/* Admin rail: labeled rows. */
 [data-visual-theme='refined'] [data-admin-rail] {
   border-right: 1px solid var(--border);
 }

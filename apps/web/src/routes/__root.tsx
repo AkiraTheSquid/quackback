@@ -5,7 +5,6 @@ import type { QueryClient } from '@tanstack/react-query'
 import {
   Outlet,
   createRootRouteWithContext,
-  HeadContent,
   redirect,
   rootRouteId,
   useRouter,
@@ -19,6 +18,7 @@ import { createRouteContextMemo } from '@/lib/client/route-context-memo'
 import type { WorkspaceSettings } from '@/lib/shared/types/settings'
 import { ThemeProvider } from '@/components/theme-provider'
 import { resolveDocumentTheme, SYSTEM_THEME_SCRIPT } from '@/lib/shared/theme'
+import { MinimalDocument } from '@/components/shared/minimal-document'
 import { DefaultErrorPage } from '@/components/shared/error-page'
 import { DocumentHead, DocumentScripts } from '@/components/shared/document-head'
 import { OttHandler } from '@/components/shared/ott-handler'
@@ -165,25 +165,6 @@ function RootComponent() {
  * Wraps RootDocument with a fallback for when route context is unavailable
  * (e.g. when the error occurred during beforeLoad).
  */
-function MinimalDocument({ children }: Readonly<{ children: ReactNode }>) {
-  // No route context here, so the theme is unknown — fall back to the same
-  // OS-driven canvas the helper uses for `system`, so the error page doesn't
-  // white-flash either.
-  const { colorScheme } = resolveDocumentTheme('system')
-  return (
-    <html lang="en" style={{ colorScheme }} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: SYSTEM_THEME_SCRIPT }} />
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Quackback</title>
-        <HeadContent />
-      </head>
-      <body className="min-h-screen bg-background font-sans antialiased">{children}</body>
-    </html>
-  )
-}
-
 class SafeRootDocument extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false }
 

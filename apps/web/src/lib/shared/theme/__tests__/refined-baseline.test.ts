@@ -99,6 +99,18 @@ describe('refined theme baseline', () => {
     )
   })
 
+  it('leaves the body radius to the stylesheet and custom CSS when the config sets none', () => {
+    for (const config of [{}, { light: { primary: '#ff0000' } }, { light: { radius: '  ' } }]) {
+      const css = generateThemeCSS(config as ThemeConfig)
+      expect(css).not.toMatch(/body \{[^}]*--radius/)
+    }
+  })
+
+  it('emits the body radius when the config sets one', () => {
+    const css = generateThemeCSS({ light: { radius: '1rem' } })
+    expect(css).toMatch(/body \{[^}]*--radius: 1rem/)
+  })
+
   it('expandTheme fills gaps from the refined palette and radius', () => {
     const expanded = expandTheme({ primary: 'oklch(0.5 0.1 20)' }, { mode: 'light' })
     expect(expanded.background).toBe(DEFAULT_LIGHT_BASE.background)
