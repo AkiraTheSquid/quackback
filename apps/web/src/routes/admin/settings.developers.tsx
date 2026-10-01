@@ -96,7 +96,7 @@ function ApiPage() {
         </TabsContent>
 
         <TabsContent value="mcp" className="space-y-6">
-          <SettingsCard title="MCP server">
+          <SettingsCard>
             <McpServerSettings
               entitled={mcpEntitled}
               initialEnabled={developerConfigQuery.data.mcpEnabled}

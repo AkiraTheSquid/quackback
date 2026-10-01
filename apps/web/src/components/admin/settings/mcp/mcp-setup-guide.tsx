@@ -197,7 +197,7 @@ const CLIENTS: ClientDef[] = [
     lang: 'js',
     note: 'Add to your project root.',
     variants: [
-      { id: 'oauth', label: 'OAuth (recommended)', code: claudeCodeOAuthConfig },
+      { id: 'oauth', label: 'OAuth', code: claudeCodeOAuthConfig },
       { id: 'api-key', label: 'API key', code: claudeCodeApiKeyConfig },
     ],
   },
@@ -232,7 +232,7 @@ const CLIENTS: ClientDef[] = [
     lang: 'js',
     note: 'Requires mcp-remote bridge (Node.js must be installed).',
     variants: [
-      { id: 'oauth', label: 'OAuth (recommended)', code: claudeDesktopOAuthConfig },
+      { id: 'oauth', label: 'OAuth', code: claudeDesktopOAuthConfig },
       { id: 'api-key', label: 'API key', code: claudeDesktopApiKeyConfig },
     ],
   },
@@ -303,11 +303,11 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
   return (
     <div
       data-settings-card=""
-      className="rounded-xl border border-border bg-card overflow-hidden flex flex-col min-h-[480px]"
+      className="rounded-xl border border-border bg-card overflow-hidden flex flex-col"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] flex-1">
+      <div className="grid grid-cols-1 flex-1">
         {/* ─── Left: Configuration ─── */}
-        <div className="flex flex-col border-b lg:border-b-0 lg:border-r border-border divide-y divide-border">
+        <div className="flex flex-col border-b border-border divide-y divide-border">
           {/* Header */}
           <div className="p-5">
             <h3 className="text-sm font-semibold text-foreground">Setup guide</h3>
@@ -361,7 +361,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
               >
                 API key
               </Link>{' '}
-              or OAuth (browser login). Claude Code and Claude Desktop support both.
+              or OAuth (browser login, recommended). Claude Code and Claude Desktop support both.
             </p>
           </div>
 
@@ -457,7 +457,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
         </div>
 
         {/* ─── Right: Code Panel ─── */}
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           {/* File tab header */}
           <div
             className="flex items-center justify-between shrink-0 px-1"

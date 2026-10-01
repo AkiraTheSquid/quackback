@@ -87,7 +87,6 @@ export function WebhooksSettings({ webhooks, entitled }: WebhooksSettingsProps) 
             icon={BoltIcon}
             title="No webhooks yet"
             description="Get notified when posts are created, statuses change or comments arrive."
-            action={newWebhookButton}
           />
         ) : (
           <SettingsList>

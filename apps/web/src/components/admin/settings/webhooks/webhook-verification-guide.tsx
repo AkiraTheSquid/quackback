@@ -11,6 +11,7 @@ import {
   GoIcon,
   PHPIcon,
 } from '@/components/admin/settings/lang-icons'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/shared/utils'
 import { useCopyToClipboard } from '@/lib/client/hooks/use-copy-to-clipboard'
 
@@ -216,7 +217,23 @@ const WEBHOOK_HEADERS = [
 // Component
 // ——————————————————————————————————————————————————
 
+/** The guide is documentation: a quiet link opens it, so it never competes with the list. */
 export function WebhookVerificationGuide() {
+  return (
+    <Collapsible>
+      <CollapsibleTrigger className="text-[13px] font-medium text-primary underline-offset-2 hover:underline">
+        How to verify signatures
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="pt-3">
+          <VerificationCard />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function VerificationCard() {
   const [selectedFramework, setSelectedFramework] = useState('node')
   const { copied: copiedCode, copy: copyCode } = useCopyToClipboard()
 
