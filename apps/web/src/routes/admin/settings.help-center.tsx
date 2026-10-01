@@ -110,7 +110,7 @@ function HelpCenterSettingsPage() {
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
-          <SettingsCard title="Homepage" description="Customize the help center landing page">
+          <SettingsCard title="Homepage" description="Customize the help center landing page.">
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="homepage-title" className="text-sm font-medium">

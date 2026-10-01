@@ -362,7 +362,7 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
     <>
       <SettingsCard
         title="Labels"
-        description="Group entries by label"
+        description="Group entries by label."
         action={<NewButton noun="label" onClick={openCreate} />}
         flush
       >

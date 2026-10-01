@@ -433,7 +433,7 @@ function IndexingCard({ indexable }: { indexable: boolean }) {
   }
 
   return (
-    <SettingsCard title="Indexing" description="Control whether search engines can crawl /hc">
+    <SettingsCard title="Indexing" description="Control whether search engines can crawl /hc.">
       <SettingRows>
         <SettingRow
           label="Allow search engines to index the help center"
@@ -461,7 +461,7 @@ function LocalesCard({ locales }: { locales: HelpCenterConfig['locales'] }) {
   return (
     <SettingsCard
       title="Languages"
-      description="Add a locale to translate articles and categories into it"
+      description="Add a locale to translate articles and categories into it."
     >
       <div className="space-y-4">
         <ul className="divide-y divide-border/50">
@@ -663,7 +663,7 @@ function AutoTranslateCard({
   return (
     <SettingsCard
       title="Auto-translate"
-      description="Queue an AI translation draft for each enabled language when you publish an article"
+      description="Queue an AI translation draft for each enabled language when you publish an article."
     >
       <div className="space-y-4">
         <SettingRows>

@@ -16,7 +16,7 @@ export function QuackbackUrlCard(props: {
   onSubmit: () => void
 }) {
   return (
-    <SettingsCard title="Workspace URL" description="The address customers use for this workspace">
+    <SettingsCard title="Workspace URL" description="The address customers use for this workspace.">
       <form
         className="max-w-xl space-y-5"
         onSubmit={(event) => {

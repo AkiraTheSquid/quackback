@@ -15,7 +15,7 @@ const OPTIONS: Array<{ value: ChangelogSettings['audience']; title: string }> = 
 
 export function VisibilityCard({ settings, onChange, disabled }: VisibilityCardProps) {
   return (
-    <SettingsCard title="Visibility" description="Who can see the changelog">
+    <SettingsCard title="Visibility" description="Who can see the changelog.">
       <VisibilityTiles
         name="changelog-audience"
         value={settings.audience}

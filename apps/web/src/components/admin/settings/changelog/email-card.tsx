@@ -12,7 +12,7 @@ interface EmailCardProps {
 
 export function EmailCard({ settings, onChange, disabled }: EmailCardProps) {
   return (
-    <SettingsCard title="Email" description="Who gets emailed when you publish an entry">
+    <SettingsCard title="Email" description="Who gets emailed when you publish an entry.">
       <SettingRows>
         <SettingRow
           label="Send changelog emails"

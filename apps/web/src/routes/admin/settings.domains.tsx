@@ -110,7 +110,10 @@ function DomainsSettingsPage() {
   })
 
   return (
-    <SettingsPage page="/admin/settings/domains" description="Your own hostname for this workspace">
+    <SettingsPage
+      page="/admin/settings/domains"
+      description="Your own hostname for this workspace."
+    >
       {!cloudEnabled || !allowed ? (
         <p className="text-sm text-muted-foreground">
           Custom domains are available only in a Quackback Cloud workspace.

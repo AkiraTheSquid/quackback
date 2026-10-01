@@ -32,7 +32,7 @@ export function StatusVisibilityCard({ settings, onChange, disabled }: StatusVis
   const segmentsQuery = useSegments()
 
   return (
-    <SettingsCard title="Visibility" description="Who can view the status page">
+    <SettingsCard title="Visibility" description="Who can view the status page.">
       <div className="space-y-3">
         <VisibilityTiles
           name="status-audience"
