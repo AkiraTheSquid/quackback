@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Link, useRouter } from '@tanstack/react-router'
+import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import {
   ChatBubbleLeftIcon,
   MapIcon,
@@ -280,6 +280,9 @@ function MobileNavLink({
 export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarProps) {
   const refined = useRefinedTheme()
   const router = useRouter()
+  const onNotificationsPage = useRouterState({
+    select: (s) => s.location.pathname.startsWith('/admin/notifications'),
+  })
   // Each part is selected: the route context is a new object after every
   // navigation, while these stay the same until the viewer or workspace changes.
   const session = useSessionContext()
@@ -424,13 +427,17 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
               ) : null}
 
               {/* Notifications */}
-              <NotificationBell className={refined ? undefined : 'size-9'} labeled={refined} />
+              <NotificationBell
+                className={refined ? undefined : 'size-9'}
+                labeled={refined}
+                active={onNotificationsPage}
+              />
 
               {/* Portal Link */}
               {refined ? (
                 <Link to="/" data-admin-rail-item="" className={railControlClass(true)}>
                   <GlobeAltIcon className="size-5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">View Portal</span>
+                  <span className="min-w-0 flex-1 truncate">View portal</span>
                 </Link>
               ) : (
                 <Tooltip>
@@ -440,11 +447,11 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                       className="flex size-9 items-center justify-center rounded-lg text-muted-foreground/70 transition-all duration-200 hover:bg-muted/50 hover:text-foreground"
                     >
                       <GlobeAltIcon className="size-5" />
-                      <span className="sr-only">View Portal</span>
+                      <span className="sr-only">View portal</span>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
-                    View Portal
+                    View portal
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -671,7 +678,7 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
                 className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-muted-foreground/80 hover:text-foreground hover:bg-muted/50 transition-colors"
               >
                 <GlobeAltIcon className="h-5 w-5" />
-                View Portal
+                View portal
               </Link>
               <div className="h-px bg-border/40 my-4" />
               <a

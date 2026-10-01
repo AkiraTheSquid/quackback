@@ -22,4 +22,24 @@ describe('NotificationBell', () => {
     const svg = screen.getByRole('button', { name: 'Notifications' }).querySelector('svg')!
     expect(svg.getAttribute('fill')).toBe('currentColor')
   })
+
+  it('marks the labeled rail item active on the notifications page', () => {
+    render(
+      <TooltipProvider>
+        <NotificationBell labeled active />
+      </TooltipProvider>
+    )
+    const button = screen.getByRole('button', { name: 'Notifications' })
+    expect(button.getAttribute('data-active')).toBe('true')
+    expect(button.className).toContain('bg-muted/80')
+  })
+
+  it('is not active by default', () => {
+    render(
+      <TooltipProvider>
+        <NotificationBell labeled />
+      </TooltipProvider>
+    )
+    expect(screen.getByRole('button', { name: 'Notifications' }).getAttribute('data-active')).toBeNull()
+  })
 })

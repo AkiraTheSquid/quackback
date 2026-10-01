@@ -90,8 +90,8 @@ test.describe('Admin Sidebar Navigation', () => {
     await expect(page).toHaveURL(/\/admin\/users/)
   })
 
-  test('View Portal link is present', async ({ page }) => {
-    const portalLink = page.getByRole('link', { name: 'View Portal' })
+  test('View portal link is present', async ({ page }) => {
+    const portalLink = page.getByRole('link', { name: 'View portal' })
     await expect(portalLink.first()).toBeVisible({ timeout: 10000 })
   })
 
