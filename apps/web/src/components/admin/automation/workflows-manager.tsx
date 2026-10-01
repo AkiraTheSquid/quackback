@@ -485,7 +485,7 @@ export function WorkflowsManager({
             })}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border/50">
+          <div className="overflow-hidden rounded-xl border border-border/50 shadow-sm">
             {groups.map((group, groupIndex) => {
               const isCustomerFacing = group.cls.value === 'customer_facing'
               const reorderMode: 'enabled' | 'filtered' | 'none' = !isCustomerFacing

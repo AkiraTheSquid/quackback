@@ -162,7 +162,7 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
         ))}
       </SettingRows>
 
-      <p className="text-[13px] text-muted-foreground">
+      <p className="pt-2 text-[13px] text-muted-foreground">
         Held posts and comments appear in the{' '}
         <Link to="/admin/feedback/moderation" className="text-primary hover:underline">
           review queue
