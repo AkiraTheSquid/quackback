@@ -34,6 +34,7 @@ function AutomationLayout() {
       >
         <div className="shrink-0 px-4 py-3.5">
           <PageHeader
+            as="h2"
             title={intl.formatMessage({
               id: 'automation.nav.label',
               defaultMessage: 'AI & Automation',

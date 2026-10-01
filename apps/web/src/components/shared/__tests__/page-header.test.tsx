@@ -16,6 +16,17 @@ const { PageHeader } = await import('../page-header')
 afterEach(cleanup)
 
 describe('PageHeader', () => {
+  it('renders a pane title as an h2 so the page keeps its single h1', () => {
+    render(
+      <>
+        <PageHeader as="h2" title="Settings" />
+        <PageHeader title="Boards" />
+      </>
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+  })
+
   it('renders the title as the page heading with the standard sizes', () => {
     render(<PageHeader title="Boards" description="Where posts live" />)
     const heading = screen.getByRole('heading', { level: 1, name: 'Boards' })

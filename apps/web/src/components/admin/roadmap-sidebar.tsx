@@ -122,7 +122,7 @@ export function RoadmapSidebar({ selectedRoadmapId, onSelectRoadmap }: RoadmapSi
       className="w-64 xl:w-72 shrink-0 flex flex-col border-r border-border/50 bg-card/30 overflow-hidden"
     >
       <div className="shrink-0 px-4 py-3.5">
-        <PageHeader title="Roadmap" />
+        <PageHeader as="h2" title="Roadmap" />
       </div>
 
       {/* Selector + list — the "Roadmaps" subheading routes through the shared

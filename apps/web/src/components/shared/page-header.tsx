@@ -12,6 +12,8 @@ export interface PageCrumb {
 
 interface PageHeaderProps {
   title: string
+  /** The heading level. A side pane's title heads the pane, not the page, so panes pass `h2`. */
+  as?: 'h1' | 'h2'
   description?: string
   /** A quiet badge beside the title, for a non-default state of the page's subject. */
   badge?: React.ReactNode
@@ -27,6 +29,7 @@ interface PageHeaderProps {
 
 export function PageHeader({
   title,
+  as: Heading = 'h1',
   description,
   badge,
   crumbs,
@@ -68,11 +71,11 @@ export function PageHeader({
           {logo || badge ? (
             <div className="flex items-center gap-2.5">
               {logo}
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+              <Heading className="text-xl font-semibold tracking-tight text-foreground">{title}</Heading>
               {badge}
             </div>
           ) : (
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+            <Heading className="text-xl font-semibold tracking-tight text-foreground">{title}</Heading>
           )}
           {description && <p className="text-[13px] text-muted-foreground">{description}</p>}
         </div>
