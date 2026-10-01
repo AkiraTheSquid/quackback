@@ -52,6 +52,25 @@ interface PreviewResponse {
   updatedCount: number
 }
 
+/** The kind of CSV being brought in. Every source follows the same template; the hint says how to map it. */
+const IMPORT_SOURCES = [
+  {
+    value: 'feedback_portal',
+    label: 'Feedback portal CSV',
+    hint: 'Boards, posts, votes and comments from a feedback portal CSV export.',
+  },
+  {
+    value: 'support_suite',
+    label: 'Support suite CSV',
+    hint: 'Help articles and conversation history from a support suite CSV export.',
+  },
+  {
+    value: 'help_center',
+    label: 'Help center CSV',
+    hint: 'Categories and articles from a help center CSV export.',
+  },
+] as const
+
 const IN_FLIGHT_RUN_STATUSES = new Set(['pending', 'dry_run', 'running'])
 
 function downloadTemplate() {
@@ -74,6 +93,7 @@ export function ImportCsv() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<Step>('idle')
   const [file, setFile] = useState<File | null>(null)
+  const [source, setSource] = useState<string>(IMPORT_SOURCES[0].value)
   const [boardId, setBoardId] = useState<string>('')
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [runId, setRunId] = useState<string | null>(null)
@@ -172,6 +192,21 @@ export function ImportCsv() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
+        <label>
+          <span className="sr-only">Source</span>
+          <Select value={source} onValueChange={setSource}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORT_SOURCES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
         <Select value={boardId} onValueChange={setBoardId}>
           <SelectTrigger className="w-[240px]">
             <SelectValue placeholder="Default board (optional)" />
@@ -189,6 +224,12 @@ export function ImportCsv() {
           Download template
         </Button>
       </div>
+
+      {step === 'idle' && (
+        <p className="text-[13px] text-muted-foreground">
+          {IMPORT_SOURCES.find((s) => s.value === source)?.hint}
+        </p>
+      )}
 
       {step === 'idle' && (
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-8 text-center transition-colors hover:bg-muted/40">

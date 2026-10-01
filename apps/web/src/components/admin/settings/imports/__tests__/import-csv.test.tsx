@@ -122,10 +122,25 @@ describe('<ImportCsv>', () => {
     expect(screen.getByText(/Keep source_id filled/)).toBeTruthy()
   })
 
-  it('offers no Source select, since every CSV imports posts', () => {
+  it('offers a Source choice that keeps every migration path, defaulting to the feedback portal', () => {
     renderCsv()
-    expect(screen.queryByLabelText('Source')).toBeNull()
-    expect(screen.queryByText(/Help center CSV/)).toBeNull()
+    const source = screen.getByLabelText('Source') as HTMLSelectElement
+    expect(source.value).toBe('feedback_portal')
+    expect(Array.from(source.options).map((o) => o.textContent)).toEqual([
+      'Feedback portal CSV',
+      'Support suite CSV',
+      'Help center CSV',
+    ])
+  })
+
+  it('shows the guidance for the chosen source', () => {
+    renderCsv()
+    expect(
+      screen.getByText('Boards, posts, votes and comments from a feedback portal CSV export.')
+    ).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'help_center' } })
+    expect(screen.getByText('Categories and articles from a help center CSV export.')).toBeTruthy()
+    expect(screen.queryByText(/from a feedback portal CSV export/)).toBeNull()
   })
 
   it('walks upload -> dry-run review -> commit -> done', async () => {
