@@ -21,13 +21,13 @@ import { WORKFLOW_CLASSES } from '../workflow-graph'
 
 const STATUS_STYLE: Record<WorkflowStatusValue, string> = {
   draft: 'bg-muted text-muted-foreground',
-  live: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  paused: 'bg-amber-500/10 text-amber-700 dark:text-amber-500',
+  live: 'bg-success/10 text-success',
+  paused: 'bg-warning/10 text-warning',
 }
 const STATUS_DOT: Record<WorkflowStatusValue, string> = {
   draft: 'bg-muted-foreground',
-  live: 'bg-emerald-500',
-  paused: 'bg-amber-500',
+  live: 'bg-success',
+  paused: 'bg-warning',
 }
 
 function NameField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -143,7 +143,7 @@ export function WorkflowBuilderTopBar({
         <button
           type="button"
           onClick={onJumpToFirstIssue}
-          className="inline-flex h-5.5 items-center gap-1 rounded-full bg-amber-500/10 px-2.5 text-[11px] font-semibold text-amber-700 hover:brightness-95 dark:text-amber-500"
+          className="inline-flex h-5.5 items-center gap-1 rounded-full bg-warning/10 px-2.5 text-[11px] font-semibold text-warning hover:brightness-95"
         >
           <ExclamationTriangleIcon className="size-3" />
           {issuesCount} issue{issuesCount === 1 ? '' : 's'}

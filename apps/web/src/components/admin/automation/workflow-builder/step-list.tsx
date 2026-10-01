@@ -19,7 +19,13 @@ import { MENU_LABEL } from '@/components/ui/menu'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { assistantWaitMinutes } from '@/lib/shared/workflows/abandoned-auto-close'
 import { useWorkflowEntities } from './entities'
-import { ACTION_ICONS, BLOCK_ICONS, ConfirmDeleteDialog, TONE_TILE } from './step-visuals'
+import {
+  ACTION_ICONS,
+  BLOCK_ICONS,
+  ConfirmDeleteDialog,
+  START_TAG,
+  TONE_TILE,
+} from './step-visuals'
 import { LaneTabs } from './lane-tabs'
 import {
   lanesRevealingNode,
@@ -135,17 +141,22 @@ function StepCard({
           data.selected
             ? 'border-transparent shadow-md ring-2 ring-ring'
             : data.warn
-              ? 'border-amber-500/60'
+              ? 'border-warning/60'
               : 'border-border hover:border-foreground/25'
         )}
       >
         {data.startTag && (
-          <span className="absolute -top-[21px] left-3.5 rounded-t-md bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">
+          <span
+            className={cn(
+              'absolute -top-[21px] left-3.5 rounded-t-md px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase',
+              START_TAG
+            )}
+          >
             {startLabel}
           </span>
         )}
         {data.warn && (
-          <ExclamationTriangleIcon className="absolute top-2.5 right-2.5 size-3.5 text-amber-600 dark:text-amber-500" />
+          <ExclamationTriangleIcon className="absolute top-2.5 right-2.5 size-3.5 text-warning" />
         )}
         <div className="flex items-center gap-2.5 p-3">
           <span

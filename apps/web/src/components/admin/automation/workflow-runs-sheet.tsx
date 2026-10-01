@@ -31,23 +31,23 @@ import { ACTION_LABELS } from './workflow-graph'
 const RUN_STATE_META: Record<string, { label: string; dotClass: string; textClass: string }> = {
   running: {
     label: 'Running',
-    dotClass: 'bg-blue-500',
-    textClass: 'text-blue-600 dark:text-blue-400',
+    dotClass: 'bg-primary',
+    textClass: 'text-primary',
   },
   waiting: {
     label: 'Waiting',
-    dotClass: 'bg-amber-500',
-    textClass: 'text-amber-600 dark:text-amber-400',
+    dotClass: 'bg-warning',
+    textClass: 'text-warning',
   },
   done: {
     label: 'Done',
-    dotClass: 'bg-emerald-500',
-    textClass: 'text-emerald-600 dark:text-emerald-400',
+    dotClass: 'bg-success',
+    textClass: 'text-success',
   },
   interrupted: {
     label: 'Interrupted',
-    dotClass: 'bg-rose-500',
-    textClass: 'text-rose-600 dark:text-rose-400',
+    dotClass: 'bg-destructive',
+    textClass: 'text-destructive',
   },
 }
 

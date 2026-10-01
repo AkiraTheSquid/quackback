@@ -369,7 +369,7 @@ function ImportProgress({
     return (
       <div className="space-y-3 rounded-lg border border-border p-4">
         <div className="flex items-center gap-2">
-          <CheckCircleIcon className="size-5 text-green-600" />
+          <CheckCircleIcon className="size-5 text-success" />
           <p className="text-sm font-medium">Import complete</p>
         </div>
         <p className="text-sm text-muted-foreground">

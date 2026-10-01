@@ -1,48 +1,47 @@
 import type { RuleName } from './admin-consistency.rules'
 
-/** Files (or, for registry-pages, registry paths) that do not comply yet. Entries only shrink. */
+/**
+ * Files (or, for registry-pages, registry paths) that do not comply with a
+ * rule. Every entry is a deliberate exception with its reason above it, or a
+ * Labs entry. The guard fails on an offender that is not listed and on a listed
+ * entry that no longer offends, so entries are only ever removed.
+ */
 export const ALLOWLIST: Record<RuleName, string[]> = {
   'page-shell': ['components/admin/settings/labs/labs-settings.tsx'],
-  'page-width': [
-    'components/admin/settings/labs/labs-settings.tsx',
+  'page-width': ['components/admin/settings/labs/labs-settings.tsx'],
+  'registry-pages': [
+    // A module label with no page of its own: its URL redirects to the first page of the module.
+    '/admin/settings/feedback',
+    '/admin/settings/labs',
+    // A module label with no page of its own: its URL redirects to the first page of the module.
+    '/admin/settings/support',
   ],
-  'registry-pages': ['/admin/settings/feedback', '/admin/settings/labs', '/admin/settings/support'],
   'create-labels': [],
   'no-dashes': [],
   'tab-icons': [],
   'toggle-rows': [
-    'components/admin/automation/workflow-builder/inspector/collect-data-editor.tsx',
-    'components/admin/automation/workflow-builder/inspector/csat-editor.tsx',
-    'components/admin/automation/workflow-builder/inspector/reply-buttons-editor.tsx',
     // A switch on a provider tile in a card grid, not a setting row.
     'components/admin/settings/auth-shared/oauth-provider-grid.tsx',
+    // A switch inside a dense draggable row of the portal tab list.
     'components/admin/settings/branding/portal-nav-editor.tsx',
     'components/admin/settings/labs/labs-settings.tsx',
     // The Enabled switch sits in the page header actions, not in a setting row.
     'components/admin/settings/security/identity-providers/provider-detail-page.tsx',
     // A switch inside a provider list row, not a setting row.
     'components/admin/settings/security/identity-providers/provider-list.tsx',
+    // A switch inside a dense draggable row.
     'components/admin/settings/statuses/status-list.tsx',
+    // A per-field Visible switch inside a dense draggable row.
     'components/admin/settings/tickets/fields-editor.tsx',
   ],
   palette: [
+    // Avatar hues picked from the connector's name, so each connector keeps its own colour.
     'components/admin/automation/connectors/connector-mark.tsx',
-    'components/admin/automation/workflow-builder/canvas.tsx',
-    'components/admin/automation/workflow-builder/inspector/collect-data-editor.tsx',
-    'components/admin/automation/workflow-builder/inspector/inspector-panel.tsx',
-    'components/admin/automation/workflow-builder/inspector/reply-buttons-editor.tsx',
-    'components/admin/automation/workflow-builder/inspector/reply-time-editor.tsx',
-    'components/admin/automation/workflow-builder/inspector/rule-group-builder.tsx',
-    'components/admin/automation/workflow-builder/inspector/trigger-editor.tsx',
-    'components/admin/automation/workflow-builder/json-panel.tsx',
-    'components/admin/automation/workflow-builder/outline-rail.tsx',
-    'components/admin/automation/workflow-builder/step-list.tsx',
+    // The step kind colours that colour-code the workflow builder (trigger, branch, action, wait).
     'components/admin/automation/workflow-builder/step-visuals.tsx',
-    'components/admin/automation/workflow-builder/top-bar.tsx',
-    'components/admin/automation/workflow-runs-sheet.tsx',
-    'components/admin/automation/workflow-template-gallery.tsx',
+    // One icon tint per template category.
     'components/admin/automation/workflow-templates.ts',
-    'components/admin/settings/imports/import-csv.tsx',
+    // Per-provider brand tints for integration badges.
     'components/admin/settings/integrations/integration-ui.tsx',
   ],
 }
