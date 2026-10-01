@@ -33,7 +33,7 @@ const STATUS_VARIANT: Record<
   pending: 'secondary',
   dry_run: 'secondary',
   running: 'default',
-  completed: 'success',
+  completed: 'secondary',
   failed: 'destructive',
 }
 
@@ -101,7 +101,11 @@ export function ImportHistoryList() {
                 {run.fileName}
               </TableCell>
               <TableCell>
-                <Badge variant={STATUS_VARIANT[run.status]}>{STATUS_LABEL[run.status]}</Badge>
+                {run.status === 'completed' ? (
+                  <span className="text-sm text-muted-foreground">{STATUS_LABEL[run.status]}</span>
+                ) : (
+                  <Badge variant={STATUS_VARIANT[run.status]}>{STATUS_LABEL[run.status]}</Badge>
+                )}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {run.totals ? (

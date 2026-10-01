@@ -166,15 +166,22 @@ const LIFECYCLE_VARIANT: Record<StatusIncidentLifecycle, 'success' | 'warning' |
   investigating: 'warning',
   identified: 'warning',
   monitoring: 'warning',
-  resolved: 'success',
+  resolved: 'secondary',
   scheduled: 'secondary',
   in_progress: 'warning',
   verifying: 'warning',
-  completed: 'success',
+  completed: 'secondary',
 }
 
-/** The sentence-case lifecycle badge used by list rows and overview cards. */
+/**
+ * The sentence-case lifecycle badge used by list rows and overview cards. A
+ * finished incident or maintenance window is the normal end state, so it reads
+ * as muted text instead of a badge.
+ */
 export function LifecycleBadge({ status }: { status: StatusIncidentLifecycle }) {
+  if (status === 'resolved' || status === 'completed') {
+    return <span className="text-xs text-muted-foreground">{LIFECYCLE_LABELS[status]}</span>
+  }
   return (
     <Badge variant={LIFECYCLE_VARIANT[status]} size="sm" shape="pill">
       {LIFECYCLE_LABELS[status]}
