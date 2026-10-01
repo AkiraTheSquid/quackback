@@ -52,6 +52,7 @@ import {
   ArrowDownTrayIcon,
   ArrowTopRightOnSquareIcon,
   UserPlusIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline'
 import { toast } from 'sonner'
 import type {
@@ -160,6 +161,7 @@ import {
   TicketPriorityControl,
 } from '@/components/admin/inbox/ticket-controls'
 import { InboxDetailPanel } from '@/components/admin/inbox/inbox-detail-panel'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { CreateTicketDialog } from '@/components/admin/inbox/create-ticket-dialog'
 import { ConvertToPostDialog } from '@/components/admin/conversation/convert-to-post-dialog'
 import { EndConversationDialog } from '@/components/admin/conversation/end-conversation-dialog'
@@ -489,6 +491,7 @@ export function AgentConversationThread({
   const permissions = usePermissions()
   const canViewTickets = permissions.has(PERMISSIONS.TICKET_VIEW)
   const canSetTicketStatus = permissions.has(PERMISSIONS.TICKET_SET_STATUS)
+  const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
 
   // Reply and Note each hold an independent draft (the rich doc persisted as
   // contentJson + its markdown mirror), so toggling modes preserves each mode's
@@ -1867,7 +1870,7 @@ export function AgentConversationThread({
   // (§2.7, M5): a ticket-status pill when the item is or links a ticket, an
   // icon cluster (create ticket / save for later / snooze / overflow), then
   // the primary Close (conversations) / Resolve (tickets) button. Priority/
-  // assignee move to the detail panel's Properties row; an xl:hidden fallback
+  // assignee move to the detail panel's Properties row; a below-1400px fallback
   // keeps them reachable below that breakpoint (the panel is xl-only).
   const backButton = (
     <button
@@ -1886,6 +1889,19 @@ export function AgentConversationThread({
   // identical JSX for both kinds, gated internally by `isTicket`/capabilities.
   const headerActions = (
     <div className="ml-auto flex shrink-0 items-center gap-1">
+      {/* Below the inline panel width the details open in a sheet. */}
+      {!detailPanelShown && (conversation || ticket) && (
+        <button
+          type="button"
+          title="Details"
+          aria-label="Details"
+          aria-expanded={detailsSheetOpen}
+          onClick={() => setDetailsSheetOpen(true)}
+          className={cn(headerIconButtonClass, 'min-[1400px]:hidden')}
+        >
+          <InformationCircleIcon className="h-4 w-4" />
+        </button>
+      )}
       {/* B24: the ticket-status pill's interactivity follows the resolved
           permissions — the full dropdown with `ticket.set_status`, an inert
           read-only chip with view-only, and nothing at all without
@@ -2074,9 +2090,9 @@ export function AgentConversationThread({
           </div>
         </div>
         {/* Narrow-viewport fallback: Properties live in the detail panel at
-            xl+; below that, priority/assignee stay reachable here. */}
+            1400px+; below that, priority/assignee stay reachable here. */}
         {!detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 xl:hidden">
+          <div className="flex shrink-0 items-center gap-1.5 min-[1400px]:hidden">
             <TicketPriorityControl ticket={ticket} onChanged={onChanged} />
             <TicketAssigneeControl ticket={ticket} onChanged={onChanged} />
           </div>
@@ -2117,10 +2133,10 @@ export function AgentConversationThread({
             </p>
           </div>
         </div>
-        {/* Triage controls live in the detail panel at xl+; below that
+        {/* Triage controls live in the detail panel at 1400px+; below that
             (panel hidden) they stay in the header. */}
         {conversation && !detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 xl:hidden">
+          <div className="flex shrink-0 items-center gap-1.5 min-[1400px]:hidden">
             <PriorityControl
               conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
               value={conversation.priority}
@@ -2148,11 +2164,11 @@ export function AgentConversationThread({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {header}
 
-        {/* Conversation labels — xl+ shows them in the detail panel. Tickets
+        {/* Conversation labels — 1400px+ shows them in the detail panel. Tickets
             have no tags surface (§2.5's capability matrix — "tags,
             conversations only"). */}
         {!isTicket && conversation && conversationId && !detailPanelShown && (
-          <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 xl:hidden">
+          <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 min-[1400px]:hidden">
             <ConversationTagsEditor conversationId={conversationId} tags={conversation.tags} />
           </div>
         )}
@@ -2564,6 +2580,29 @@ export function AgentConversationThread({
           issuePeople={issuePeople}
           visible={detailPanelShown}
         />
+      )}
+      {!detailPanelShown && ((!isTicket && conversation) || (isTicket && ticket)) && (
+        <Sheet open={detailsSheetOpen} onOpenChange={setDetailsSheetOpen}>
+          <SheetContent className="w-[22rem] max-w-[90vw] gap-0 p-0 sm:max-w-[22rem]">
+            <SheetTitle className="sr-only">Details</SheetTitle>
+            <InboxDetailPanel
+              item={item}
+              conversation={conversation}
+              ticket={panelTicket}
+              onChanged={refreshThread}
+              onSelectItem={(id) => {
+                setDetailsSheetOpen(false)
+                onSelectItem(id)
+              }}
+              onTrackAsFeedback={handleTrackAsFeedback}
+              onCreateTicket={handleCreateTicketFromPanel}
+              onInsertFromCopilot={insertFromCopilot}
+              issuePeople={issuePeople}
+              visible={detailsSheetOpen}
+              overlay
+            />
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   )

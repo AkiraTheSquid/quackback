@@ -207,6 +207,8 @@ export interface InboxDetailPanelProps {
    *  the inbox route). The panel is `hidden xl:flex`; it only fetches its data
    *  when shown, so smaller viewports don't pay for an invisible sidebar. */
   visible: boolean
+  /** Renders the panel to fill a sheet instead of as the inline right column. */
+  overlay?: boolean
 }
 
 /**
@@ -231,8 +233,12 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   openCopilotToken,
   issuePeople,
   visible: isVisible,
+  overlay = false,
 }: InboxDetailPanelProps) {
   const flags = useFeatureFlags()
+  const asideClassName = overlay
+    ? 'flex h-full min-h-0 w-full flex-col overflow-hidden'
+    : 'hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96'
   // The flag + copilot.use gate, shared with the inbox route's
   // `copilotAvailable` so the Ask Copilot affordances can never disagree
   // with the tab actually existing.
@@ -825,7 +831,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
     return (
       <aside
         aria-label="Item details"
-        className="hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96"
+        className={asideClassName}
       >
         {detailsBody}
       </aside>
@@ -835,7 +841,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   return (
     <aside
       aria-label="Item details"
-      className="hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96"
+      className={asideClassName}
     >
       <Tabs
         value={tab}
