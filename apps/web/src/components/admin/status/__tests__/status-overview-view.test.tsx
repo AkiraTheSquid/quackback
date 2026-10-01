@@ -93,7 +93,7 @@ describe('<StatusOverviewView>', () => {
 
   it('shows the stats as sentence-case tiles', () => {
     render(<StatusOverviewView />)
-    const label = screen.getByText('90-day uptime, all services')
+    const label = screen.getByText('90-day uptime')
     expect(label.className).not.toContain('uppercase')
     expect(screen.getByText('99.50%')).toBeTruthy()
   })

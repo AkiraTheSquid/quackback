@@ -8,6 +8,7 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/outline'
 import { Badge } from '@/components/ui/badge'
+import { AnalyticsStatRow } from '@/components/admin/analytics/analytics-stat-row'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -105,13 +106,11 @@ function downloadCsv(rows: ExportRow[]): void {
   URL.revokeObjectURL(url)
 }
 
-function CountTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex-1 rounded-xl border border-border/50 bg-card px-4 py-3">
-      <div className="text-2xl font-semibold tabular-nums">{value.toLocaleString()}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
-  )
+/** Only the non-default sources get a badge; a self-serve subscription is the normal case. */
+const SOURCE_LABELS: Record<string, string> = {
+  auto: 'Automatic',
+  admin: 'Added by admin',
+  csv_import: 'CSV import',
 }
 
 export function StatusSubscribersView() {
@@ -154,7 +153,7 @@ export function StatusSubscribersView() {
   }
 
   return (
-    <div className="max-w-3xl w-full flex flex-col flex-1 min-h-0">
+    <div className="max-w-5xl w-full flex flex-col flex-1 min-h-0">
       <AdminListHeader
         searchValue={searchValue}
         onSearchChange={setSearchValue}
@@ -170,11 +169,18 @@ export function StatusSubscribersView() {
         }
       />
 
-      <div className="p-4 space-y-4">
-        <div className="flex gap-3">
-          <CountTile label="Total subscribers" value={countsQuery.data?.total ?? 0} />
-          <CountTile label="Active" value={countsQuery.data?.active ?? 0} />
-          <CountTile label="Unsubscribed" value={countsQuery.data?.unsubscribed ?? 0} />
+      <div className="p-3 space-y-3">
+        <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+          <AnalyticsStatRow
+            stats={[
+              { label: 'Total', value: (countsQuery.data?.total ?? 0).toLocaleString() },
+              { label: 'Active', value: (countsQuery.data?.active ?? 0).toLocaleString() },
+              {
+                label: 'Unsubscribed',
+                value: (countsQuery.data?.unsubscribed ?? 0).toLocaleString(),
+              },
+            ]}
+          />
         </div>
 
         {isLoading ? (
@@ -201,15 +207,17 @@ export function StatusSubscribersView() {
                     <div className="text-xs text-muted-foreground truncate">{sub.email}</div>
                   )}
                 </div>
-                <Badge variant="outline" size="sm" className="capitalize">
-                  {sub.scope === 'components'
-                    ? `${sub.componentIds.length} service${sub.componentIds.length === 1 ? '' : 's'}`
-                    : 'Whole page'}
-                </Badge>
-                <Badge variant="outline" size="sm" className="capitalize">
-                  {sub.source.replace('_', ' ')}
-                </Badge>
-                <div className="text-xs text-muted-foreground w-32 text-right shrink-0">
+                {sub.scope === 'components' && (
+                  <Badge variant="outline" size="sm">
+                    {`${sub.componentIds.length} service${sub.componentIds.length === 1 ? '' : 's'}`}
+                  </Badge>
+                )}
+                {SOURCE_LABELS[sub.source] && (
+                  <Badge variant="outline" size="sm">
+                    {SOURCE_LABELS[sub.source]}
+                  </Badge>
+                )}
+                <div className="text-xs text-muted-foreground text-right shrink-0 whitespace-nowrap">
                   {sub.unsubscribedAt ? (
                     <span>
                       Unsubscribed <TimeAgo date={sub.unsubscribedAt} />
@@ -252,11 +260,11 @@ function AddSubscribersDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => setOpen(o)}>
       <DialogTrigger asChild>
-        <NewButton noun="subscriber">Add subscribers</NewButton>
+        <NewButton noun="subscriber" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Add subscribers</DialogTitle>
+          <DialogTitle>New subscriber</DialogTitle>
           <DialogDescription>
             Subscribe existing accounts to status updates. Emails without a matching account are
             skipped; no new accounts are created.

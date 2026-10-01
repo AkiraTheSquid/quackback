@@ -165,8 +165,8 @@ function CardShell({
 }) {
   return (
     <section className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40">
-        <h4 className="text-[13px] font-semibold">{title}</h4>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40">
+        <h2 className="text-base font-semibold">{title}</h2>
         <div className="ml-auto">{action}</div>
       </div>
       {children}
@@ -380,7 +380,7 @@ function StatTiles({ data }: { data: StatusOverview }) {
       <AnalyticsStatRow
         stats={[
           {
-            label: '90-day uptime, all services',
+            label: '90-day uptime',
             value: data.uptime90d === null ? '-' : `${data.uptime90d.toFixed(2)}%`,
           },
           {
@@ -391,7 +391,7 @@ function StatTiles({ data }: { data: StatusOverview }) {
                 ? `+${data.subscribers.newLast7d} this week`
                 : undefined,
           },
-          { label: 'Incidents in the last 30 days', value: String(data.incidentsLast30d) },
+          { label: 'Incidents, 30 days', value: String(data.incidentsLast30d) },
         ]}
       />
     </div>
