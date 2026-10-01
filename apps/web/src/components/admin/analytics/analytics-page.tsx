@@ -71,7 +71,7 @@ function StatSection({ stats, children }: { stats: AnalyticsStatProps[]; childre
   return (
     <Card className="overflow-hidden py-0 gap-0">
       <AnalyticsStatRow stats={stats} />
-      <div className="border-t border-border/50 px-6 py-6">{children}</div>
+      <div className="border-t border-border/50 px-4 sm:px-6 py-6">{children}</div>
     </Card>
   )
 }
@@ -179,11 +179,11 @@ export function AnalyticsPage() {
         data-side-pane=""
         className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col border-r border-border/50 bg-card/30 overflow-hidden"
       >
-        <div className="shrink-0 px-4 py-3.5">
+        <div className="shrink-0 px-5 py-3.5">
           <PageHeader as="h2" title="Analytics" />
         </div>
         <ScrollArea className="min-h-0 flex-1">
-          <div className="px-5 pb-5">
+          <div className="px-2.5 pb-5">
             <div className="space-y-1">
               {sections.map(({ key, label, icon: Icon }) => {
                 const active = section === key
@@ -214,7 +214,7 @@ export function AnalyticsPage() {
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="w-full px-6 pt-4 pb-6 flex flex-col gap-4">
+          <div className="w-full px-4 sm:px-6 pt-4 pb-6 flex flex-col gap-4">
             {/* Header: mobile title + section switcher (left) · updated + period (right) */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 lg:hidden">
@@ -287,7 +287,7 @@ export function AnalyticsPage() {
                       activeMetric={activeMetric}
                       onMetricChange={setActiveMetric}
                     />
-                    <div className="border-t border-border/50 px-6 pt-7 pb-6">
+                    <div className="border-t border-border/50 px-4 sm:px-6 pt-7 pb-6">
                       <Suspense fallback={<ChartSkeleton className={CHART_HEIGHT_CLASS} />}>
                         <AnalyticsActivityChart
                           dailyStats={data.dailyStats}
@@ -317,7 +317,7 @@ export function AnalyticsPage() {
                           activeMetric={visitorMetric}
                           onMetricChange={setVisitorMetric}
                         />
-                        <div className="border-t border-border/50 px-6 pt-7 pb-6">
+                        <div className="border-t border-border/50 px-4 sm:px-6 pt-7 pb-6">
                           <Suspense fallback={<ChartSkeleton className={CHART_HEIGHT_CLASS} />}>
                             <AnalyticsVisitorChart
                               dailyStats={visitorData.dailyStats}

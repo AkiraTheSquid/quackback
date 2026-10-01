@@ -32,7 +32,7 @@ function AutomationLayout() {
         data-side-pane=""
         className="hidden w-64 shrink-0 flex-col overflow-hidden border-e border-border/50 bg-card/30 lg:flex xl:w-72"
       >
-        <div className="shrink-0 px-4 py-3.5">
+        <div className="shrink-0 px-5 py-3.5">
           <PageHeader
             as="h2"
             title={intl.formatMessage({
@@ -45,7 +45,7 @@ function AutomationLayout() {
           className="min-h-0 flex-1"
           scrollBarClassName="w-1.5 opacity-0 transition-opacity data-[scrolling]:opacity-100"
         >
-          <div className="px-5 pb-5">
+          <div className="px-2.5 pb-5">
             <AutomationNav />
           </div>
         </ScrollArea>

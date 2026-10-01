@@ -20,14 +20,14 @@ function SettingsLayout() {
         data-side-pane=""
         className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col border-r border-border/50 bg-card/30 overflow-hidden"
       >
-        <div className="shrink-0 px-4 py-3.5">
+        <div className="shrink-0 px-5 py-3.5">
           <PageHeader as="h2" title="Settings" />
         </div>
         <ScrollArea
           className="min-h-0 flex-1"
           scrollBarClassName="w-1.5 opacity-0 transition-opacity data-[scrolling]:opacity-100"
         >
-          <div className="px-5 pb-5">
+          <div className="px-2.5 pb-5">
             <SettingsNav />
           </div>
         </ScrollArea>
@@ -35,7 +35,7 @@ function SettingsLayout() {
 
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <ScrollArea className="min-h-0 flex-1">
-          <div data-settings-page="" className="px-6 pb-6 pt-3.5">
+          <div data-settings-page="" className="px-4 pb-6 pt-3.5 sm:px-6">
             <Outlet />
           </div>
         </ScrollArea>

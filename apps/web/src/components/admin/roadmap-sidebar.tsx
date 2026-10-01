@@ -121,7 +121,7 @@ export function RoadmapSidebar({ selectedRoadmapId, onSelectRoadmap }: RoadmapSi
       data-side-pane=""
       className="w-64 xl:w-72 shrink-0 flex flex-col border-r border-border/50 bg-card/30 overflow-hidden"
     >
-      <div className="shrink-0 px-4 py-3.5">
+      <div className="shrink-0 px-5 py-3.5">
         <PageHeader as="h2" title="Roadmap" />
       </div>
 
@@ -129,7 +129,7 @@ export function RoadmapSidebar({ selectedRoadmapId, onSelectRoadmap }: RoadmapSi
           FilterSection (static label + create button in the action slot) so it
           matches every other admin left pane. */}
       <ScrollArea className="flex-1">
-        <div className="px-5 pb-5">
+        <div className="px-2.5 pb-5">
           <FilterSection
             title="Roadmaps"
             action={

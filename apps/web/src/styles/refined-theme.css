@@ -53,6 +53,21 @@
   --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.1);
   --shadow-xl: 0 16px 40px oklch(0 0 0 / 0.12);
   --shadow-2xl: 0 20px 48px oklch(0 0 0 / 0.16);
+  /* Two-tone admin chrome: the rail and side panes sit on a tinted field, the page is a sheet. */
+  --chrome-background: #f4f4f5;
+  --chrome-hairline: #e4e4e7;
+  --chrome-rail-text: #52525b;
+  --chrome-pane-text: #3f3f46;
+  --chrome-icon: #8b8b93;
+  --chrome-label: #5f5f68;
+  --chrome-hover: rgba(0, 0, 0, 0.04);
+  --chrome-active-background: #ffffff;
+  --chrome-active-border: #d4d4d8;
+  --chrome-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --chrome-active-text: #09090b;
+  --chrome-active-icon: #9a6c00;
+  --chrome-pane-active-background: #f4f4f5;
+  --chrome-focus: #9a6c00;
 }
 
 .dark:where([data-visual-theme='refined']) {
@@ -98,6 +113,36 @@
   --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.5);
   --shadow-xl: 0 16px 40px oklch(0 0 0 / 0.55);
   --shadow-2xl: 0 20px 48px oklch(0 0 0 / 0.6);
+  --chrome-background: #09090b;
+  --chrome-hairline: #232327;
+  --chrome-rail-text: #a1a1aa;
+  --chrome-pane-text: #d4d4d8;
+  --chrome-icon: #71717a;
+  --chrome-label: #8b8b94;
+  --chrome-hover: rgba(255, 255, 255, 0.04);
+  --chrome-active-background: #1f1f23;
+  --chrome-active-border: #45454d;
+  --chrome-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --chrome-active-text: #fafafa;
+  --chrome-active-icon: #ffcf20;
+  --chrome-pane-active-background: #1f1f23;
+  --chrome-focus: #ffcf20;
+}
+
+/*
+ * Dark mode raises the admin page into a sheet. The surfaces are set on the canvas only, so
+ * the public portal and the widget keep the document-level dark tokens above.
+ */
+.dark[data-visual-theme='refined'] [data-admin-canvas] {
+  --background: #131316;
+  --card: #18181b;
+  --popover: #18181b;
+  --elevated: #18181b;
+  --muted: #1f1f23;
+  --secondary: #1f1f23;
+  --accent: #1f1f23;
+  --border: #27272a;
+  --input: #3f3f46;
 }
 
 [data-visual-theme='refined'] {
@@ -125,7 +170,7 @@
   letter-spacing: -0.02em;
 }
 
-/* Admin shell: one charcoal field. No inset rounded canvas. */
+/* Admin shell: no inset rounded canvas. The page is a flat sheet that meets the chrome on a hairline. */
 [data-visual-theme='refined'] [data-admin-shell] {
   padding: 0;
 }
@@ -133,36 +178,76 @@
 [data-visual-theme='refined'] [data-admin-canvas] {
   border-style: none;
   border-radius: 0;
+  background: var(--background);
+  color: var(--foreground);
 }
 
-/* Admin rail: labeled rows. */
+/* The rail is the only chrome: a tinted field beside the page sheet. */
 [data-visual-theme='refined'] [data-admin-rail] {
-  border-right: 1px solid var(--border);
+  background: var(--chrome-background);
+  border-color: var(--chrome-hairline);
+  --card: var(--chrome-background);
+}
+
+/* Side panes belong to the page: the sheet surface, separated from the body by a hairline. */
+[data-visual-theme='refined'] [data-side-pane] {
+  background: var(--background);
+  border-color: var(--chrome-hairline);
+}
+
+[data-visual-theme='refined'] [data-admin-rail] {
+  border-right: 1px solid var(--chrome-hairline);
+}
+
+[data-visual-theme='refined'] [data-side-pane] {
+  border-right-width: 1px;
+  border-inline-end-width: 1px;
 }
 
 [data-visual-theme='refined'] [data-admin-rail-item] {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 0 10px;
+  gap: 10px;
+  border: 1px solid transparent;
   border-radius: var(--radius-field);
-  color: var(--nav-inactive-color);
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--chrome-rail-text);
   background: transparent;
+  box-shadow: none;
+}
+
+[data-visual-theme='refined'] [data-admin-rail-item] > svg {
+  width: 17px;
+  height: 17px;
+  color: var(--chrome-icon);
 }
 
 [data-visual-theme='refined'] [data-admin-rail-item]:hover {
-  background: var(--accent);
-  color: var(--foreground);
+  background: var(--chrome-hover);
+  color: var(--chrome-rail-text);
 }
 
 [data-visual-theme='refined'] [data-admin-rail-item][data-active] {
-  background: var(--accent);
-  color: var(--foreground);
-  font-weight: 600;
+  background: var(--chrome-active-background);
+  border-color: var(--chrome-active-border);
+  box-shadow: var(--chrome-active-shadow);
+  color: var(--chrome-active-text);
+  font-weight: 500;
 }
 
-/* Side panes / settings / inbox filters — hairline only, no tinted card. */
-[data-visual-theme='refined'] [data-side-pane] {
-  background: transparent;
-  border-color: var(--border);
+[data-visual-theme='refined'] [data-admin-rail-item][data-active] > svg {
+  color: var(--chrome-active-icon);
 }
 
+[data-visual-theme='refined'] [data-admin-rail-item]:focus-visible,
+[data-visual-theme='refined'] [data-side-pane] .nav-row:focus-visible {
+  outline: 2px solid var(--chrome-focus);
+  outline-offset: 1px;
+}
+
+/* Menu and filter rows outside a pane (popovers, sheets) keep the plain row. */
 [data-visual-theme='refined'] .nav-row {
   border-radius: var(--radius-field);
   padding: 8px 10px;
@@ -194,6 +279,54 @@
   letter-spacing: 0;
   text-transform: none;
   color: var(--foreground);
+}
+
+/* Side pane rows: 32px, 13.5px, a flat fill when active. */
+[data-visual-theme='refined'] [data-side-pane] .nav-row {
+  box-sizing: border-box;
+  min-height: 32px;
+  gap: 10px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-field);
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--chrome-pane-text);
+  background: transparent;
+}
+
+[data-visual-theme='refined'] [data-side-pane] .nav-row > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--chrome-icon);
+}
+
+[data-visual-theme='refined'] [data-side-pane] .nav-row:hover {
+  background: var(--chrome-hover);
+  color: var(--chrome-pane-text);
+}
+
+[data-visual-theme='refined'] [data-side-pane] .nav-row.bg-muted,
+[data-visual-theme='refined'] [data-side-pane] .nav-row.bg-primary\/10,
+[data-visual-theme='refined'] [data-side-pane] .nav-row[data-active],
+[data-visual-theme='refined'] [data-side-pane] .nav-row[aria-selected='true'] {
+  background: var(--chrome-pane-active-background);
+  color: var(--chrome-active-text);
+  font-weight: 500;
+}
+
+[data-visual-theme='refined'] [data-side-pane] .nav-row.bg-muted > svg,
+[data-visual-theme='refined'] [data-side-pane] .nav-row.bg-primary\/10 > svg,
+[data-visual-theme='refined'] [data-side-pane] .nav-row[data-active] > svg,
+[data-visual-theme='refined'] [data-side-pane] .nav-row[aria-selected='true'] > svg {
+  color: var(--chrome-active-icon);
+}
+
+[data-visual-theme='refined'] [data-side-pane] .nav-section {
+  padding: 4px 10px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--chrome-label);
 }
 
 /* Menus, selects, command, popovers — elevated, 12px, 8px rows. */
@@ -324,6 +457,11 @@
   background: transparent;
 }
 
+[data-visual-theme='refined'] [data-admin-canvas] [data-slot='card'],
+[data-visual-theme='refined'] [data-admin-canvas] [data-settings-card] {
+  background: var(--card);
+}
+
 /* Settings pages — one type scale and the same panel chrome. */
 [data-visual-theme='refined'] [data-settings-page] [data-page-header] p {
   font-size: 13px;
@@ -371,7 +509,7 @@
 [data-visual-theme='refined'] [data-settings-page] .rounded-xl.border.bg-card,
 [data-visual-theme='refined'] [data-settings-page] .rounded-xl.border.shadow-sm,
 [data-visual-theme='refined'] [data-settings-page] [data-settings-card] {
-  background: transparent;
+  background: var(--card);
   box-shadow: none;
   border-color: var(--border);
 }

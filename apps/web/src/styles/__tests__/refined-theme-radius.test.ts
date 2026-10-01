@@ -27,7 +27,7 @@ describe('refined theme radius', () => {
     )
     expect(css).toContain('[data-settings-tile] {\n  border-radius: var(--radius-panel);')
     expect(css).toContain('.nav-row {\n  border-radius: var(--radius-field);')
-    expect(css).toContain('[data-admin-rail-item] {\n  border-radius: var(--radius-field);')
+    expect(css).toMatch(/\[data-admin-rail-item\] \{[^}]*border-radius: var\(--radius-field\);/)
     expect(css).toContain("[data-slot='tooltip-content'] {\n  border-radius: 0.375rem;")
     expect(css).toContain("[data-slot='dropdown-menu-item'],")
     expect(css).toMatch(/\[data-slot='command-item'\] \{\n  border-radius: var\(--radius-field\);/)
