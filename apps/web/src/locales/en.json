@@ -782,7 +782,7 @@
   "automation.test.send": "Send",
   "automation.test.reset": "Reset conversation",
   "automation.test.resetDone": "Conversation reset.",
-  "automation.test.retry": "Try again",
+  "automation.test.retry": "Retry",
   "automation.test.working": "Agent is working.",
   "automation.test.activity.searching": "Searching the knowledge base.",
   "automation.test.activity.reviewing": "Reviewing the conversation.",
