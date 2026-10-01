@@ -43,6 +43,11 @@ async function createEntry(
   return title
 }
 
+/** The entry title headings, without the "Most viewed" card heading above the list. */
+function entryTitles(page: import('@playwright/test').Page) {
+  return page.locator('h3').filter({ hasNotText: /^Most viewed$/ })
+}
+
 /**
  * Find the first list item card containing `title` text.
  * Uses h3 elements as they render entry titles.
@@ -67,7 +72,7 @@ test.describe('Changelog admin navigation', () => {
 
   test('page shows entry list or empty state', async ({ page }) => {
     // Either an h3 (entry title) or an empty-state message should be visible
-    const content = page.getByText('No changelog entries yet').or(page.locator('h3').first())
+    const content = page.getByText('No changelog entries yet').or(entryTitles(page).first())
 
     await expect(content.first()).toBeVisible({ timeout: 10000 })
   })
@@ -206,7 +211,7 @@ test.describe('Changelog edit entry', () => {
 
   test('clicking an entry row opens the edit modal', async ({ page }) => {
     // Ensure there is at least one entry to click
-    const firstCard = page.locator('h3').first()
+    const firstCard = entryTitles(page).first()
     if ((await firstCard.count()) === 0) {
       test.skip()
       return
@@ -222,7 +227,7 @@ test.describe('Changelog edit entry', () => {
   })
 
   test('edit modal shows title input pre-populated', async ({ page }) => {
-    const firstCard = page.locator('h3').first()
+    const firstCard = entryTitles(page).first()
     if ((await firstCard.count()) === 0) {
       test.skip()
       return
@@ -272,7 +277,7 @@ test.describe('Changelog edit entry', () => {
   })
 
   test('edit modal can be dismissed with Escape', async ({ page }) => {
-    const firstCard = page.locator('h3').first()
+    const firstCard = entryTitles(page).first()
     if ((await firstCard.count()) === 0) {
       test.skip()
       return
@@ -287,7 +292,7 @@ test.describe('Changelog edit entry', () => {
   })
 
   test('closing edit modal removes entry param from URL', async ({ page }) => {
-    const firstCard = page.locator('h3').first()
+    const firstCard = entryTitles(page).first()
     if ((await firstCard.count()) === 0) {
       test.skip()
       return
@@ -366,6 +371,7 @@ test.describe('Changelog publish and unpublish', () => {
       .locator('div')
       .filter({ hasText: /published/i })
       .locator('h3')
+      .filter({ hasNotText: /^Most viewed$/ })
 
     if ((await publishedRows.count()) === 0) {
       test.skip()
