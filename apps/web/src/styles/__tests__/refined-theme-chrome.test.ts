@@ -28,7 +28,11 @@ describe('refined theme chrome tokens', () => {
     ['--chrome-label', '#5f5f68', '#8b8b94'],
     ['--chrome-hover', 'rgba(0, 0, 0, 0.04)', 'rgba(255, 255, 255, 0.04)'],
     ['--chrome-active-background', '#e4e4e7', '#18181b'],
-    ['--chrome-active-shadow', 'inset 0 1px 2px rgba(0, 0, 0, 0.1)', 'inset 0 1px 2px rgba(0, 0, 0, 0.6)'],
+    [
+      '--chrome-active-shadow',
+      'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+      'inset 0 1px 2px rgba(0, 0, 0, 0.6)',
+    ],
     ['--chrome-active-text', '#09090b', '#fafafa'],
     ['--chrome-active-icon', '#9a6c00', '#ffcf20'],
     ['--chrome-pane-active-background', '#f4f4f5', '#1f1f23'],
@@ -91,11 +95,23 @@ describe('refined theme chrome rules', () => {
     expect(ring).toContain('outline-offset: 1px')
   })
 
-  it('meets the page sheet with no rounding and no inset', () => {
+  it('fills the screen with the page sheet on phones', () => {
     expect(block(`${R} [data-admin-shell] {`)).toContain('padding: 0')
     const canvas = block(`${R} [data-admin-canvas] {`)
     expect(canvas).toContain('border-radius: 0')
     expect(canvas).toContain('background: var(--background)')
+  })
+
+  it('insets the page sheet on the chrome ground from the small breakpoint up', () => {
+    expect(block(`${R} [data-admin-shell] {`)).toContain('background: var(--chrome-background)')
+    const media = css.slice(css.indexOf('@media (min-width: 640px)'))
+    const shell = media.slice(media.indexOf('[data-admin-shell]'))
+    expect(shell.slice(0, shell.indexOf('}'))).toContain('padding: 8px 8px 8px 0')
+    const canvas = media.slice(media.indexOf('[data-admin-canvas]'))
+    const canvasBlock = canvas.slice(0, canvas.indexOf('}'))
+    expect(canvasBlock).toContain('border: 1px solid var(--chrome-hairline)')
+    expect(canvasBlock).toContain('border-radius: 14px')
+    expect(block(`${R} [data-admin-rail] {\n  border-right`)).toContain('border-right: 0')
   })
 })
 
