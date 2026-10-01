@@ -67,7 +67,7 @@ export function NotificationsPage() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-16 sm:px-6">
+      <div className="w-full max-w-3xl space-y-4 px-4 pt-4 pb-16 sm:px-6">
         <PageHeader
           title="Notifications"
           actions={

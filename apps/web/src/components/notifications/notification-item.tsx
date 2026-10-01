@@ -82,7 +82,7 @@ export function NotificationItem({
   // `group` scopes the archive button's hover/focus visibility to this row;
   // only applied for the full variant, which is the only one that ever
   // renders the button.
-  const rowClassName = cn(isFullVariant && 'group', className)
+  const rowClassName = cn(isFullVariant && 'group block', className)
 
   const target = getNotificationTarget(notification)
 
@@ -258,17 +258,10 @@ function FullContent({
   return (
     <div
       className={cn(
-        'relative flex items-start gap-4 px-5 py-4 transition-colors hover:bg-muted/30',
+        'relative flex min-h-14 items-center gap-3 py-2.5 transition-colors hover:bg-muted/30',
         isUnread && 'bg-primary/[0.02]'
       )}
     >
-      {isUnread && (
-        <div
-          className="absolute start-0 top-3 bottom-3 w-0.5 rounded-full bg-primary"
-          aria-hidden="true"
-        />
-      )}
-
       <NotificationLeadingVisual
         notification={notification}
         icon={Icon}
@@ -277,49 +270,49 @@ function FullContent({
         variant="full"
       />
 
-      {/* End padding reserves room for the absolutely-positioned unread dot
-          and archive button so long titles never run underneath them. */}
-      <div className="flex-1 min-w-0 pe-14">
-        {/* The accent bar and dot are aria-hidden, so this plain-English
-            label is the only unread signal exposed to screen readers. Both
-            surfaces share this component, so full i18n of the row is out of
-            scope here. */}
+      {/* End margin on the time reserves room for the archive button so
+          long titles and timestamps never run underneath it. */}
+      <div className="min-w-0 flex-1">
+        {/* The dot is aria-hidden, so this plain-English label is the only
+            unread signal exposed to screen readers. Both surfaces share this
+            component, so full i18n of the row is out of scope here. */}
         {isUnread && <span className="sr-only">Unread</span>}
-        <p className={cn('text-sm leading-tight', isUnread ? 'font-medium' : 'text-foreground')}>
-          {notification.title}
-        </p>
-        {notification.body && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.body}</p>
-        )}
-        <div className="flex items-center gap-2 mt-1">
-          {notification.post && (
-            <>
-              <span className="text-[11px] text-muted-foreground/60 truncate max-w-[200px]">
-                {notification.post.title}
-              </span>
-              <span className="text-muted-foreground/40">·</span>
-            </>
-          )}
-          <time
-            className="text-[11px] text-muted-foreground/60 whitespace-nowrap"
-            dateTime={createdAt.toISOString()}
-            title={format(createdAt, 'MMM d, yyyy, h:mm a')}
+        <div className="flex items-baseline justify-between gap-3">
+          <p
+            className={cn(
+              'min-w-0 truncate text-sm leading-tight',
+              isUnread ? 'font-medium' : 'text-foreground'
+            )}
           >
-            {isToday(createdAt)
-              ? formatDistanceToNow(createdAt, { addSuffix: true })
-              : format(createdAt, 'MMM d, h:mm a')}
-          </time>
+            {notification.title}
+          </p>
+          <span className="me-9 flex shrink-0 items-center gap-2">
+            {isUnread && (
+              <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+            )}
+            <time
+              className="text-xs whitespace-nowrap text-muted-foreground"
+              dateTime={createdAt.toISOString()}
+              title={format(createdAt, 'MMM d, yyyy, h:mm a')}
+            >
+              {isToday(createdAt)
+                ? formatDistanceToNow(createdAt, { addSuffix: true })
+                : format(createdAt, 'MMM d, h:mm a')}
+            </time>
+          </span>
         </div>
+        {(notification.body || notification.post) && (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {notification.body}
+            {notification.body && notification.post && (
+              <span className="text-muted-foreground/40"> · </span>
+            )}
+            {notification.post && (
+              <span className="text-muted-foreground/70">{notification.post.title}</span>
+            )}
+          </p>
+        )}
       </div>
-
-      {/* Sits to the start-side of the archive button (below), clear of its
-          hitbox so the two never overlap. */}
-      {isUnread && (
-        <div
-          className="absolute end-10 top-4 flex-shrink-0 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-primary/10"
-          aria-hidden="true"
-        />
-      )}
 
       {onArchive && (
         <Button
@@ -329,7 +322,7 @@ function FullContent({
           onClick={handleArchiveClick}
           aria-label="Archive notification"
           className={cn(
-            'absolute end-2 top-2 h-7 w-7',
+            'absolute end-0 top-1/2 h-7 w-7 -translate-y-1/2',
             'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100',
             'transition-opacity'
           )}
