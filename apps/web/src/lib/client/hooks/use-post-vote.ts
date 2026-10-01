@@ -113,6 +113,7 @@ export function usePostVote({
         queryClient.setQueryData<number>(voteCountKeys.byPost(postId), data.voteCount)
         // Delta fork: un-voting deletes the importance rating — refresh the detail summary.
         queryClient.invalidateQueries({ queryKey: ['portal', 'post', postId] })
+        queryClient.invalidateQueries({ queryKey: ['importance'] })
       },
     })
   }

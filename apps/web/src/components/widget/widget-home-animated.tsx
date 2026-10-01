@@ -23,6 +23,10 @@ import { useInfiniteScroll } from '@/lib/client/hooks/use-infinite-scroll'
 import { WidgetVoteButton } from './widget-vote-button'
 import { useWidgetAuth } from './widget-auth-provider'
 import { sendToHost } from '@/lib/client/widget-bridge'
+import { getWidgetAuthHeaders } from '@/lib/client/widget-auth'
+import { useImportanceSummaries } from '@/lib/client/hooks/use-vote-importance'
+import { ImportancePicker } from '@/components/public/importance-picker'
+import type { ImportanceSummary } from '@/lib/shared/importance'
 import type { PostId } from '@quackback/ids'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { useWidgetImageUpload } from '@/lib/client/hooks/use-image-upload'
@@ -97,6 +101,7 @@ const WidgetPostRow = memo(
     ensureSessionThen,
     onAuthRequired,
     onSelect,
+    importance,
   }: {
     post: WidgetPost
     statusMap: Map<string, StatusInfo>
@@ -108,6 +113,8 @@ const WidgetPostRow = memo(
     ensureSessionThen: (callback: () => void | Promise<void>) => Promise<void>
     onAuthRequired?: () => void
     onSelect?: () => void
+    /** Delta fork: list-level rating summary for this post */
+    importance?: ImportanceSummary
   }) {
     const status = post.statusId ? (statusMap.get(post.statusId) ?? null) : null
     return (
@@ -158,6 +165,37 @@ const WidgetPostRow = memo(
           >
             {post.title}
           </p>
+          {/* Delta fork: rate importance straight from the list */}
+          <div onClick={(e) => e.stopPropagation()} className="mt-1">
+            <ImportancePicker
+              variant="row"
+              compact
+              postId={post.id as PostId}
+              initial={importance}
+              getAuthHeaders={getWidgetAuthHeaders}
+              noAccessReason={!canVote ? noAccessReason : undefined}
+              onAuthRequired={!canVote && !noAccessReason ? onAuthRequired : undefined}
+              onBeforeRate={
+                canVote
+                  ? async () => {
+                      let success = false
+                      await ensureSessionThen(() => {
+                        success = true
+                      })
+                      return success
+                    }
+                  : undefined
+              }
+              onRated={({ newlyVoted, voteCount }) => {
+                if (newlyVoted)
+                  sendToHost({
+                    type: 'quackback:event',
+                    name: 'vote',
+                    payload: { postId: post.id, voted: true, voteCount },
+                  })
+              }}
+            />
+          </div>
         </div>
       </div>
     )
@@ -168,7 +206,8 @@ const WidgetPostRow = memo(
     prev.showBoard === next.showBoard &&
     prev.compact === next.compact &&
     prev.canVote === next.canVote &&
-    prev.noAccessReason === next.noAccessReason
+    prev.noAccessReason === next.noAccessReason &&
+    prev.importance === next.importance
 )
 
 // ── Main component ──
@@ -193,6 +232,7 @@ export function WidgetHomeAnimated({
     emitEvent,
     metadata,
     identifyWithEmail,
+    sessionVersion,
   } = useWidgetAuth()
   const { upload: uploadImage } = useWidgetImageUpload()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -316,6 +356,17 @@ export function WidgetHomeAnimated({
       return { posts: (json.data?.posts ?? []) as WidgetPost[] }
     },
     enabled: debouncedPopularSearch.length > 0,
+  })
+
+  // Delta fork: importance summaries for every row on screen, one request.
+  const importanceMap = useImportanceSummaries({
+    postIds: [
+      ...(similarPostResults?.posts ?? []).slice(0, 3).map((p) => p.id),
+      ...(popularSearchData?.posts ?? []).map((p) => p.id),
+      ...allPopularPosts.map((p) => p.id),
+    ],
+    viewer: sessionVersion,
+    getAuthHeaders: getWidgetAuthHeaders,
   })
 
   const handleAuthRequired = useCallback(
@@ -698,6 +749,7 @@ export function WidgetHomeAnimated({
                                   noAccessReason={voteNoAccessReason}
                                   onAuthRequired={() => handleAuthRequired(post.id)}
                                   onSelect={() => onPostSelect?.(post.id)}
+                                  importance={importanceMap?.[post.id]}
                                 />
                               ))}
                             </div>
@@ -972,6 +1024,7 @@ export function WidgetHomeAnimated({
                           noAccessReason={voteNoAccessReason}
                           onAuthRequired={() => handleAuthRequired(post.id)}
                           onSelect={() => onPostSelect?.(post.id)}
+                          importance={importanceMap?.[post.id]}
                         />
                       ))}
                     </div>
@@ -1030,6 +1083,7 @@ export function WidgetHomeAnimated({
                         noAccessReason={voteNoAccessReason}
                         onAuthRequired={() => handleAuthRequired(post.id)}
                         onSelect={() => onPostSelect?.(post.id)}
+                        importance={importanceMap?.[post.id]}
                       />
                     ))}
                     {hasNextPage && (

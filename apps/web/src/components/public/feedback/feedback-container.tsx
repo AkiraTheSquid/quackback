@@ -13,6 +13,7 @@ import {
 } from '@/components/public/feedback/public-filters-bar'
 import { usePublicFilters } from '@/components/public/feedback/use-public-filters'
 import { PostCard } from '@/components/public/post-card'
+import { useImportanceSummaries } from '@/lib/client/hooks/use-vote-importance'
 import type { PublicBoardWithStats } from '@/lib/shared/types'
 import type { PortalWelcomeCard as PortalWelcomeCardData } from '@/lib/shared/types/settings'
 import type { PostStatusEntity, Tag } from '@/lib/shared/db-types'
@@ -154,6 +155,11 @@ export function FeedbackContainer({
   })
 
   const posts = flattenPublicPosts(postsData)
+  // Delta fork: one request for every visible post's importance summary
+  const importanceMap = useImportanceSummaries({
+    postIds: posts.map((p) => p.id),
+    viewer: effectiveUser?.email ?? 'anon',
+  })
   // Show subtle loading indicator when fetching new filter results (not for pagination)
   const isLoading = isFetching && !isFetchingNextPage
 
@@ -305,6 +311,8 @@ export function FeedbackContainer({
                           post.board ? (boardPermissions?.[post.board.id]?.canVote ?? false) : false
                         }
                         showAvatar={false}
+                        showImportance
+                        importance={importanceMap?.[post.id]}
                       />
                     </div>
                   ))}

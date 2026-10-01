@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { createServerFn } from '@tanstack/react-start'
 import {
+  isValidTypeId,
   type PostId,
   type BoardId,
   type StatusId,
@@ -31,7 +32,10 @@ import {
 } from '@/lib/server/domains/posts/post.public.utils'
 import { createPost } from '@/lib/server/domains/posts/post.service'
 import { voteOnPost } from '@/lib/server/domains/posts/post.voting'
-import { setVoteImportance } from '@/lib/server/domains/posts/post.importance'
+import {
+  setVoteImportance,
+  getImportanceSummaries,
+} from '@/lib/server/domains/posts/post.importance'
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, type ImportanceLevel } from '@/lib/shared/importance'
 import { checkAnonVoteRateLimit } from '@/lib/server/utils/anon-rate-limit'
 import { getPostPermissions } from '@/lib/server/domains/posts/post.permissions'
@@ -1116,6 +1120,36 @@ export const setVoteImportanceFn = createServerFn({ method: 'POST' })
       )
     } catch (error) {
       log.error({ err: error }, 'set vote importance failed')
+      throw error
+    }
+  })
+
+const getImportanceSummariesSchema = z.object({
+  postIds: z.array(z.string().max(64)).max(100),
+})
+
+/**
+ * Delta fork: rating summaries (count, average, caller's own rating) for a
+ * page of posts, so lists can show the importance line without one request
+ * per row. Optional auth: a signed-out caller gets `mine: null` everywhere.
+ * Posts the caller can't see are left out of the result.
+ */
+export const getImportanceSummariesFn = createServerFn({ method: 'GET' })
+  .validator(getImportanceSummariesSchema)
+  .handler(async ({ data }: { data: z.infer<typeof getImportanceSummariesSchema> }) => {
+    try {
+      // Same outer gate as listPublicPostsFn: a private portal gives a denied
+      // caller nothing.
+      const access = await resolvePortalAccessForRequest()
+      if (!access.granted) return {}
+
+      const ctx = hasAuthCredentials() ? await getOptionalAuth() : null
+      const actor = await policyActorFromAuth(ctx)
+      const principalId = (ctx?.principal?.id ?? null) as PrincipalId | null
+      const postIds = data.postIds.filter((id) => isValidTypeId(id, 'post')) as PostId[]
+      return await getImportanceSummaries(postIds, principalId, actor)
+    } catch (error) {
+      log.error({ err: error }, 'get importance summaries failed')
       throw error
     }
   })

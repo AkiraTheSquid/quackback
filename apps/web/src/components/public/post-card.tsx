@@ -29,6 +29,8 @@ import type { PostStatusEntity } from '@/lib/shared/db-types'
 import { usePostVote } from '@/lib/client/hooks/use-post-vote'
 import { cn, getInitials } from '@/lib/shared/utils'
 import { useEnsureAnonSession } from '@/lib/client/hooks/use-ensure-anon-session'
+import { ImportancePicker } from '@/components/public/importance-picker'
+import type { ImportanceSummary } from '@/lib/shared/importance'
 import type { PostId, StatusId } from '@quackback/ids'
 
 interface PostCardProps {
@@ -85,6 +87,10 @@ interface PostCardProps {
   showQuickActions?: boolean
   /** Whether to show avatar in meta row */
   showAvatar?: boolean
+  /** Delta fork: show the importance line (portal lists). */
+  showImportance?: boolean
+  /** Delta fork: list-level rating summary for this post */
+  importance?: ImportanceSummary
 }
 
 export function PostCard({
@@ -117,6 +123,8 @@ export function PostCard({
   onMouseLeave,
   showQuickActions = false,
   showAvatar = true,
+  showImportance = false,
+  importance,
 }: PostCardProps): React.ReactElement {
   // Safe hook - returns null in admin context where AuthPopoverProvider isn't available
   const intl = useIntl()
@@ -450,6 +458,23 @@ export function PostCard({
               <span className="text-[10px] text-muted-foreground/60">+{tags.length - 3}</span>
             )}
           </div>
+        )}
+
+        {/* Delta fork: rate importance straight from the list */}
+        {showImportance && (
+          <ImportancePicker
+            variant="row"
+            postId={id}
+            initial={importance}
+            className="mt-2"
+            noAccessReason={voteNoAccessMsg}
+            onAuthRequired={
+              !canVote && !isAuthenticated
+                ? () => authPopover?.openAuthPopover({ mode: 'login' })
+                : undefined
+            }
+            onBeforeRate={canVote && !isAuthenticated ? ensureAnonSession : undefined}
+          />
         )}
 
         {/* Meta row */}

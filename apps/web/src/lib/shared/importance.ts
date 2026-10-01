@@ -33,3 +33,12 @@ export function importanceLabel(value: number | null | undefined): string | null
   if (value == null) return null
   return IMPORTANCE_LEVELS.find((l) => l.value === value)?.label ?? null
 }
+
+/** Summaries for a page of posts, keyed by post TypeID. */
+export type ImportanceSummaryMap = Record<string, ImportanceSummary>
+
+export const EMPTY_IMPORTANCE_SUMMARY: ImportanceSummary = {
+  ratingCount: 0,
+  average: null,
+  mine: null,
+}

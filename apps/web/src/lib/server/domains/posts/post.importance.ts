@@ -7,11 +7,29 @@
  * voteOnPost deletes the row, so the rating goes with it.
  */
 
-import { db, posts, votes, postSubscriptions, boards, principal, sql } from '@/lib/server/db'
+import {
+  db,
+  posts,
+  votes,
+  postSubscriptions,
+  boards,
+  principal,
+  sql,
+  and,
+  eq,
+  inArray,
+  isNull,
+} from '@/lib/server/db'
+import { postViewFilter, type Actor } from '@/lib/server/policy'
 import { createId, toUuid, type PostId, type PrincipalId } from '@quackback/ids'
 import { getExecuteRows } from '@/lib/server/utils'
 import { NotFoundError } from '@/lib/shared/errors'
-import type { ImportanceLevel, ImportanceSummary } from '@/lib/shared/importance'
+import {
+  EMPTY_IMPORTANCE_SUMMARY,
+  type ImportanceLevel,
+  type ImportanceSummary,
+  type ImportanceSummaryMap,
+} from '@/lib/shared/importance'
 
 export interface SetImportanceResult {
   voted: boolean
@@ -53,6 +71,72 @@ export async function getImportanceSummary(
     average: row?.average == null ? null : Number(row.average),
     mine: row?.mine == null ? null : (Number(row.mine) as ImportanceLevel),
   }
+}
+
+/**
+ * Rating summaries for many posts at once (post lists). Keyed by post TypeID.
+ *
+ * Only posts the actor could see in the public list get an entry (same
+ * postViewFilter + soft-delete rules as listPublicPosts), so a caller can't
+ * read ratings for a post on a board it isn't allowed to view. Visible posts
+ * with no votes get a zero-rating entry.
+ */
+export async function getImportanceSummaries(
+  postIds: PostId[],
+  principalId: PrincipalId | null,
+  actor: Actor
+): Promise<ImportanceSummaryMap> {
+  const out: ImportanceSummaryMap = {}
+  if (postIds.length === 0) return out
+
+  const visible = await db
+    .select({ id: posts.id })
+    .from(posts)
+    .innerJoin(boards, eq(posts.boardId, boards.id))
+    .where(
+      and(
+        inArray(posts.id, postIds),
+        postViewFilter(actor),
+        isNull(boards.deletedAt),
+        isNull(posts.deletedAt)
+      )
+    )
+  if (visible.length === 0) return out
+  for (const { id } of visible) out[id] = { ...EMPTY_IMPORTANCE_SUMMARY }
+
+  const byUuid = new Map(visible.map(({ id }) => [toUuid(id), id]))
+  const principalUuid = principalId ? toUuid(principalId) : null
+
+  const result = await db.execute(sql`
+    SELECT
+      post_id,
+      COUNT(importance)::int AS rating_count,
+      AVG(importance)::float8 AS average,
+      MAX(importance) FILTER (WHERE principal_id = ${principalUuid}::uuid) AS mine
+    FROM ${votes}
+    WHERE post_id IN (${sql.join(
+      [...byUuid.keys()].map((u) => sql`${u}::uuid`),
+      sql`, `
+    )})
+    GROUP BY post_id
+  `)
+  const rows = getExecuteRows<{
+    post_id: string
+    rating_count: number
+    average: number | null
+    mine: number | null
+  }>(result)
+
+  for (const row of rows) {
+    const id = byUuid.get(row.post_id)
+    if (!id) continue
+    out[id] = {
+      ratingCount: Number(row.rating_count ?? 0),
+      average: row.average == null ? null : Number(row.average),
+      mine: row.mine == null ? null : (Number(row.mine) as ImportanceLevel),
+    }
+  }
+  return out
 }
 
 /**
