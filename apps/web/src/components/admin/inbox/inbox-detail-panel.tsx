@@ -386,7 +386,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
                       {getChannelDescriptor(conversation!.channel)?.label} user
                     </p>
                   ) : (
-                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
                       Anonymous <UnreachableBadge channel={conversation?.channel ?? 'email'} />
                     </p>
                   )
@@ -825,7 +825,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
     return (
       <aside
         aria-label="Item details"
-        className="hidden h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
+        className="hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96"
       >
         {detailsBody}
       </aside>
@@ -835,7 +835,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   return (
     <aside
       aria-label="Item details"
-      className="hidden h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
+      className="hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96"
     >
       <Tabs
         value={tab}
