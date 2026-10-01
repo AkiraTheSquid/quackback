@@ -314,6 +314,7 @@ export function PortalAuthTab({ portalConfig, teamOpenSignup }: PortalAuthTabPro
             onChange={handleVisibilitySelect}
             options={VISIBILITY_OPTIONS}
             disabled={isAccessBusy}
+            className="sm:grid-cols-2"
           />
 
           {/* Directly under the tiles, so the team-always-has-access reassurance
