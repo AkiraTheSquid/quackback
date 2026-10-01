@@ -133,6 +133,30 @@ describe('Help Center domains and languages autosave', () => {
       }
     )
 
+    it('saves a mixed-case domain once, then treats the lower-cased form as saved', async () => {
+      renderTab()
+      const input = screen.getByLabelText('Domain') as HTMLInputElement
+      typeAndBlur(input, 'Help.Acme.com')
+      await waitFor(() => expect(fns.updateDomain).toHaveBeenCalledTimes(1))
+      expect(fns.updateDomain).toHaveBeenCalledWith({ data: { domain: 'help.acme.com' } })
+      await waitFor(() => expect(input.value).toBe('help.acme.com'))
+      fireEvent.blur(input)
+      await new Promise((resolve) => setTimeout(resolve, 30))
+      expect(fns.updateDomain).toHaveBeenCalledTimes(1)
+    })
+
+    it.each([
+      ['hilfe.müller.de', 'hilfe.xn--mller-kva.de'],
+      ['help.shop.xn--p1ai', 'help.shop.xn--p1ai'],
+      ['help.acme.com.', 'help.acme.com'],
+    ])('accepts %s and sends %s', async (typed, sent) => {
+      renderTab()
+      typeAndBlur(screen.getByLabelText('Domain'), typed)
+      await waitFor(() => expect(fns.updateDomain).toHaveBeenCalledTimes(1))
+      expect(fns.updateDomain).toHaveBeenCalledWith({ data: { domain: sent } })
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
     it('does not save an unchanged value', async () => {
       renderTab()
       fireEvent.blur(screen.getByLabelText('Domain'))
@@ -148,6 +172,37 @@ describe('Help Center domains and languages autosave', () => {
       await new Promise((resolve) => setTimeout(resolve, 30))
       expect(toastError).toHaveBeenCalledTimes(1)
       expect(toastError).toHaveBeenCalledWith("Couldn't save. Domain already in use")
+    })
+  })
+
+  describe('overlapping saves', () => {
+    it('runs a terms save and the auto-translate toggle one after another', async () => {
+      const order: string[] = []
+      let releaseFirst!: () => void
+      fns.updateAutoTranslate.mockImplementation(
+        (arg: { data: { enabled?: boolean; protectedTerms?: string[] } }) => {
+          const label = arg.data.protectedTerms ? 'terms' : 'toggle'
+          order.push(`start ${label}`)
+          return new Promise((resolve) => {
+            const done = () => {
+              order.push(`end ${label}`)
+              resolve({})
+            }
+            if (label === 'terms') releaseFirst = done
+            else done()
+          })
+        }
+      )
+      renderTab()
+      typeAndBlur(screen.getByLabelText('Protected terms'), 'API')
+      await waitFor(() => expect(order).toEqual(['start terms']))
+      fireEvent.click(screen.getByRole('switch', { name: /Auto-translate on publish/ }))
+      await new Promise((resolve) => setTimeout(resolve, 30))
+      expect(order).toEqual(['start terms'])
+      releaseFirst()
+      await waitFor(() =>
+        expect(order).toEqual(['start terms', 'end terms', 'start toggle', 'end toggle'])
+      )
     })
   })
 

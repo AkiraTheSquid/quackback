@@ -339,10 +339,17 @@ export function useUpdateSpamFilterConfig() {
   })
 }
 
+/**
+ * Help Center config writes are read-merge-write on the server, so every
+ * mutation that changes it shares one scope and runs after the previous one settles.
+ */
+const HELP_CENTER_CONFIG_SCOPE = { id: 'help-center-config' } as const
+
 export function useUpdateHelpCenterConfig() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterConfigFn>[0]['data']) =>
       updateHelpCenterConfigFn({ data }),
@@ -355,6 +362,7 @@ export function useUpdateHelpCenterSeo() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterSeoFn>[0]['data']) =>
       updateHelpCenterSeoFn({ data }),
@@ -367,6 +375,7 @@ export function useEnableHelpCenterLocale() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     mutationFn: (data: Parameters<typeof enableHelpCenterLocaleFn>[0]['data']) =>
       enableHelpCenterLocaleFn({ data }),
     onSuccess: () =>
@@ -378,6 +387,7 @@ export function useDisableHelpCenterLocale() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     mutationFn: (locale: Parameters<typeof disableHelpCenterLocaleFn>[0]['data']['locale']) =>
       disableHelpCenterLocaleFn({ data: { locale } }),
     onSuccess: () =>
@@ -389,6 +399,7 @@ export function useUpdateHelpCenterLocaleChrome() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterLocaleChromeFn>[0]['data']) =>
       updateHelpCenterLocaleChromeFn({ data }),
@@ -401,6 +412,7 @@ export function useUpdateHelpCenterAutoTranslate() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     meta: AUTOSAVE,
     mutationFn: (data: Parameters<typeof updateHelpCenterAutoTranslateFn>[0]['data']) =>
       updateHelpCenterAutoTranslateFn({ data }),
@@ -413,6 +425,7 @@ export function useUpdateHelpCenterDomain() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     // The server's reasons (a host already in use, say) are written for the person saving.
     meta: { ...AUTOSAVE, showServerMessage: true },
     mutationFn: (domain: string | null) => updateHelpCenterDomainFn({ data: { domain } }),
@@ -425,6 +438,7 @@ export function useVerifyHelpCenterDomain() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: HELP_CENTER_CONFIG_SCOPE,
     mutationFn: () => verifyHelpCenterDomainFn({ data: {} }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsQueries.helpCenterConfig().queryKey })

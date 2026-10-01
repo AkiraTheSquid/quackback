@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TrashIcon, XCircleIcon } from '@heroicons/react/24/solid'
 import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row'
@@ -49,12 +49,30 @@ const LOCALE_LABELS: Record<string, string> = {
   nl: 'Nederlands',
 }
 
-const HOSTNAME_PATTERN = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i
+const HOSTNAME_PATTERN =
+  /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,63}|xn--[a-z0-9-]{1,59})$/
+
+/**
+ * The stored form of a hostname: trimmed, one trailing dot dropped, IDN labels
+ * as punycode, lower case. Null when the value is not a bare hostname. The
+ * server canonicalises the same way, so the two agree on what is already saved.
+ */
+export function normalizeHelpCenterDomain(value: string): string | null {
+  const trimmed = value.trim().replace(/\.$/, '')
+  if (!trimmed || /[\s/:@?#\\]/.test(trimmed)) return null
+  let ascii: string
+  try {
+    ascii = new URL(`http://${trimmed}`).hostname
+  } catch {
+    return null
+  }
+  const lower = ascii.toLowerCase()
+  return HOSTNAME_PATTERN.test(lower) ? lower : null
+}
 
 /** An empty value clears the domain; anything else must be a bare hostname. */
 export function isValidHelpCenterDomain(value: string): boolean {
-  const trimmed = value.trim()
-  return trimmed === '' || HOSTNAME_PATTERN.test(trimmed)
+  return value.trim() === '' || normalizeHelpCenterDomain(value) !== null
 }
 
 const MAX_PROTECTED_TERMS = 100
@@ -118,6 +136,7 @@ export function DomainsLanguagesTab({ config }: DomainsLanguagesTabProps) {
 
 function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
   const [value, setValue] = useState(domain.domain ?? '')
+  const [savedDomain, setSavedDomain] = useState(domain.domain ?? '')
   const [invalid, setInvalid] = useState(false)
   const updateDomain = useUpdateHelpCenterDomain()
   const verifyDomain = useVerifyHelpCenterDomain()
@@ -127,19 +146,26 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
   })
 
   const busy = verifyDomain.isPending
+  const verifyDisabled = busy || updateDomain.isPending
+
+  useEffect(() => {
+    setSavedDomain(domain.domain ?? '')
+  }, [domain.domain])
 
   function save() {
-    const next = value.trim()
-    if (next === (domain.domain ?? '')) {
-      setInvalid(false)
-      return
-    }
-    if (!isValidHelpCenterDomain(next)) {
+    const next = normalizeHelpCenterDomain(value) ?? ''
+    if (value.trim() !== '' && next === '') {
       setInvalid(true)
       return
     }
     setInvalid(false)
-    updateDomain.mutate(next || null)
+    if (next === savedDomain) return
+    updateDomain.mutate(next || null, {
+      onSuccess: () => {
+        setSavedDomain(next)
+        setValue(next)
+      },
+    })
   }
 
   return (
@@ -186,7 +212,7 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
             <Button
               variant="outline"
               size="sm"
-              disabled={busy}
+              disabled={verifyDisabled}
               onClick={() => verifyDomain.mutate()}
             >
               <InlineSpinner visible={verifyDomain.isPending} />
