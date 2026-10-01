@@ -5,6 +5,8 @@ interface SettingsCardProps {
   description?: string
   action?: React.ReactNode
   variant?: 'default' | 'danger'
+  /** A body without padding, for a `SettingsList` whose rows carry the card's horizontal padding. */
+  flush?: boolean
   contentClassName?: string
   children: React.ReactNode
 }
@@ -14,6 +16,7 @@ export function SettingsCard({
   description,
   action,
   variant = 'default',
+  flush = false,
   contentClassName,
   children,
 }: SettingsCardProps): React.ReactElement {
@@ -43,7 +46,7 @@ export function SettingsCard({
           {action}
         </div>
       )}
-      <div className={cn('p-4 sm:p-6', contentClassName)}>{children}</div>
+      <div className={cn(!flush && 'p-4 sm:p-6', contentClassName)}>{children}</div>
     </section>
   )
 }

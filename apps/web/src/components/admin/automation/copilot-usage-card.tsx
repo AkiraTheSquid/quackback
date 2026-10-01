@@ -79,7 +79,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
 
   if (unused) {
     return (
-      <SettingsCard title="Copilot usage" contentClassName="p-0">
+      <SettingsCard title="Copilot usage" flush>
         <EmptyState
           size="compact"
           icon={UserGroupIcon}
@@ -90,7 +90,7 @@ export function CopilotUsageCard({ showActionsFunnel, range }: CopilotUsageCardP
   }
 
   return (
-    <SettingsCard title="Copilot usage" contentClassName="p-0">
+    <SettingsCard title="Copilot usage" flush>
       <PerformanceStatRow
         stats={[
           {

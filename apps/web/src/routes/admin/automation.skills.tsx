@@ -158,7 +158,7 @@ function SkillsPage() {
           })}
         </p>
       ) : (
-        <SettingsCard contentClassName={skills.length === 0 ? 'p-0' : undefined}>
+        <SettingsCard flush={skills.length === 0}>
           {skills.length === 0 ? (
             <EmptyState
               size="compact"

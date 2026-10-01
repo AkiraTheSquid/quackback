@@ -348,7 +348,7 @@ export function TagsSettingsPage({ initialTags, boards }: TagsSettingsPageProps)
       crumbs={[{ label: 'Feedback & Roadmaps' }]}
       actions={tags.length > 0 ? <NewButton noun="tag" onClick={openCreate} /> : undefined}
     >
-      <SettingsCard contentClassName="p-0 sm:p-0">
+      <SettingsCard flush>
         {tags.length === 0 ? (
           <EmptyState
             size="compact"

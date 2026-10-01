@@ -43,7 +43,7 @@ export function AttributeList({ items, onNew, emptyDescription, children }: Attr
   return (
     <SettingsCard
       title="Attributes"
-      contentClassName="p-0 sm:p-0"
+      flush
       action={<NewButton noun="attribute" onClick={onNew} />}
     >
       {items.length === 0 ? (

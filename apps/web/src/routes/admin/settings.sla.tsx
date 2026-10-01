@@ -227,7 +227,7 @@ function SlaSettingsPage() {
         action={
           <NewButton noun="policy" onClick={() => setEditor({ mode: 'create', seed: null })} />
         }
-        contentClassName="p-0 sm:p-0"
+        flush
       >
         <Tabs
           value={tab}

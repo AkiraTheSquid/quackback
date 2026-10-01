@@ -346,7 +346,7 @@ export function MembersTab({ currentMember }: MembersTabProps) {
         </Button>
       </div>
 
-      <SettingsCard contentClassName="p-0 sm:p-0">
+      <SettingsCard flush>
         {/* md+: standard table */}
         <div className="hidden md:block">
           <Table>

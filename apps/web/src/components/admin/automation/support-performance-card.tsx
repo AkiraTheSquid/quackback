@@ -86,7 +86,7 @@ export function SupportPerformanceCard({ range }: { range: DateRange }) {
   const anyMiss = miss != null && CLOCKS.some((c) => miss[c.key].count > 0)
 
   return (
-    <SettingsCard title="SLAs and workflows" contentClassName="p-0">
+    <SettingsCard title="SLAs and workflows" flush>
       {isLoading ? (
         // Loading skeleton in the stat row's own grid: without it the stats
         // read "No data" while fetching, indistinguishable from "no clocks

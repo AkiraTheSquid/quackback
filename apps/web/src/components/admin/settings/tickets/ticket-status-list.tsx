@@ -198,7 +198,7 @@ export function TicketStatusList({
             <SettingsCard
               key={category}
               title={`${TICKET_STATUS_CATEGORY_LABELS[category]} · ${CATEGORY_SLA[category]}`}
-              contentClassName="p-0 sm:p-0"
+              flush
             >
               <SortableContext
                 items={group.map((s) => s.id)}

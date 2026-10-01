@@ -58,7 +58,7 @@ export function ChannelsHubPage() {
 
   return (
     <SettingsPage page="/admin/settings/channels" crumbs={[{ label: 'Support' }]}>
-      <SettingsCard contentClassName="p-0">
+      <SettingsCard flush>
         <SettingsList>
           <SettingsListRow
             to="/admin/settings/channels/messenger"

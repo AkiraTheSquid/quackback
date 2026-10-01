@@ -76,7 +76,7 @@ function EmailActivityCard() {
           </Button>
         ) : undefined
       }
-      contentClassName={all.length === 0 ? undefined : 'p-0'}
+      flush={all.length > 0}
     >
       {all.length === 0 ? (
         <p className="text-sm text-muted-foreground">No email recorded yet.</p>

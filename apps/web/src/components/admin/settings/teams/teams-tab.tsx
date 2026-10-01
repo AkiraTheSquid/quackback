@@ -67,7 +67,7 @@ export function TeamsTab() {
         title="Teams"
         description="Group teammates into named teams."
         action={teams.length > 0 ? <NewButton noun="team" onClick={openCreate} /> : undefined}
-        contentClassName="p-0 sm:p-0"
+        flush
       >
         {teams.length === 0 ? (
           <EmptyState

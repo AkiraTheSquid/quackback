@@ -43,7 +43,7 @@ export function RolesTab() {
           />
         ) : undefined
       }
-      contentClassName="p-0 sm:p-0"
+      flush
     >
       {maxCustomRoles != null && (
         <div className="px-4 pt-4 sm:px-6">

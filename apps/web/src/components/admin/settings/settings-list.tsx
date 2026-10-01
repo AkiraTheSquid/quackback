@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/shared/utils'
 
-/** Divided rows, meant for `SettingsCard contentClassName="p-0"`. */
+/** Divided rows. Rows carry their own horizontal padding, so put the list in `SettingsCard flush`. */
 export function SettingsList({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div data-slot="settings-list" className={cn('divide-y divide-border/50', className)}>

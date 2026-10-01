@@ -55,7 +55,7 @@ export function IdentityProvidersSection({
       title="Single sign-on (OIDC)"
       description="Okta, Auth0, Microsoft Entra ID, Keycloak, or any OpenID Connect IdP."
       action={tierEnabled && providers.length > 0 ? createAction : undefined}
-      contentClassName="p-0 sm:p-0"
+      flush
     >
       {!tierEnabled ? (
         <div className="p-4 sm:p-6">

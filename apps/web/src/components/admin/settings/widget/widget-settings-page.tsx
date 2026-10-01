@@ -1256,7 +1256,7 @@ export function AssistantLinkCard({
 }) {
   const off = assistant?.enabled === false
   return (
-    <SettingsCard contentClassName="p-0 sm:p-0">
+    <SettingsCard flush>
       <SettingsList>
         <SettingsListRow
           to="/admin/automation/agent"

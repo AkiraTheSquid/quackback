@@ -87,7 +87,7 @@ function ConnectorsPage() {
           })}
         </p>
       ) : (
-        <SettingsCard contentClassName="p-0">
+        <SettingsCard flush>
           {connectors.length === 0 && (
             <EmptyState
               size="compact"

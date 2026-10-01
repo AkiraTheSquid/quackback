@@ -24,7 +24,7 @@ export function QuinnPerformanceCard({ range }: { range: DateRange }) {
         id: 'automation.performance.agent.title',
         defaultMessage: 'AI agent',
       })}
-      contentClassName="p-0"
+      flush
     >
       {performanceQuery.isError ? (
         <div className="flex items-center justify-between gap-3 p-4 sm:p-6">

@@ -222,7 +222,7 @@ function ConnectorDetailPage() {
         </SettingRows>
       </SettingsCard>
 
-      <SettingsCard title="Tool permissions" contentClassName="p-0">
+      <SettingsCard title="Tool permissions" flush>
         <ToolGroup
           title="Read-only tools"
           tools={reads}

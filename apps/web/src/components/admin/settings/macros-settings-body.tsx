@@ -12,7 +12,7 @@ export function MacrosSettingsBody({
   onCreatingChange: (creating: boolean) => void
 }) {
   return entitled ? (
-    <SettingsCard contentClassName="p-0 sm:p-0">
+    <SettingsCard flush>
       <MacrosManager creating={creating} onCreatingChange={onCreatingChange} />
     </SettingsCard>
   ) : (

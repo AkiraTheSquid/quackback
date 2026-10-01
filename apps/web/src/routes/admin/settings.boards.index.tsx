@@ -51,7 +51,7 @@ function BoardsSettingsPage() {
       crumbs={FEEDBACK_CRUMBS}
       actions={boards.length > 0 ? <CreateBoardDialog /> : undefined}
     >
-      <SettingsCard contentClassName="p-0 sm:p-0">
+      <SettingsCard flush>
         {boards.length === 0 ? (
           <EmptyState
             size="compact"

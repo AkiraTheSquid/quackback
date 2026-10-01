@@ -164,7 +164,7 @@ export function WidgetInstallPage() {
             {secretBlock}
           </SettingsCard>
 
-          <SettingsCard contentClassName="p-0 sm:p-0">{handInstall}</SettingsCard>
+          <SettingsCard flush>{handInstall}</SettingsCard>
         </>
       ) : (
         <>
@@ -182,7 +182,7 @@ export function WidgetInstallPage() {
             {connectionRows}
           </SettingsCard>
 
-          <SettingsCard contentClassName="p-0 sm:p-0">
+          <SettingsCard flush>
             {handInstall}
             <div className="border-t border-border/50">
               <CollapsibleSection

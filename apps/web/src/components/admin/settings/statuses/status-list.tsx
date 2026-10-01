@@ -212,7 +212,7 @@ export function StatusesSettingsPage({ initialStatuses }: StatusListProps) {
               key={category}
               title={CATEGORY_INFO[category].label}
               description={CATEGORY_INFO[category].description}
-              contentClassName="p-0 sm:p-0"
+              flush
             >
               <div className="flex items-center gap-3 px-4 py-2 text-[13px] text-muted-foreground sm:px-6">
                 <span className="flex-1" />

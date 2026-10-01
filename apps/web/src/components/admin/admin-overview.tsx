@@ -80,7 +80,7 @@ export function OverviewDashboard({
       {banner}
 
       {overview.isError ? (
-        <SettingsCard contentClassName="p-0 sm:p-0">
+        <SettingsCard flush>
           <Quiet>
             Couldn’t load this page.{' '}
             <RetryButton onClick={() => void overview.refetch()}>Try again</RetryButton>
@@ -102,7 +102,7 @@ export function OverviewDashboard({
               hasAside && 'lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]'
             )}
           >
-            <SettingsCard contentClassName="p-0 sm:p-0">
+            <SettingsCard flush>
               {filters.length > 2 ? (
                 <Tabs
                   value={filter}
@@ -317,7 +317,7 @@ function ModuleCard<T>({
 }) {
   if (error) {
     return (
-      <SettingsCard title={title} contentClassName="p-0 sm:p-0">
+      <SettingsCard title={title} flush>
         <Quiet>
           {error} {onRetry ? <RetryButton onClick={onRetry}>Retry</RetryButton> : null}
         </Quiet>
@@ -326,7 +326,7 @@ function ModuleCard<T>({
   }
   if (items.length === 0) return null
   return (
-    <SettingsCard title={title} contentClassName="p-0 sm:p-0">
+    <SettingsCard title={title} flush>
       <div className="divide-y divide-border">{items.map(children)}</div>
     </SettingsCard>
   )

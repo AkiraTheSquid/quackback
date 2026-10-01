@@ -364,7 +364,7 @@ export function LabelsCard({ initialCategories }: LabelsCardProps) {
         title="Labels"
         description="Group entries by label"
         action={<NewButton noun="label" onClick={openCreate} />}
-        contentClassName="p-0 sm:p-0"
+        flush
       >
         {categories.length === 0 ? (
           <EmptyState icon={TagIcon} title="No labels yet" size="compact" />

@@ -268,7 +268,7 @@ export function RoleEditor(props: RoleEditorProps) {
         />
       </div>
 
-      <SettingsCard contentClassName="p-0 sm:p-0 divide-y divide-border/50">
+      <SettingsCard flush contentClassName="divide-y divide-border/50">
         {PERMISSION_CATEGORIES.map((category) => {
           const inCategory = visible.filter((p) => p.category === category)
           if (inCategory.length === 0) return null

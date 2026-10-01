@@ -72,7 +72,7 @@ export function QuinnToolsCard({ range }: { range: DateRange }) {
         id: 'automation.performance.actions.title',
         defaultMessage: 'Actions',
       })}
-      contentClassName="p-0"
+      flush
     >
       {toolsQuery.isError ? (
         <div className="flex items-center justify-between gap-3 p-4 sm:p-6">
