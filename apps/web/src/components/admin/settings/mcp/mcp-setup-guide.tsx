@@ -310,9 +310,9 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
         {/* ─── Left: Configuration ─── */}
         <div className="flex flex-col divide-y divide-border">
           {/* Header */}
-          <div className="p-4 sm:p-6">
-            <h3 className="text-sm font-semibold text-foreground">Setup guide</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+          <div className="px-4 py-3 sm:px-6 sm:py-4">
+            <h2 className="text-base font-semibold">Setup guide</h2>
+            <p className="text-xs text-muted-foreground mt-1">
               Connect an AI tool to your MCP server
             </p>
           </div>
