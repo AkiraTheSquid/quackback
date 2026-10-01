@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   BuildingOffice2Icon,
-  PlusIcon,
   ChevronRightIcon,
   ArrowDownTrayIcon,
   BanknotesIcon,
@@ -9,9 +8,8 @@ import {
 } from '@heroicons/react/24/solid'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { cn } from '@/lib/shared/utils'
 import { EmptyState } from '@/components/shared/empty-state'
-import { FilterChip } from '@/components/shared/filter-chip'
+import { FilterAddButton, FilterChip } from '@/components/shared/filter-chip'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { AdminListHeader } from '@/components/admin/admin-list-header'
@@ -227,17 +225,7 @@ function AddCompanyFilterButton({
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
-            'border border-dashed border-border/50 text-muted-foreground',
-            'hover:text-foreground hover:border-border hover:bg-muted/30 transition-colors'
-          )}
-        >
-          <PlusIcon className="h-3 w-3" />
-          Filter
-        </button>
+        <FilterAddButton />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-52 p-0">
         {category === null ? (

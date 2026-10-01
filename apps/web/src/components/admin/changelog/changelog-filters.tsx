@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { MegaphoneIcon, PlusIcon } from '@heroicons/react/16/solid'
+import { MegaphoneIcon } from '@heroicons/react/16/solid'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { MENU_ROW } from '@/components/ui/menu'
+import { FilterAddButton } from '@/components/shared/filter-chip'
 import { cn } from '@/lib/shared/utils'
 import { FilterSection } from '@/components/shared/filter-section'
 import { FilterList } from '@/components/admin/feedback/single-select-filter-list'
@@ -58,20 +59,7 @@ export function ChangelogFilterButton({ status, onStatusChange }: ChangelogFilte
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5',
-            'rounded-full text-[13px]',
-            'border border-dashed border-border/50',
-            'text-muted-foreground hover:text-foreground',
-            'hover:border-border hover:bg-muted/30',
-            'transition-colors'
-          )}
-        >
-          <PlusIcon className="h-3 w-3" />
-          Filter
-        </button>
+        <FilterAddButton />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-44 p-1">
         {CHANGELOG_STATUSES.map((item) => (

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import {
   EnvelopeIcon,
   CalendarIcon,
-  PlusIcon,
   ChevronRightIcon,
   GlobeAltIcon,
   DocumentTextIcon,
@@ -13,7 +12,7 @@ import {
 import { cn } from '@/lib/shared/utils'
 import { DATE_PRESETS, getDateFromDaysAgo } from '@/components/shared/filter-presets'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { FilterChip, type FilterOption } from '@/components/shared/filter-chip'
+import { FilterAddButton, FilterChip, type FilterOption } from '@/components/shared/filter-chip'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -336,20 +335,7 @@ export function UsersFilterButton({
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5',
-            'rounded-full text-[13px]',
-            'border border-dashed border-border/50',
-            'text-muted-foreground hover:text-foreground',
-            'hover:border-border hover:bg-muted/30',
-            'transition-colors'
-          )}
-        >
-          <PlusIcon className="h-3 w-3" />
-          Filter
-        </button>
+        <FilterAddButton />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-52 p-0">
         {activeCustomAttr ? (

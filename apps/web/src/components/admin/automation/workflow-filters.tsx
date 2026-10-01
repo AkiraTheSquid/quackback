@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { PlusIcon } from '@heroicons/react/16/solid'
 import { BoltIcon, TagIcon } from '@heroicons/react/24/outline'
-import { FilterChip } from '@/components/shared/filter-chip'
+import { FilterAddButton, FilterChip } from '@/components/shared/filter-chip'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/shared/utils'
 
@@ -65,17 +64,7 @@ export function WorkflowFilters({
       {(status === null || type === null) && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px]',
-                'border border-dashed border-border text-muted-foreground',
-                'transition-colors hover:border-foreground/30 hover:text-foreground'
-              )}
-            >
-              <PlusIcon className="size-3" aria-hidden />
-              Filter
-            </button>
+            <FilterAddButton />
           </PopoverTrigger>
           <PopoverContent align="start" className="w-48 p-0">
             <div className="py-1">

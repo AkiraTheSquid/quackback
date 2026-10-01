@@ -126,7 +126,7 @@ export function ConversationListToolbar({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-dashed font-normal text-muted-foreground"
+                  className="border-dashed font-normal"
                 />
               }
             >

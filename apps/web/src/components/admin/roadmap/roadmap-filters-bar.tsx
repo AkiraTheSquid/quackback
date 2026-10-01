@@ -3,14 +3,13 @@ import {
   Squares2X2Icon,
   TagIcon,
   UserGroupIcon,
-  PlusIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/solid'
 import { cn } from '@/lib/shared/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { useDebouncedSearch } from '@/lib/client/hooks/use-debounced-search'
-import { FilterChip, type FilterOption } from '@/components/shared/filter-chip'
+import { FilterAddButton, FilterChip, type FilterOption } from '@/components/shared/filter-chip'
 import type { RoadmapFilters } from '@/lib/shared/types'
 import type { PostTag } from '@/lib/shared/db-types'
 import type { SegmentListItem } from '@/lib/client/hooks/use-segments-queries'
@@ -229,20 +228,7 @@ function AddFilterButton({
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5',
-            'rounded-full text-[13px]',
-            'border border-dashed border-border/50',
-            'text-muted-foreground hover:text-foreground',
-            'hover:border-border hover:bg-muted/30',
-            'transition-colors'
-          )}
-        >
-          <PlusIcon className="h-3 w-3" />
-          Filter
-        </button>
+        <FilterAddButton />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-48 p-0">
         {activeCategory === null ? (

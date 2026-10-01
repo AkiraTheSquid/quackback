@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { PlusIcon } from '@heroicons/react/16/solid'
 import { FolderIcon, TagIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { cn } from '@/lib/shared/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { FilterChip } from '@/components/shared/filter-chip'
+import { FilterAddButton, FilterChip } from '@/components/shared/filter-chip'
 import type { HelpCenterStatusFilter } from './use-help-center-filters'
 
 interface Category {
@@ -144,20 +143,7 @@ export function HelpCenterFilterButton({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5',
-            'rounded-full text-[13px]',
-            'border border-dashed border-border/50',
-            'text-muted-foreground hover:text-foreground',
-            'hover:border-border hover:bg-muted/30',
-            'transition-colors'
-          )}
-        >
-          <PlusIcon className="h-3 w-3" />
-          Filter
-        </button>
+        <FilterAddButton />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-44 p-0">
         <div className="py-1">
