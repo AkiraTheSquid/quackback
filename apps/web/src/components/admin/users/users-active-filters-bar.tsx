@@ -44,13 +44,7 @@ interface UsersActiveFiltersBarProps {
 }
 
 type FilterCategory =
-  | 'verified'
-  | 'date'
-  | 'emailDomain'
-  | 'postCount'
-  | 'voteCount'
-  | 'commentCount'
-  | 'customAttr'
+  'verified' | 'date' | 'emailDomain' | 'postCount' | 'voteCount' | 'commentCount' | 'customAttr'
 
 interface FilterCategoryDef {
   key: FilterCategory

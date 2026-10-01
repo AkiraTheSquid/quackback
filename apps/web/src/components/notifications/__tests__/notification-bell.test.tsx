@@ -40,6 +40,8 @@ describe('NotificationBell', () => {
         <NotificationBell labeled />
       </TooltipProvider>
     )
-    expect(screen.getByRole('button', { name: 'Notifications' }).getAttribute('data-active')).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Notifications' }).getAttribute('data-active')
+    ).toBeNull()
   })
 })
