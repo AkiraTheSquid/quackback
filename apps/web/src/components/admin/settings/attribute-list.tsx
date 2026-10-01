@@ -41,11 +41,7 @@ interface AttributeListProps {
  */
 export function AttributeList({ items, onNew, emptyDescription, children }: AttributeListProps) {
   return (
-    <SettingsCard
-      title="Attributes"
-      flush
-      action={<NewButton noun="attribute" onClick={onNew} />}
-    >
+    <SettingsCard title="Attributes" flush action={<NewButton noun="attribute" onClick={onNew} />}>
       {items.length === 0 ? (
         <EmptyState
           size="compact"

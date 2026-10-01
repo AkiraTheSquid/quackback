@@ -71,11 +71,15 @@ export function PageHeader({
           {logo || badge ? (
             <div className="flex items-center gap-2.5">
               {logo}
-              <Heading className="text-xl font-semibold tracking-tight text-foreground">{title}</Heading>
+              <Heading className="text-xl font-semibold tracking-tight text-foreground">
+                {title}
+              </Heading>
               {badge}
             </div>
           ) : (
-            <Heading className="text-xl font-semibold tracking-tight text-foreground">{title}</Heading>
+            <Heading className="text-xl font-semibold tracking-tight text-foreground">
+              {title}
+            </Heading>
           )}
           {description && <p className="text-[13px] text-muted-foreground">{description}</p>}
         </div>

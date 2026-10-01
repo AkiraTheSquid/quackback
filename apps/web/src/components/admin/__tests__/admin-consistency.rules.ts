@@ -62,7 +62,13 @@ function parseSource(file: string, src: string): Node {
   }
 }
 
-const SKIPPED_KEYS = new Set(['loc', 'extra', 'leadingComments', 'trailingComments', 'innerComments'])
+const SKIPPED_KEYS = new Set([
+  'loc',
+  'extra',
+  'leadingComments',
+  'trailingComments',
+  'innerComments',
+])
 
 function analyse(file: string, src: string): Analysis {
   const out: Analysis = {
@@ -115,7 +121,8 @@ function analyse(file: string, src: string): Analysis {
         const name = node.name as Node
         const value = node.value as Node | null
         if (name.type === 'JSXIdentifier' && name.name === 'page' && value) {
-          const literal = value.type === 'JSXExpressionContainer' ? (value.expression as Node) : value
+          const literal =
+            value.type === 'JSXExpressionContainer' ? (value.expression as Node) : value
           if (literal.type === 'StringLiteral') out.pageProps.push(literal.value as string)
         }
         break
@@ -206,7 +213,9 @@ const MATCHERS: Record<FileRuleName, (a: Analysis) => boolean> = {
   'page-shell': (a) => a.importsPageHeader || a.rendersH1,
   'page-width': (a) => a.pageClassTexts.some((text) => PAGE_WIDTH.test(text)),
   'create-labels': (a) =>
-    a.texts.some((text) => /\bAdd new\b/.test(text) || /\b(?:New|Add|Create) [A-Z][a-z]+/.test(text)),
+    a.texts.some(
+      (text) => /\bAdd new\b/.test(text) || /\b(?:New|Add|Create) [A-Z][a-z]+/.test(text)
+    ),
   'no-dashes': (a) => a.texts.some((text) => /[\u2013\u2014]/.test(text)),
   'tab-icons': (a) => a.tabTriggerElementChild,
   'toggle-rows': (a) => a.rendersSwitch && !a.usesSettingRow,

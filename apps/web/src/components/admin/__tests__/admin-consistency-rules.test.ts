@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  inScope,
-  offends,
-  usedRegistryPaths,
-  type FileRuleName,
-} from './admin-consistency.rules'
+import { inScope, offends, usedRegistryPaths, type FileRuleName } from './admin-consistency.rules'
 
 const SETTINGS_FILE = 'components/admin/settings/example.tsx'
 const ROUTE_FILE = 'routes/admin/settings.example.tsx'
@@ -174,8 +169,12 @@ describe('matchers', () => {
   })
 
   it('never flags a file outside the rule scope', () => {
-    expect(offends('palette', 'components/admin/feedback/x.tsx', "const c = 'text-green-500'")).toBe(false)
-    expect(offends('toggle-rows', 'components/admin/feedback/x.tsx', program('<Switch />'))).toBe(false)
+    expect(
+      offends('palette', 'components/admin/feedback/x.tsx', "const c = 'text-green-500'")
+    ).toBe(false)
+    expect(offends('toggle-rows', 'components/admin/feedback/x.tsx', program('<Switch />'))).toBe(
+      false
+    )
   })
 
   it('does not treat a SettingRows-only file as a setting-row file', () => {
@@ -187,7 +186,10 @@ describe('usedRegistryPaths', () => {
   it('finds page="<path>" props', () => {
     const used = usedRegistryPaths([
       { file: 'a.tsx', src: `export const A = () => <SettingsPage page="/admin/settings/tags" />` },
-      { file: 'b.tsx', src: `export const B = () => <SettingsPage page='/admin/automation/agent' area="automation" />` },
+      {
+        file: 'b.tsx',
+        src: `export const B = () => <SettingsPage page='/admin/automation/agent' area="automation" />`,
+      },
       { file: 'c.tsx', src: `// <SettingsPage page="/admin/settings/boards" />` },
     ])
     expect([...used].sort()).toEqual(['/admin/automation/agent', '/admin/settings/tags'])
