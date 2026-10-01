@@ -20,7 +20,7 @@ import {
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { AttributeList, type AttributeListItem } from './attribute-list'
 
-export const ATTRIBUTE_TYPES = [
+const ATTRIBUTE_TYPES = [
   { value: 'string', label: 'Text' },
   { value: 'number', label: 'Number' },
   { value: 'boolean', label: 'Boolean' },
