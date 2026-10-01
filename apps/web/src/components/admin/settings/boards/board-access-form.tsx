@@ -77,19 +77,19 @@ interface TierMeta {
 const TIERS: readonly TierMeta[] = [
   {
     id: 'anonymous',
-    label: 'Anyone',
+    label: 'Everyone',
     blurb: 'No sign-in needed',
     icon: GlobeAltIcon,
   },
   {
     id: 'authenticated',
-    label: 'Signed-in',
+    label: 'Signed-in users',
     blurb: 'Any signed-in user',
     icon: UsersIcon,
   },
   {
     id: 'segments',
-    label: 'Segments',
+    label: 'Specific segments',
     blurb: 'Specific audiences',
     icon: TagIcon,
   },
@@ -408,7 +408,7 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
             <GlobeAltIcon className="h-3 w-3 shrink-0" />
             <span>
-              Workspace policy disables the <span className="text-foreground">Anyone</span> tier
+              Workspace policy disables the <span className="text-foreground">Everyone</span> tier
               for:{' '}
               <span className="text-foreground">
                 {wsBlockedActions.map((a) => a.label).join(', ')}
