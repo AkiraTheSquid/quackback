@@ -206,7 +206,7 @@ export interface InboxDetailPanelProps {
   /** Distinct GitHub users who have written on this issue. */
   issuePeople?: { principalId: string; displayName: string; avatarUrl: string | null }[]
   /** Whether the viewport shows the panel (DETAIL_PANEL_MEDIA_QUERY, read by
-   *  the inbox route). The panel is `hidden 2xl:flex`; it only fetches its data
+   *  the inbox route). The panel is `hidden min-[1680px]:flex`; it only fetches its data
    *  when shown, so smaller viewports don't pay for an invisible sidebar. */
   visible: boolean
   /** Renders the panel to fill a sheet instead of as the inline right column. */
@@ -240,7 +240,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   const flags = useFeatureFlags()
   const asideClassName = overlay
     ? 'flex h-full min-h-0 w-full flex-col overflow-hidden'
-    : 'hidden h-full min-h-0 w-96 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 2xl:flex'
+    : 'hidden h-full min-h-0 w-80 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1680px]:flex'
   // The flag + copilot.use gate, shared with the inbox route's
   // `copilotAvailable` so the Ask Copilot affordances can never disagree
   // with the tab actually existing.
