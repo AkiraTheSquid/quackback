@@ -236,7 +236,7 @@ export function UsersSegmentNav({
             ) : !segments || segments.length === 0 ? (
               <p className="text-xs text-muted-foreground px-2.5 py-1.5">No segments yet.</p>
             ) : (
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {segments.map((seg) => (
                   <SegmentNavItem
                     key={seg.id}
