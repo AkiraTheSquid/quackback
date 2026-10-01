@@ -307,9 +307,9 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
     >
       <div className="grid grid-cols-1 flex-1">
         {/* ─── Left: Configuration ─── */}
-        <div className="flex flex-col border-b border-border divide-y divide-border">
+        <div className="flex flex-col divide-y divide-border">
           {/* Header */}
-          <div className="p-5">
+          <div className="p-4 sm:p-6">
             <h3 className="text-sm font-semibold text-foreground">Setup guide</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Connect an AI tool to your MCP server
@@ -317,7 +317,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
           </div>
 
           {/* Step 1: Endpoint */}
-          <div className="p-5 space-y-2">
+          <div className="p-4 sm:p-6 space-y-2">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
                 1
@@ -345,7 +345,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
           </div>
 
           {/* Step 2: Auth */}
-          <div className="p-5 space-y-2">
+          <div className="p-4 sm:p-6 space-y-2">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
                 2
@@ -366,7 +366,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
           </div>
 
           {/* Step 3: Client */}
-          <div className="flex-1 p-5 space-y-3">
+          <div className="flex-1 p-4 sm:p-6 space-y-3">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0">
                 3
@@ -422,13 +422,50 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
                 </div>
               )}
 
+              {/* Code panel, then its caption */}
+              <div className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border">
+                {/* File tab header */}
+                <div
+                  className="flex items-center justify-between shrink-0 px-1"
+                  style={{ backgroundColor: '#252526' }}
+                >
+                  <div className="flex items-center">
+                    <span className="px-3 py-2 text-[11px] font-mono text-white/90 border-b-2 border-primary">
+                      {client.filename}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="flex items-center gap-1 px-2.5 py-1.5 mr-1 rounded text-[11px] text-white/40 hover:text-white/70 transition-colors"
+                  >
+                    {copiedCode ? (
+                      <>
+                        <CheckIcon className="h-3 w-3 text-success" />
+                        <span className="text-success">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardDocumentIcon className="h-3 w-3" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Syntax-highlighted code */}
+                <div className="flex-1 overflow-auto">
+                  <HighlightedCode code={codeOutput} lang="js" />
+                </div>
+              </div>
+
               {/* Client note */}
               <p className="text-[11px] text-muted-foreground">{client.note}</p>
             </div>
           </div>
 
           {/* Tools summary */}
-          <div className="p-5 space-y-2">
+          <div className="p-4 sm:p-6 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">
                 {MCP_TOOLS.length} tools available
@@ -453,43 +490,6 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
                 </span>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* ─── Right: Code Panel ─── */}
-        <div className="flex min-w-0 flex-col">
-          {/* File tab header */}
-          <div
-            className="flex items-center justify-between shrink-0 px-1"
-            style={{ backgroundColor: '#252526' }}
-          >
-            <div className="flex items-center">
-              <span className="px-3 py-2 text-[11px] font-mono text-white/90 border-b-2 border-primary">
-                {client.filename}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              className="flex items-center gap-1 px-2.5 py-1.5 mr-1 rounded text-[11px] text-white/40 hover:text-white/70 transition-colors"
-            >
-              {copiedCode ? (
-                <>
-                  <CheckIcon className="h-3 w-3 text-success" />
-                  <span className="text-success">Copied</span>
-                </>
-              ) : (
-                <>
-                  <ClipboardDocumentIcon className="h-3 w-3" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Syntax-highlighted code */}
-          <div className="flex-1 overflow-auto">
-            <HighlightedCode code={codeOutput} lang="js" />
           </div>
         </div>
       </div>
