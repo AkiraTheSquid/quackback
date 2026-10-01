@@ -78,7 +78,7 @@ const TIERS: readonly TierMeta[] = [
   {
     id: 'anonymous',
     label: 'Anyone',
-    blurb: 'Public · no sign-in',
+    blurb: 'No sign-in needed',
     icon: GlobeAltIcon,
   },
   {
@@ -564,16 +564,16 @@ function Matrix({
         aria-label="Permissions matrix"
       >
         <div
-          className="grid min-w-[560px] bg-muted/40 border-b text-xs uppercase tracking-wider text-muted-foreground"
+          className="grid min-w-[560px] bg-muted/40 border-b text-xs text-muted-foreground"
           style={{ gridTemplateColumns: '1.5fr repeat(4, 1fr)' }}
         >
           <div className="px-4 py-2.5 font-medium">Action</div>
           {TIERS.map((t) => (
             <div
               key={t.id}
-              className="flex flex-col items-center justify-center gap-0.5 border-l py-2 text-center normal-case"
+              className="flex flex-col items-center justify-start gap-0.5 border-l px-1 py-2.5 text-center"
             >
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <div className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-foreground">
                 <span className="text-muted-foreground">
                   <t.icon className="h-3 w-3" />
                 </span>

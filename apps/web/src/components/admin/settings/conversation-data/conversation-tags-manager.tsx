@@ -140,7 +140,7 @@ export function ConversationTagsManager() {
   const archived = (tags ?? []).filter((t) => t.archived)
 
   return (
-    <SettingsCard description="Agents create tags inline from the inbox." flush>
+    <SettingsCard title="Tags" description="Agents create tags inline from the inbox." flush>
       {!tags || tags.length === 0 ? (
         <EmptyState
           size="compact"

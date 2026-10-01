@@ -596,7 +596,7 @@ function SortableGroupHeader({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 px-3 py-2 transition-colors ${
+      className={`group flex items-center gap-3 px-3 py-2 transition-colors ${
         isOver ? 'bg-primary/10' : 'bg-muted/40'
       }`}
     >
