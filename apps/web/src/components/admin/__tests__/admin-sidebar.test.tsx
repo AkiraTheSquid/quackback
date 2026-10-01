@@ -41,11 +41,13 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@tanstack/react-query', () => ({
   useMutation: () => ({ mutate: vi.fn() }),
-  useQuery: ({ queryKey }: { queryKey?: unknown[] }) => {
+  useQuery: ({ queryKey, enabled }: { queryKey?: unknown[]; enabled?: boolean }) => {
     if (Array.isArray(queryKey) && queryKey.includes('owner-workspaces')) {
       return { data: mockBillingEnabled.current ? mockSiblings.current : undefined }
     }
     if (Array.isArray(queryKey) && queryKey.includes('moderationStatus')) {
+      moderationQueryEnabled.current = enabled !== false
+      if (enabled === false) return { data: undefined }
       return { data: { enabled: true, pendingCount: mockPending.current } }
     }
     return { data: undefined }
@@ -60,8 +62,9 @@ vi.mock('@/components/notifications', () => ({ NotificationBell: () => null }))
 
 vi.mock('@/lib/server/functions/conversation', () => ({ setAgentAvailabilityFn: vi.fn() }))
 
-const { mockSiblings, mockBillingEnabled, mockPending } = vi.hoisted(() => ({
+const { mockSiblings, mockBillingEnabled, mockPending, moderationQueryEnabled } = vi.hoisted(() => ({
   mockPending: { current: 0 },
+  moderationQueryEnabled: { current: null as boolean | null },
   mockSiblings: {
     current: [] as Array<{ instanceId: string; displayName: string; url: string | null }>,
   },
@@ -306,6 +309,19 @@ describe('AdminSidebar — rail', () => {
     expect(none.container.querySelector('aside nav a[href="/admin/feedback"]')!.textContent).toBe(
       'Feedback'
     )
+  })
+
+  it('asks for the pending moderation count only with the post.approve permission', () => {
+    mockPending.current = 3
+    moderationQueryEnabled.current = null
+    const member = renderSidebar('member', { flags: ALL_ON, visualTheme: 'refined' })
+    expect(moderationQueryEnabled.current).toBe(false)
+    expect(member.container.querySelector('aside nav a[href="/admin/feedback"]')!.textContent).toBe(
+      'Feedback'
+    )
+    cleanup()
+    renderSidebar('admin', { flags: ALL_ON, visualTheme: 'refined' })
+    expect(moderationQueryEnabled.current).toBe(true)
   })
 
   it('uses solid icons for Status in both themes', () => {

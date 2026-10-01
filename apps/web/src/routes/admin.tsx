@@ -4,6 +4,8 @@ import { IntlProvider } from 'react-intl'
 import { useAdminPresence } from '@/lib/client/hooks/use-admin-presence'
 import { DEFAULT_LOCALE, loadMessages } from '@/lib/shared/i18n'
 import { fetchUserAvatar } from '@/lib/server/functions/portal'
+import { adminQueries } from '@/lib/client/queries/admin'
+import { isProductEnabled } from '@/lib/shared/types/settings'
 import { unreadCountQuery } from '@/lib/client/hooks/use-notifications-queries'
 import { getLatestVersion, isNewerVersion } from '@/lib/server/functions/version'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
@@ -109,6 +111,10 @@ export const Route = createFileRoute('/admin')({
       user: NonNullable<typeof context.user>
       principal: NonNullable<typeof context.principal>
     }
+    // The rail's review badge is only asked for by viewers who can act on it.
+    const warmModeration =
+      isProductEnabled(context.settings?.featureFlags, 'feedback') &&
+      (context.permissions ?? []).includes(PERMISSIONS.POST_APPROVE)
 
     const locale = context.acceptLanguageLocale ?? DEFAULT_LOCALE
     const [avatarData, latestRelease, planNotice, messages] = await Promise.all([
@@ -121,6 +127,10 @@ export const Route = createFileRoute('/admin')({
       // The rail's unread badge rides the document rather than a request of
       // its own after hydration. Unreadable now, it is left to the bell.
       context.queryClient.ensureQueryData(unreadCountQuery()).catch(() => null),
+      // The same goes for the count of posts waiting for review.
+      warmModeration
+        ? context.queryClient.ensureQueryData(adminQueries.moderationStatus()).catch(() => null)
+        : null,
     ])
 
     const latestVersion =

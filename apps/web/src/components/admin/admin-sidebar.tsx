@@ -303,11 +303,13 @@ export function AdminSidebar({ initialUserData, latestVersion }: AdminSidebarPro
   const railItems = buildRailItems(flags, canOpenAutomation)
   // Posts and comments waiting for review. Shown on Feedback when there are any.
   const feedbackEnabled = isProductEnabled(flags, 'feedback')
+  const canReviewPosts = usePermission(PERMISSIONS.POST_APPROVE)
+  const reviewEnabled = feedbackEnabled && canReviewPosts
   const { data: moderation } = useQuery({
     ...adminQueries.moderationStatus(),
-    enabled: feedbackEnabled,
+    enabled: reviewEnabled,
   })
-  const pendingModeration = feedbackEnabled ? (moderation?.pendingCount ?? 0) : 0
+  const pendingModeration = reviewEnabled ? (moderation?.pendingCount ?? 0) : 0
   const itemBadge = (item: RailItem) =>
     item.href === '/admin/feedback' && pendingModeration > 0 ? pendingModeration : null
   const itemBadgeLabel = (item: RailItem) =>
