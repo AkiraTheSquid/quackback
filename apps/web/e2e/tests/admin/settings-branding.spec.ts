@@ -8,9 +8,7 @@ test.describe('Admin Portal Settings', () => {
 
   test('page loads and shows portal settings', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Portal' })).toBeVisible({ timeout: 10000 })
-    await expect(
-      page.getByText('Everything visitors see on your portal — theme, navigation, and content')
-    ).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Appearance').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('/admin/settings/branding redirects to portal', async ({ page }) => {

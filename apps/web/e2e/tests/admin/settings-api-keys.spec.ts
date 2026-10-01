@@ -37,7 +37,7 @@ test.describe('Admin API Keys Settings', () => {
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 5000 })
 
-    await expect(dialog.getByText(/create api key/i)).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: /create api key/i })).toBeVisible()
   })
 
   test('create dialog has name input', async ({ page }) => {

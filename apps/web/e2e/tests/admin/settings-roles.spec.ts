@@ -27,7 +27,7 @@ test.describe('Admin Roles Settings', () => {
     await expect(page.getByRole('button', { name: 'Save role' })).toHaveCount(0)
 
     // Its permissions are browsable (categories expand).
-    await page.getByRole('button', { name: /Feedback/ }).click()
+    await page.getByRole('main').last().getByRole('button', { name: /Feedback/ }).click()
     await expect(page.getByText('post.view_private').first()).toBeVisible({ timeout: 10000 })
   })
 
@@ -46,7 +46,7 @@ test.describe('Admin Roles Settings', () => {
     await expect(page.getByText(/of \d+ selected/).first()).toBeVisible()
 
     // Trim one permission and create.
-    await page.getByRole('button', { name: /Feedback/ }).click()
+    await page.getByRole('main').last().getByRole('button', { name: /Feedback/ }).click()
     await page.getByLabel('post.view_private', { exact: true }).click()
     await page.getByRole('button', { name: 'Create role' }).click()
 

@@ -68,7 +68,7 @@ test.describe('Admin Roadmap - Sidebar', () => {
 
       const dialog = page.getByRole('dialog')
       await expect(dialog).toBeVisible({ timeout: 5000 })
-      await expect(dialog.getByText('Create roadmap')).toBeVisible()
+      await expect(dialog.getByRole('heading', { name: 'Create roadmap' })).toBeVisible()
 
       // Dialog should expose the saved-view layout and visibility controls.
       await expect(dialog.getByLabel('Name', { exact: true })).toBeVisible()
@@ -296,7 +296,7 @@ test.describe('Admin Roadmap - CRUD', () => {
           // ConfirmDialog renders as an alertdialog or dialog
           const confirmDialog = page.getByRole('alertdialog').or(page.getByRole('dialog'))
           await expect(confirmDialog).toBeVisible({ timeout: 5000 })
-          await expect(confirmDialog.getByText(/delete roadmap/i)).toBeVisible()
+          await expect(confirmDialog.getByRole('heading', { name: /delete roadmap/i })).toBeVisible()
 
           // Cancel — do not actually delete
           const cancelBtn = confirmDialog.getByRole('button', { name: /cancel/i })
