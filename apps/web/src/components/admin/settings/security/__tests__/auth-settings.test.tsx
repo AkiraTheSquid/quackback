@@ -87,4 +87,21 @@ describe('AuthSettings audit tab', () => {
     )
     expect(screen.getByRole('tab', { name: /Audit log/i })).toBeDefined()
   })
+
+  it('keeps the tab bar at form width on every tab', () => {
+    for (const tab of ['portal-access', 'sign-in', 'audit-log'] as const) {
+      const { unmount } = render(
+        <AuthSettings
+          tab={tab}
+          teamAuthConfig={TEAM_AUTH}
+          portalConfig={PORTAL}
+          credentialStatus={{}}
+          customOidcProviderTier
+          auditEntitled
+        />
+      )
+      expect(screen.getByRole('tablist').className).toContain('max-w-3xl')
+      unmount()
+    }
+  })
 })

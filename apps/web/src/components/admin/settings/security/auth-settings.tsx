@@ -71,7 +71,7 @@ export function AuthSettings({
       variant="line"
       className="space-y-6"
     >
-      <TabsList>
+      <TabsList className="max-w-3xl">
         <TabsTrigger value="portal-access">Portal access</TabsTrigger>
         <TabsTrigger value="sign-in">Sign-in</TabsTrigger>
         <TabsTrigger value="audit-log">Audit log</TabsTrigger>
