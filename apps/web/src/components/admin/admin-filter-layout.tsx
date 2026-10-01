@@ -37,7 +37,10 @@ export function AdminFilterLayout({
             <div className="shrink-0 px-4 py-3.5">
               <PageHeader as="h2" title={headerTitle} />
             </div>
-            <ScrollArea className="min-h-0 flex-1">
+            <ScrollArea
+              className="min-h-0 flex-1"
+              scrollBarClassName="w-1.5 opacity-0 transition-opacity data-[scrolling]:opacity-100"
+            >
               <div className="px-5 pb-5">{filters}</div>
             </ScrollArea>
           </>

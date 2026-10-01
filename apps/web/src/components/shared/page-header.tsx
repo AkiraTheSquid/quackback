@@ -66,7 +66,12 @@ export function PageHeader({
           </span>
         </nav>
       )}
-      <div className="flex items-start justify-between gap-4">
+      <div
+        className={cn(
+          'flex min-h-8 justify-between gap-4',
+          description ? 'items-start' : 'items-center'
+        )}
+      >
         <div className="min-w-0">
           {logo || badge ? (
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">

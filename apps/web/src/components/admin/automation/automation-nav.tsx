@@ -113,7 +113,7 @@ export function AutomationNav() {
     >
       {sections.map((section) => (
         <div key={section.labelId} className="space-y-1">
-          <p className={cn(MENU_LABEL, 'px-2 pb-1')}>
+          <p className={cn(MENU_LABEL, 'pb-1')}>
             {intl.formatMessage({ id: section.labelId, defaultMessage: section.defaultLabel })}
           </p>
           {section.items.map((item) => {

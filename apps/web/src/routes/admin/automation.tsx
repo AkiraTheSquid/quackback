@@ -41,7 +41,10 @@ function AutomationLayout() {
             })}
           />
         </div>
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea
+          className="min-h-0 flex-1"
+          scrollBarClassName="w-1.5 opacity-0 transition-opacity data-[scrolling]:opacity-100"
+        >
           <div className="px-5 pb-5">
             <AutomationNav />
           </div>
@@ -50,7 +53,7 @@ function AutomationLayout() {
 
       <main className="flex-1 min-w-0 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-4 sm:p-6">
+          <div className="px-4 pb-4 pt-3.5 sm:px-6 sm:pb-6">
             <Outlet />
           </div>
         </ScrollArea>

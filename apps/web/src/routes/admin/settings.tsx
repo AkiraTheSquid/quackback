@@ -23,7 +23,10 @@ function SettingsLayout() {
         <div className="shrink-0 px-4 py-3.5">
           <PageHeader as="h2" title="Settings" />
         </div>
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea
+          className="min-h-0 flex-1"
+          scrollBarClassName="w-1.5 opacity-0 transition-opacity data-[scrolling]:opacity-100"
+        >
           <div className="px-5 pb-5">
             <SettingsNav />
           </div>
@@ -32,7 +35,7 @@ function SettingsLayout() {
 
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <ScrollArea className="min-h-0 flex-1">
-          <div data-settings-page="" className="p-6">
+          <div data-settings-page="" className="px-6 pb-6 pt-3.5">
             <Outlet />
           </div>
         </ScrollArea>
