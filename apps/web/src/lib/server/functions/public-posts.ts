@@ -31,6 +31,8 @@ import {
 } from '@/lib/server/domains/posts/post.public.utils'
 import { createPost } from '@/lib/server/domains/posts/post.service'
 import { voteOnPost } from '@/lib/server/domains/posts/post.voting'
+import { setVoteImportance } from '@/lib/server/domains/posts/post.importance'
+import { IMPORTANCE_MIN, IMPORTANCE_MAX, type ImportanceLevel } from '@/lib/shared/importance'
 import { checkAnonVoteRateLimit } from '@/lib/server/utils/anon-rate-limit'
 import { getPostPermissions } from '@/lib/server/domains/posts/post.permissions'
 import { userEditPost, softDeletePost } from '@/lib/server/domains/posts/post.user-actions'
@@ -87,6 +89,11 @@ const toggleVoteSchema = z.object({
   postId: z.string(),
 })
 
+const setVoteImportanceSchema = z.object({
+  postId: z.string(),
+  importance: z.number().int().min(IMPORTANCE_MIN).max(IMPORTANCE_MAX).nullable(),
+})
+
 const createPublicPostSchema = z.object({
   boardId: z.string(),
   title: z.string().min(1, 'Title is required').max(200),
@@ -121,6 +128,7 @@ export type GetPostPermissionsInput = z.infer<typeof getPostPermissionsSchema>
 export type UserEditPostInput = z.infer<typeof userEditPostSchema>
 export type UserDeletePostInput = z.infer<typeof userDeletePostSchema>
 export type ToggleVoteInput = z.infer<typeof toggleVoteSchema>
+export type SetVoteImportanceInput = z.infer<typeof setVoteImportanceSchema>
 export type CreatePublicPostInput = z.infer<typeof createPublicPostSchema>
 export type GetPublicRoadmapPostsInput = z.infer<typeof getPublicRoadmapPostsSchema>
 export type GetRoadmapPostsByStatusInput = z.infer<typeof getRoadmapPostsByStatusSchema>
@@ -340,6 +348,57 @@ export const userDeletePostFn = createServerFn({ method: 'POST' })
   })
 
 /**
+ * Shared write gate for voting and rating (toggleVoteFn, setVoteImportanceFn).
+ * Returns the authenticated context once every check has passed.
+ */
+async function requireVotableRequest(postId: PostId) {
+  // Portal-visibility gate: a denied caller (signed-in but not on
+  // the allowlist of a private portal) must not be able to vote.
+  // Read-side gating happens at list / detail; write paths need
+  // the same check or the caller could mutate state from inside a
+  // portal they're not entitled to view.
+  const access = await resolvePortalAccessForRequest()
+  if (!access.granted) {
+    throw new Error('Portal access required')
+  }
+  const ctx = await requireAuth()
+  // Per-post audience gate: portal-access alone is not enough — an
+  // authenticated caller could still vote on a team-only / segment-
+  // restricted post if they knew the id. `assertPostVotable`
+  // composes view (404 on deny) + the per-board vote tier
+  // (403 on "viewable but not votable").
+  const { assertPostVotable } = await import('@/lib/server/domains/posts/post.access')
+  const actor = await policyActorFromAuth(ctx)
+  await assertPostVotable(postId, actor)
+
+  // Block anonymous users unless the workspace allows anonymous
+  // interaction. The per-board vote tier was already enforced
+  // above by assertPostVotable; this is the workspace-wide
+  // master switch (collapsed in migration 0084 from the legacy
+  // anonymousVoting/Commenting/Posting trio).
+  if (ctx.principal.type === 'anonymous') {
+    // Fail closed on a missing flag — read the raw config, not
+    // getPortalConfig's permissive merged default (matches
+    // createPublicPostFn / the vote-sidebar gate). The per-board vote
+    // tier was already enforced above by assertPostVotable.
+    const settings = await getSettings()
+    if (!workspaceAllowsAnonymous(settings?.portalConfig)) {
+      throw new Error('Anonymous interaction is not enabled')
+    }
+
+    // Rate limit anonymous voters by IP
+    const headers = getRequestHeaders()
+    const ip =
+      headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || '0.0.0.0'
+    if (!(await checkAnonVoteRateLimit(ip))) {
+      throw new Error('Too many votes, please try again later')
+    }
+  }
+
+  return ctx
+}
+
+/**
  * Toggle vote on a post. Requires authentication (including anonymous sessions).
  * Anonymous users sign in via Better Auth's anonymous plugin on the client side
  * before calling this function.
@@ -350,51 +409,7 @@ export const toggleVoteFn = createServerFn({ method: 'POST' })
     async ({ data }: { data: ToggleVoteInput }): Promise<{ voted: boolean; voteCount: number }> => {
       log.debug({ post_id: data.postId }, 'toggle vote')
       try {
-        // Portal-visibility gate: a denied caller (signed-in but not on
-        // the allowlist of a private portal) must not be able to vote.
-        // Read-side gating happens at list / detail; write paths need
-        // the same check or the caller could mutate state from inside a
-        // portal they're not entitled to view.
-        const access = await resolvePortalAccessForRequest()
-        if (!access.granted) {
-          throw new Error('Portal access required')
-        }
-        const ctx = await requireAuth()
-        // Per-post audience gate: portal-access alone is not enough — an
-        // authenticated caller could still vote on a team-only / segment-
-        // restricted post if they knew the id. `assertPostVotable`
-        // composes view (404 on deny) + the per-board vote tier
-        // (403 on "viewable but not votable").
-        const { assertPostVotable } = await import('@/lib/server/domains/posts/post.access')
-        const actor = await policyActorFromAuth(ctx)
-        await assertPostVotable(data.postId as PostId, actor)
-
-        // Block anonymous users unless the workspace allows anonymous
-        // interaction. The per-board vote tier was already enforced
-        // above by assertPostVotable; this is the workspace-wide
-        // master switch (collapsed in migration 0084 from the legacy
-        // anonymousVoting/Commenting/Posting trio).
-        if (ctx.principal.type === 'anonymous') {
-          // Fail closed on a missing flag — read the raw config, not
-          // getPortalConfig's permissive merged default (matches
-          // createPublicPostFn / the vote-sidebar gate). The per-board vote
-          // tier was already enforced above by assertPostVotable.
-          const settings = await getSettings()
-          if (!workspaceAllowsAnonymous(settings?.portalConfig)) {
-            throw new Error('Anonymous interaction is not enabled')
-          }
-
-          // Rate limit anonymous voters by IP
-          const headers = getRequestHeaders()
-          const ip =
-            headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-            headers.get('x-real-ip') ||
-            '0.0.0.0'
-          if (!(await checkAnonVoteRateLimit(ip))) {
-            throw new Error('Too many votes, please try again later')
-          }
-        }
-
+        const ctx = await requireVotableRequest(data.postId as PostId)
         const result = await voteOnPost(data.postId as PostId, ctx.principal.id)
         log.debug(
           { voted: result.voted, count: result.voteCount, principal_type: ctx.principal.type },
@@ -1080,5 +1095,27 @@ export const findSimilarPostsFn = createServerFn({ method: 'GET' })
     } catch (error) {
       log.error({ err: error }, 'find similar posts failed')
       return []
+    }
+  })
+
+/**
+ * Delta fork: set (1-5) or clear (null) the caller's importance rating on a
+ * post. Setting a rating casts the vote if the caller hasn't voted yet, so it
+ * passes the same gate as toggleVoteFn.
+ */
+export const setVoteImportanceFn = createServerFn({ method: 'POST' })
+  .validator(setVoteImportanceSchema)
+  .handler(async ({ data }: { data: SetVoteImportanceInput }) => {
+    log.debug({ post_id: data.postId, importance: data.importance }, 'set vote importance')
+    try {
+      const ctx = await requireVotableRequest(data.postId as PostId)
+      return await setVoteImportance(
+        data.postId as PostId,
+        ctx.principal.id,
+        data.importance as ImportanceLevel | null
+      )
+    } catch (error) {
+      log.error({ err: error }, 'set vote importance failed')
+      throw error
     }
   })

@@ -10,6 +10,7 @@ import {
   customType,
   check,
   varchar,
+  smallint,
 } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { typeIdWithDefault, typeIdColumn, typeIdColumnNullable } from '@quackback/ids/drizzle'
@@ -218,10 +219,14 @@ export const votes = pgTable(
       () => principal.id,
       { onDelete: 'set null' }
     ),
+    // Delta fork: voter's importance rating, 1 (not important at all) .. 5 (crucial).
+    // NULL = plain upvote with no rating.
+    importance: smallint('importance'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
+    check('votes_importance_range', sql`importance IS NULL OR importance BETWEEN 1 AND 5`),
     index('votes_post_id_idx').on(table.postId),
     // Unique constraint: one vote per principal per post
     uniqueIndex('votes_principal_post_idx').on(table.postId, table.principalId),

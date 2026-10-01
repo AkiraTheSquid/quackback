@@ -38,6 +38,8 @@ export interface VoterInfo {
   addedByName: string | null
   createdAt: Date | string
   subscriptionLevel: SubscriptionLevel
+  /** Delta fork: the voter's importance rating (1-5), null for a plain upvote */
+  importance: number | null
 }
 
 /**
@@ -326,6 +328,7 @@ export async function getPostVoters(postId: PostId): Promise<VoterInfo[]> {
         WHERE p2.id = ${votes.addedByPrincipalId}
       )`.as('added_by_name'),
       createdAt: votes.createdAt,
+      importance: votes.importance,
       notifyComments: postSubscriptions.notifyComments,
       notifyStatusChanges: postSubscriptions.notifyStatusChanges,
     })
@@ -355,6 +358,7 @@ export async function getPostVoters(postId: PostId): Promise<VoterInfo[]> {
       sourceExternalUrl: row.sourceExternalUrl,
       addedByName: row.addedByName,
       createdAt: row.createdAt,
+      importance: row.importance ?? null,
       subscriptionLevel: isAnonymous
         ? ('none' as const)
         : levelFromFlags(row.notifyComments ?? false, row.notifyStatusChanges ?? false),

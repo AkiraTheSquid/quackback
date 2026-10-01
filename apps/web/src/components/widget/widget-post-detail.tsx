@@ -12,6 +12,7 @@ import { buildPortalUrl } from './build-portal-url'
 import { widgetQueryKeys } from '@/lib/client/hooks/use-widget-vote'
 import type { PublicPostDetailView } from '@/lib/client/queries/portal-detail'
 import { WidgetVoteButton } from './widget-vote-button'
+import { ImportancePicker } from '@/components/public/importance-picker'
 import { WidgetCommentList } from './widget-comment-list'
 import { useWidgetAuth } from './widget-auth-provider'
 import { sendToHost } from '@/lib/client/widget-bridge'
@@ -124,6 +125,15 @@ export function WidgetPostDetail({ postId, statuses }: WidgetPostDetailProps) {
       : undefined
   const commentNoAccess = isIdentified && !canComment
 
+  // Session bootstrap before a vote or rating; resolves false if it fails.
+  const ensureVoteSession = useCallback(async () => {
+    let success = false
+    await ensureSessionThen(() => {
+      success = true
+    })
+    return success
+  }, [ensureSessionThen])
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const viewport = scrollAreaRef.current?.querySelector('[data-slot="scroll-area-viewport"]')
@@ -179,17 +189,7 @@ export function WidgetPostDetail({ postId, statuses }: WidgetPostDetailProps) {
             <WidgetVoteButton
               postId={postId as PostId}
               voteCount={post.voteCount}
-              onBeforeVote={
-                canVote
-                  ? async () => {
-                      let success = false
-                      await ensureSessionThen(() => {
-                        success = true
-                      })
-                      return success
-                    }
-                  : undefined
-              }
+              onBeforeVote={canVote ? ensureVoteSession : undefined}
               noAccessReason={voteNoAccessReason}
               onAuthRequired={!canVote ? handleViewOnPortal : undefined}
             />
@@ -225,6 +225,26 @@ export function WidgetPostDetail({ postId, statuses }: WidgetPostDetailProps) {
             </div>
           </div>
         </div>
+
+        {/* Delta fork: importance rating (rating casts the vote) */}
+        <ImportancePicker
+          compact
+          postId={postId as PostId}
+          initial={post.importance}
+          getAuthHeaders={getWidgetAuthHeaders}
+          noAccessReason={voteNoAccessReason}
+          onAuthRequired={!canVote ? handleViewOnPortal : undefined}
+          onBeforeRate={canVote ? ensureVoteSession : undefined}
+          onRated={({ newlyVoted, voteCount }) => {
+            if (newlyVoted) {
+              sendToHost({
+                type: 'quackback:event',
+                name: 'vote',
+                payload: { postId, voted: true, voteCount },
+              })
+            }
+          }}
+        />
 
         {/* Post body */}
         {post.content && (

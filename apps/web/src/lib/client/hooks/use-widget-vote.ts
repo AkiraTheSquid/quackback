@@ -109,6 +109,8 @@ export function useWidgetVote({
         else next.delete(id)
         return next
       })
+      // Delta fork: un-voting deletes the importance rating — refresh the detail summary.
+      queryClient.invalidateQueries({ queryKey: widgetQueryKeys.postDetail.all })
       sendToHost({
         type: 'quackback:event',
         name: 'vote',

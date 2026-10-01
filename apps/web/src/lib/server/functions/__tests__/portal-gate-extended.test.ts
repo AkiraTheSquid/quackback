@@ -114,6 +114,10 @@ vi.mock('@/lib/server/domains/posts/post.public.detail', () => ({
   getPublicPostDetail: (...a: unknown[]) => mockGetPublicPostDetail(...a),
 }))
 
+vi.mock('@/lib/server/domains/posts/post.importance', () => ({
+  getImportanceSummary: vi.fn(async () => ({ ratingCount: 0, average: null, mine: null })),
+}))
+
 vi.mock('@/lib/server/domains/posts/post.merge', () => ({
   getPostMergeInfo: (...a: unknown[]) => mockGetPostMergeInfo(...a),
   getMergedPosts: (...a: unknown[]) => mockGetMergedPosts(...a),

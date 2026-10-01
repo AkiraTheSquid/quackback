@@ -8,6 +8,7 @@ import { portalQueries } from '@/lib/client/queries/portal'
 import { UnsubscribeBanner } from '@/components/public/unsubscribe-banner'
 import { VoteSidebar, VoteSidebarSkeleton } from '@/components/public/post-detail/vote-sidebar'
 import { PostContentSection } from '@/components/public/post-detail/post-content-section'
+import { ImportanceSection } from '@/components/public/post-detail/importance-section'
 import {
   MetadataSidebar,
   MetadataSidebarSkeleton,
@@ -253,6 +254,11 @@ function PostDetailPage() {
           </Suspense>
         </div>
       </div>
+
+      {/* Delta fork: importance rating */}
+      <Suspense fallback={null}>
+        <ImportanceSection postId={postId} initial={post.importance} disabled={!!post.mergeInfo} />
+      </Suspense>
 
       {/* Comments card */}
       <div className="bg-card border border-border/40 rounded-lg overflow-hidden mt-4">

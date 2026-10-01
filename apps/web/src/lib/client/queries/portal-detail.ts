@@ -1,3 +1,4 @@
+import type { ImportanceSummary } from '@/lib/shared/importance'
 import { queryOptions } from '@tanstack/react-query'
 import type { PostId, StatusId, CommentId, PrincipalId } from '@quackback/ids'
 import {
@@ -85,6 +86,8 @@ export interface PublicPostDetailView {
   } | null
   /** Number of posts merged into this one (if canonical) */
   mergedPostCount?: number
+  /** Delta fork: importance rating summary + the viewer's own rating */
+  importance?: ImportanceSummary
 }
 
 /**

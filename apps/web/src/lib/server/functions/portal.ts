@@ -39,6 +39,7 @@ import { getSubscriptionStatus } from '@/lib/server/domains/subscriptions/subscr
 import { listPublicRoadmaps } from '@/lib/server/domains/roadmaps/roadmap.service'
 import { getPublicRoadmapPosts } from '@/lib/server/domains/roadmaps/roadmap.query'
 import { resolvePortalAccessForRequest } from './portal-access'
+import { getImportanceSummary } from '@/lib/server/domains/posts/post.importance'
 import { logger } from '@/lib/server/logger'
 
 const log = logger.child({ component: 'portal' })
@@ -337,12 +338,18 @@ export const fetchPublicPostDetail = createServerFn({ method: 'GET' })
     // its DB read overlaps the merge queries instead of running in series.
     const postId = data.postId as PostId
     const needsAnonCeiling = actor.principalType !== 'user'
-    const [mergeInfo, mergedPostsList, allowAnonymous] = await Promise.all([
+    const [mergeInfo, mergedPostsList, allowAnonymous, importance] = await Promise.all([
       getPostMergeInfo(postId, actor).then((info) =>
         info ? { ...info, mergedAt: toISOString(info.mergedAt) } : null
       ),
       getMergedPosts(postId),
       needsAnonCeiling ? loadAllowAnonymous() : Promise.resolve(false),
+      // Delta fork: public rating summary (count + average) and the viewer's own rating.
+      // Optional: a failure here must not take the post page down with it.
+      getImportanceSummary(postId, actor.principalId).catch((err) => {
+        log.error({ err, post_id: postId }, 'importance summary failed')
+        return undefined
+      }),
     ])
 
     // Per-board vote/comment capability for THIS viewer. The widget passes its
@@ -371,6 +378,7 @@ export const fetchPublicPostDetail = createServerFn({ method: 'GET' })
       mergedPostCount: mergedPostsList.length > 0 ? mergedPostsList.length : undefined,
       canVote,
       canComment,
+      importance,
     }
   })
 

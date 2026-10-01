@@ -21,6 +21,7 @@ import { useUpdateVoterSubscription } from '@/lib/client/mutations/admin-subscri
 import { useRemoveVote } from '@/lib/client/mutations/posts'
 import type { PostId, PrincipalId } from '@quackback/ids'
 import type { SubscriptionLevel } from '@/lib/shared/types'
+import { IMPORTANCE_LEVELS, importanceLabel } from '@/lib/shared/importance'
 
 interface VotersModalProps {
   postId: PostId
@@ -97,6 +98,7 @@ export function VotersModal({
         <DialogHeader>
           <DialogTitle>Voters ({voteCount})</DialogTitle>
         </DialogHeader>
+        {voters && <ImportanceBreakdown ratings={voters.map((v) => v.importance)} />}
         <div className="max-h-[400px] overflow-y-auto -mx-6 px-6">
           {isLoading ? (
             <div className="space-y-4">
@@ -124,6 +126,11 @@ export function VotersModal({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">
                         {voter.displayName || voter.email || 'Anonymous'}
+                        {voter.importance != null && (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {voter.importance} · {importanceLabel(voter.importance)}
+                          </span>
+                        )}
                       </p>
                       <VoterSourceLine voter={voter} />
                     </div>
@@ -289,6 +296,30 @@ function VoterSourceLine({
 
   // Direct votes: just "{time}"
   return <TimeAgo date={voter.createdAt} className="text-xs text-muted-foreground" />
+}
+
+/** Delta fork: per-level rating counts + average for the admin. */
+function ImportanceBreakdown({ ratings }: { ratings: Array<number | null> }) {
+  const rated = ratings.filter((r): r is number => r != null)
+  if (rated.length === 0) return null
+  const average = rated.reduce((a, b) => a + b, 0) / rated.length
+  return (
+    <div className="space-y-1 text-xs text-muted-foreground" data-testid="importance-breakdown">
+      <p>
+        {rated.length} rated · avg {average.toFixed(1)} ({importanceLabel(Math.round(average))})
+      </p>
+      <div className="grid grid-cols-5 gap-1">
+        {IMPORTANCE_LEVELS.map(({ value, label }) => (
+          <div key={value} className="rounded border border-border/50 px-1 py-1 text-center">
+            <div className="font-semibold text-foreground tabular-nums">
+              {rated.filter((r) => r === value).length}
+            </div>
+            <div className="leading-tight text-[10px]">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function capitalize(s: string): string {
