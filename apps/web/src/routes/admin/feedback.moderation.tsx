@@ -128,7 +128,7 @@ function ModerationPage() {
         />
       }
     >
-      <div className="max-w-5xl w-full p-4 sm:p-6 space-y-6">
+      <div className="max-w-5xl w-full px-3 pt-3.5 pb-6 space-y-6">
         <PageHeader title="Moderation" />
 
         {loading ? (

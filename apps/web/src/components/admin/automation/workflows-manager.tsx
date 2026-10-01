@@ -68,6 +68,7 @@ import { isPlanRefusal } from '@/lib/shared/describe-upgrade'
 import { WorkflowRunsSheet } from './workflow-runs-sheet'
 import { cn } from '@/lib/shared/utils'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { RowActions } from '@/components/admin/settings/settings-list'
 import { WorkflowFilters } from './workflow-filters'
 import { Badge } from '@/components/ui/badge'
@@ -485,7 +486,7 @@ export function WorkflowsManager({
             })}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border/50 shadow-sm">
+          <SettingsCard flush>
             {groups.map((group, groupIndex) => {
               const isCustomerFacing = group.cls.value === 'customer_facing'
               const reorderMode: 'enabled' | 'filtered' | 'none' = !isCustomerFacing
@@ -553,7 +554,7 @@ export function WorkflowsManager({
                 </div>
               )
             })}
-          </div>
+          </SettingsCard>
         )}
       </div>
 
