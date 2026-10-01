@@ -68,43 +68,37 @@ test.describe('Admin Users Page', () => {
     }
   })
 
-  test('can change sort order', async ({ page }) => {
-    // Sort options are pill buttons — click "Most Active" directly
-    const mostActiveButton = page.getByRole('button', { name: 'Most Active' })
-    await expect(mostActiveButton).toBeVisible({ timeout: 5000 })
-    await mostActiveButton.click()
+  /** Open the "Sort: {label}" menu and pick an option. */
+  async function chooseSort(page: import('@playwright/test').Page, option: string) {
+    const trigger = page.getByRole('button', { name: /^Sort: /i })
+    await expect(trigger).toBeVisible({ timeout: 5000 })
+    await trigger.click()
+    await page.getByRole('menuitemradio', { name: option, exact: true }).click()
 
     // Wait for update
     await page.waitForLoadState('networkidle')
+  }
+
+  test('can change sort order', async ({ page }) => {
+    await chooseSort(page, 'Most active')
 
     // URL should update with sort param
     await expect(page).toHaveURL(/sort=most_active/)
+    await expect(page.getByRole('button', { name: 'Sort: Most active' })).toBeVisible()
   })
 
   test('can sort by name', async ({ page }) => {
-    // Sort options are pill buttons — click "Name A-Z" directly
-    const nameButton = page.getByRole('button', { name: 'Name A-Z' })
-    await expect(nameButton).toBeVisible({ timeout: 5000 })
-    await nameButton.click()
+    await chooseSort(page, 'Name A-Z')
 
-    // Wait for update
-    await page.waitForLoadState('networkidle')
-
-    // URL should update with sort param
     await expect(page).toHaveURL(/sort=name/)
+    await expect(page.getByRole('button', { name: 'Sort: Name A-Z' })).toBeVisible()
   })
 
   test('can sort by oldest', async ({ page }) => {
-    // Sort options are pill buttons — click "Oldest" directly
-    const oldestButton = page.getByRole('button', { name: 'Oldest' })
-    await expect(oldestButton).toBeVisible({ timeout: 5000 })
-    await oldestButton.click()
+    await chooseSort(page, 'Oldest')
 
-    // Wait for update
-    await page.waitForLoadState('networkidle')
-
-    // URL should update with sort param
     await expect(page).toHaveURL(/sort=oldest/)
+    await expect(page.getByRole('button', { name: 'Sort: Oldest' })).toBeVisible()
   })
 })
 
