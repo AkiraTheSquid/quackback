@@ -579,8 +579,8 @@
     "sweep:ui:admin:/admin/settings/companies": {
       "dbQueries": 7,
       "serverRequests": 1,
-      "requests": 117,
-      "jsRequests": 112,
+      "requests": 123,
+      "jsRequests": 118,
       "jsKB": 413.1,
       "htmlTransferKB": 28.9,
       "componentRenders": 372
@@ -592,8 +592,8 @@
     "sweep:ui:admin:/admin/settings/conversation-data": {
       "dbQueries": 7,
       "serverRequests": 1,
-      "requests": 115,
-      "jsRequests": 110,
+      "requests": 124,
+      "jsRequests": 119,
       "jsKB": 415.3,
       "htmlTransferKB": 31.6,
       "componentRenders": 423
@@ -774,8 +774,8 @@
     "sweep:ui:admin:/admin/settings/people": {
       "dbQueries": 7,
       "serverRequests": 1,
-      "requests": 118,
-      "jsRequests": 113,
+      "requests": 124,
+      "jsRequests": 119,
       "jsKB": 414,
       "htmlTransferKB": 28.9,
       "componentRenders": 370
