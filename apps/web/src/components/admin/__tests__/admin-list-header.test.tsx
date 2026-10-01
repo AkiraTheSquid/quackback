@@ -19,6 +19,14 @@ describe('AdminListHeader', () => {
     expect(onSearchChange).toHaveBeenCalledWith('abc')
   })
 
+  it('wraps its controls so none scroll off a narrow screen', () => {
+    render(
+      <AdminListHeader searchValue="" onSearchChange={() => {}} action={<button>New</button>} />
+    )
+    const row = document.querySelector('[data-slot="admin-list-search"]')!.parentElement!
+    expect(row.className).toContain('flex-wrap')
+  })
+
   it('gives the search input an accessible name', () => {
     render(<AdminListHeader searchValue="" onSearchChange={() => {}} />)
     expect(screen.getByRole('textbox', { name: 'Search...' })).toBeTruthy()
