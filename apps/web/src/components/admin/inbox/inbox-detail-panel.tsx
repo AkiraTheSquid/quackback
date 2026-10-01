@@ -825,7 +825,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
     return (
       <aside
         aria-label="Item details"
-        className="hidden h-full min-h-0 w-80 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
+        className="hidden h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
       >
         {detailsBody}
       </aside>
@@ -835,7 +835,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   return (
     <aside
       aria-label="Item details"
-      className="hidden h-full min-h-0 w-80 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
+      className="hidden h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 xl:flex 2xl:w-96"
     >
       <Tabs
         value={tab}

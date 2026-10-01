@@ -499,7 +499,7 @@ export const InboxNavSidebar = memo(function InboxNavSidebar({
   return (
     <nav
       data-side-pane=""
-      className="hidden w-64 shrink-0 flex-col overflow-hidden border-r border-border/50 bg-card/30 lg:flex xl:w-72"
+      className="hidden w-52 shrink-0 flex-col overflow-hidden border-r border-border/50 bg-card/30 lg:flex 2xl:w-72"
     >
       <div className="px-4 py-3.5">
         <PageHeader title="Support" />

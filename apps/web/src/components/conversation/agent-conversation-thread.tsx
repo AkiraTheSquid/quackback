@@ -1885,7 +1885,7 @@ export function AgentConversationThread({
   // The unified action bar's icon cluster + overflow + primary button —
   // identical JSX for both kinds, gated internally by `isTicket`/capabilities.
   const headerActions = (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="ml-auto flex shrink-0 items-center gap-1">
       {/* B24: the ticket-status pill's interactivity follows the resolved
           permissions — the full dropdown with `ticket.set_status`, an inert
           read-only chip with view-only, and nothing at all without
@@ -2061,8 +2061,8 @@ export function AgentConversationThread({
 
   const header: ReactNode =
     isTicket && ticket ? (
-      <div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border/50 px-4 py-3 sm:px-5">
+        <div className="flex min-w-[6rem] flex-1 items-center gap-2.5">
           {backButton}
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{ticket.title}</p>
@@ -2084,8 +2084,8 @@ export function AgentConversationThread({
         {headerActions}
       </div>
     ) : (
-      <div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border/50 px-4 py-3 sm:px-5">
+        <div className="flex min-w-[6rem] flex-1 items-center gap-2.5">
           {backButton}
           <Avatar
             src={conversation?.visitor.avatarUrl ?? null}

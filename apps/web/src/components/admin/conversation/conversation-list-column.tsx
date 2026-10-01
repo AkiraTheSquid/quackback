@@ -241,7 +241,7 @@ export function ConversationListColumn({
   return (
     <div
       className={cn(
-        'flex min-h-0 w-full shrink-0 flex-col border-r border-border/50 md:w-[22.5rem]',
+        'flex min-h-0 w-full shrink-0 flex-col border-r border-border/50 md:w-72 2xl:w-[22.5rem]',
         // On mobile the list and thread are one column: hide the list while an
         // item is open (a back button returns to it).
         selectedId && 'hidden md:flex'
