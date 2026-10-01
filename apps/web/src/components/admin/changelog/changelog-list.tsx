@@ -192,6 +192,7 @@ export function ChangelogList() {
           <AdminListHeader
             searchValue={searchValue}
             onSearchChange={setSearchValue}
+            searchPlaceholder="Search entries..."
             sortOptions={CHANGELOG_SORT_OPTIONS}
             activeSort={filters.sort}
             onSortChange={(sort) => setFilters({ sort: sort as ChangelogSort })}

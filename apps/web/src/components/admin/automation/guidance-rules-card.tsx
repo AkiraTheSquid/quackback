@@ -297,7 +297,7 @@ export function GuidanceRulesCard({ agent }: { agent: AssistantAgentKind }) {
               onChange={setQuery}
               placeholder={intl.formatMessage({
                 id: 'automation.agent.guidance.search',
-                defaultMessage: 'Search guidance',
+                defaultMessage: 'Search guidance...',
               })}
             />
           </div>

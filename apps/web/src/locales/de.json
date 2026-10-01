@@ -890,7 +890,7 @@
   "automation.agent.guidance.addTitle": "Neue Anweisung",
   "automation.agent.guidance.editTitle": "Anweisung bearbeiten",
   "automation.agent.guidance.addConfirm": "Anweisung erstellen",
-  "automation.agent.guidance.search": "Anweisungen durchsuchen",
+  "automation.agent.guidance.search": "Anweisungen durchsuchen ...",
   "automation.agent.guidance.emptyTitle": "Füge eine Anweisung für eine bestimmte Situation hinzu",
   "automation.agent.guidance.emptyDescription": "Zum Beispiel: Wenn ein Kunde nach einer Erstattung fragt, erkläre zuerst die 30-Tage-Regel und verlinke dann den passenden Hilfe-Center-Artikel.",
   "automation.agent.guidance.noResults": "Keine Anweisungen passen zu „{query}“.",

@@ -78,7 +78,7 @@ export function StatusTemplatesView() {
       <AdminListHeader
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search templates…"
+        searchPlaceholder="Search templates..."
         action={<NewButton noun="template" onClick={() => setCreating(true)} />}
       />
 
