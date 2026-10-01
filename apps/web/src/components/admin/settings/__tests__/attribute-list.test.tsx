@@ -37,10 +37,15 @@ describe('AttributeList', () => {
     expect(screen.getByText('The display name.')).toBeTruthy()
   })
 
-  it('built-in rows carry a Built-in badge and no actions menu', () => {
+  it('built-in rows show no badge and offer only a disabled Delete with a hint', async () => {
+    const user = userEvent.setup()
     render(<AttributeList onNew={() => {}} items={[BUILTIN]} />)
-    expect(screen.getByText('Built-in')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /actions for/i })).toBeNull()
+    expect(screen.queryByText('Built-in')).toBeNull()
+    await user.click(screen.getByRole('button', { name: `Actions for ${BUILTIN.label}` }))
+    const del = await screen.findByRole('menuitem', { name: /Delete/ })
+    expect(del.getAttribute('aria-disabled') ?? del.getAttribute('data-disabled')).not.toBeNull()
+    expect(screen.getByText('Built-in attributes cannot be deleted')).toBeTruthy()
+    expect(screen.queryByRole('menuitem', { name: 'Edit' })).toBeNull()
   })
 
   it('custom rows expose their actions through the row menu', async () => {

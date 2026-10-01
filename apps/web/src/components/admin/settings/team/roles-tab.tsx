@@ -6,7 +6,6 @@ import { settingsQueries } from '@/lib/client/queries/settings'
 import { listRolesFn } from '@/lib/server/functions/roles'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
-import { Badge } from '@/components/ui/badge'
 import { NewButton } from '@/components/shared/new-button'
 import { cn } from '@/lib/shared/utils'
 import { CUSTOM_ROLE_NOTICE } from './role-ui'
@@ -80,13 +79,6 @@ function RoleRow({ role }: { role: RoleWithMeta }) {
       to="/admin/settings/members/roles/$roleId"
       params={{ roleId: role.id }}
       title={role.name}
-      badges={
-        role.isSystem ? (
-          <Badge size="sm" variant="secondary" shape="pill">
-            Preset
-          </Badge>
-        ) : undefined
-      }
       meta={meta}
     />
   )

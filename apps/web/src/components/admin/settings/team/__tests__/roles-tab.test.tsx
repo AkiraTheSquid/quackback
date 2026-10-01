@@ -75,7 +75,7 @@ describe('RolesTab', () => {
     expect(buttons[0].closest('button')?.querySelector('svg')).not.toBeNull()
   })
 
-  it('lists roles as link rows, badging only presets, with the permission count as meta', () => {
+  it('lists roles as link rows, with no badge on presets, and the permission count as meta', () => {
     renderTab()
     const rows = document.querySelectorAll('[data-slot="settings-list-row"]')
     expect(rows).toHaveLength(2)
@@ -83,7 +83,7 @@ describe('RolesTab', () => {
     const owner = rows[0] as HTMLElement
     expect(owner.tagName).toBe('A')
     expect(owner.getAttribute('href')).toBe('/admin/settings/members/roles/role_owner')
-    expect(within(owner).getByText('Preset')).toBeInTheDocument()
+    expect(within(owner).queryByText('Preset')).toBeNull()
     expect(within(owner).getByText(/88 permissions/)).toBeInTheDocument()
 
     const custom = rows[1] as HTMLElement

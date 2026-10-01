@@ -212,10 +212,10 @@ describe('RoleEditor', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Support Lead' })).toBeTruthy()
   })
 
-  it('badges presets only and drops the count chip from the header', () => {
+  it('shows no state badge and drops the count chip from the header', () => {
     const { unmount } = renderEditor(OWNER_PRESET.id)
     const header = document.querySelector('[data-page-header]') as HTMLElement
-    expect(within(header).getByText('Preset')).toBeTruthy()
+    expect(within(header).queryByText('Preset')).toBeNull()
     expect(header.textContent).not.toMatch(/granted/)
     unmount()
 

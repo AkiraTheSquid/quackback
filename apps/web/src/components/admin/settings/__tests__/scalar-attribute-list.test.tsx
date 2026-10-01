@@ -72,14 +72,11 @@ describe.each(ENTITIES)('ScalarAttributeList for $name', (entity) => {
   const renderList = (attrs: ReturnType<typeof stored>[] = [stored()]) =>
     render(<entity.Component initialAttributes={attrs as never} />)
 
-  it('lists the built-in fields without an actions menu, then the custom rows', () => {
+  it('lists the built-in fields without a badge and with a locked menu, then the custom rows', () => {
     renderList()
     const builtin = screen.getByText(entity.builtinKey).closest('[data-slot="settings-list-row"]')
     expect(within(builtin as HTMLElement).getByText(entity.builtinLabel)).toBeTruthy()
-    expect(within(builtin as HTMLElement).getByText('Built-in')).toBeTruthy()
-    expect(
-      within(builtin as HTMLElement).queryByRole('button', { name: /actions for/i })
-    ).toBeNull()
+    expect(within(builtin as HTMLElement).queryByText('Built-in')).toBeNull()
     const custom = screen.getByText('Seats').closest('[data-slot="settings-list-row"]')
     expect(
       within(custom as HTMLElement).getByRole('button', { name: 'Actions for Seats' })

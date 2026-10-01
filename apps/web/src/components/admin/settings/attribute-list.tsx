@@ -1,11 +1,20 @@
 import type { ComponentProps, ReactNode } from 'react'
 import { Squares2X2Icon } from '@heroicons/react/24/outline'
-import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/shared/empty-state'
 import { NewButton } from '@/components/shared/new-button'
 import { cn } from '@/lib/shared/utils'
 import { SettingsCard } from './settings-card'
 import { RowActions, SettingsList, SettingsListRow } from './settings-list'
+
+const BUILTIN_ACTIONS: ComponentProps<typeof RowActions>['items'] = [
+  {
+    label: 'Delete',
+    destructive: true,
+    disabled: true,
+    hint: 'Built-in attributes cannot be deleted',
+    onSelect: () => {},
+  },
+]
 
 /** One row of an attribute list: a built-in field or a custom attribute. */
 export interface AttributeListItem {
@@ -16,7 +25,7 @@ export interface AttributeListItem {
   /** The human type name ("Text", "Select"), shown muted after the key. */
   typeLabel: string
   description?: string | null
-  /** Built-in fields are fixed: a "Built-in" badge replaces the actions menu. */
+  /** Built-in fields are fixed: the menu offers only a disabled Delete with the reason. */
   builtin?: boolean
   /** Extra state badges (AI, Required to close, Archived). */
   badges?: ReactNode
@@ -68,14 +77,7 @@ export function AttributeList({ items, onNew, emptyDescription, children }: Attr
                   </>
                 }
                 meta={item.description || undefined}
-                trailing={
-                  item.builtin ? (
-                    <Badge variant="secondary" size="sm">
-                      Built-in
-                    </Badge>
-                  ) : undefined
-                }
-                actions={item.builtin ? undefined : item.actions}
+                actions={item.builtin ? BUILTIN_ACTIONS : item.actions}
               />
             </div>
           ))}

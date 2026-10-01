@@ -12,7 +12,6 @@ test.describe('Admin Roles Settings', () => {
         timeout: 10000,
       })
     }
-    await expect(page.getByText('Preset').first()).toBeVisible()
   })
 
   test('clicking a preset opens its read-only detail page', async ({ page }) => {

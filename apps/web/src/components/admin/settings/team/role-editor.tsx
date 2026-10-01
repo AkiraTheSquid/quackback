@@ -193,13 +193,6 @@ export function RoleEditor(props: RoleEditorProps) {
     <SettingsPage
       title={isCreate ? 'New role' : (role?.name ?? '')}
       description={readOnly ? role?.description || undefined : undefined}
-      badge={
-        role?.isSystem ? (
-          <Badge size="sm" variant="secondary" shape="pill">
-            Preset
-          </Badge>
-        ) : undefined
-      }
       crumbs={CRUMBS}
       actions={
         canManage && !isCreate ? (
