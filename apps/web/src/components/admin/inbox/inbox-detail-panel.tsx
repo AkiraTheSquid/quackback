@@ -793,7 +793,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
             </div>
             {aiActivity.outcome === 'handed_off' && aiActivity.handoffReason && (
               <p className="text-xs text-muted-foreground">
-                Escalated —{' '}
+                Escalated:{' '}
                 {HANDOFF_REASON_LABELS[aiActivity.handoffReason] ?? aiActivity.handoffReason}
               </p>
             )}

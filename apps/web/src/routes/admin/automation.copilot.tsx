@@ -127,12 +127,15 @@ function AssistantCopilotSettings() {
                       defaultMessage: 'Knowledge',
                     })}
                   </TabsTrigger>
-                  <TabsTrigger value="guidance">
+                  <TabsTrigger
+                    value="guidance"
+                    dirty={dirtyTabs.has('guidance')}
+                    dirtyLabel={unsavedLabel}
+                  >
                     {intl.formatMessage({
                       id: 'automation.agent.tabs.guidance',
                       defaultMessage: 'Guidance',
                     })}
-                    {dirtyTabs.has('guidance') && <UnsavedChangesIndicator label={unsavedLabel} />}
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -194,11 +197,3 @@ function AssistantCopilotSettings() {
   )
 }
 
-function UnsavedChangesIndicator({ label }: { label: string }) {
-  return (
-    <>
-      <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-      <span className="sr-only">{label}</span>
-    </>
-  )
-}

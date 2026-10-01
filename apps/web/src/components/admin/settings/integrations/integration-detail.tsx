@@ -182,7 +182,7 @@ export function IntegrationDetail({
       )}
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-h-[min(80vh,720px)] sm:max-w-[768px] overflow-y-auto">
+        <DialogContent className="max-h-[min(80vh,720px)] sm:max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Sync history</DialogTitle>
           </DialogHeader>

@@ -11,9 +11,7 @@ import { cn } from '@/lib/shared/utils'
  *   - "line": underline style — set `variant="line"` once on the root
  *     `<Tabs>` and it propagates to `TabsList`/`TabsTrigger` below it.
  *
- * Icons are first-class in both variants: drop any SVG (e.g. a Heroicon)
- * directly inside a TabsTrigger and the styles below give it the right
- * size / pointer-events behavior — no consumer className overrides needed.
+ * Page-section tabs are text only; `dirty` adds the unsaved-changes dot.
  */
 
 type TabsVariant = 'pill' | 'line'
@@ -89,15 +87,36 @@ const tabsTriggerVariants = cva(
 function TabsTrigger({
   className,
   variant,
+  dirty = false,
+  dirtyLabel,
+  children,
   ...props
-}: TabsPrimitive.Tab.Props & VariantProps<typeof tabsTriggerVariants>) {
+}: TabsPrimitive.Tab.Props &
+  VariantProps<typeof tabsTriggerVariants> & {
+    /** Marks the tab as holding unsaved changes: a small dot after the label. */
+    dirty?: boolean
+    /** The dot's accessible text. */
+    dirtyLabel?: string
+  }) {
   const contextVariant = React.useContext(TabsVariantContext)
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(tabsTriggerVariants({ variant: variant ?? contextVariant }), className)}
       {...props}
-    />
+    >
+      {children}
+      {dirty && (
+        <>
+          <span
+            data-slot="tabs-trigger-dirty"
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-primary"
+          />
+          {dirtyLabel && <span className="sr-only">{dirtyLabel}</span>}
+        </>
+      )}
+    </TabsPrimitive.Tab>
   )
 }
 
