@@ -187,7 +187,7 @@ describe('<BoardAccessForm> matrix visibility', () => {
 describe('<BoardAccessForm> presets', () => {
   it('renders Public preset as active for asymmetric Public access', () => {
     renderForm(PUBLIC_ACCESS)
-    const publicBtn = screen.getByRole('button', { name: 'Public' })
+    const publicBtn = screen.getByRole('button', { name: 'Everyone' })
     expect(publicBtn.getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -200,7 +200,7 @@ describe('<BoardAccessForm> presets', () => {
       segments: { view: [], vote: [], comment: [], submit: [] },
       moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
     })
-    const privateBtn = screen.getByRole('button', { name: 'Private' })
+    const privateBtn = screen.getByRole('button', { name: 'Team only' })
     expect(privateBtn.getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -213,7 +213,7 @@ describe('<BoardAccessForm> presets', () => {
       segments: { view: [], vote: [], comment: [], submit: [] },
       moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Public' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Everyone' }))
     expect(isCellSelected('View', 'Anyone')).toBe(true)
     expect(isCellSelected('Vote', 'Signed-in')).toBe(true)
     expect(isCellSelected('Comment', 'Signed-in')).toBe(true)
@@ -235,7 +235,7 @@ describe('<BoardAccessForm> presets', () => {
         moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
       })
       expect(mutate).not.toHaveBeenCalled()
-      fireEvent.click(screen.getByRole('button', { name: 'Public' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Everyone' }))
       act(() => {
         vi.advanceTimersByTime(1000)
       })
@@ -248,15 +248,19 @@ describe('<BoardAccessForm> presets', () => {
   it('preset flips to Custom after editing a cell, and back to Public when restored', () => {
     renderForm(PUBLIC_ACCESS)
     // Start in Public
-    expect(screen.getByRole('button', { name: 'Public' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Everyone' }).getAttribute('aria-pressed')).toBe(
+      'true'
+    )
     // Tweak Vote → Team only ⇒ Custom
     clickTierCell('Vote', 'Team only')
-    expect(screen.getByRole('button', { name: 'Public' }).getAttribute('aria-pressed')).toBe(
+    expect(screen.getByRole('button', { name: 'Everyone' }).getAttribute('aria-pressed')).toBe(
       'false'
     )
     // Restore Vote → Signed-in ⇒ Public again
     clickTierCell('Vote', 'Signed-in')
-    expect(screen.getByRole('button', { name: 'Public' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Everyone' }).getAttribute('aria-pressed')).toBe(
+      'true'
+    )
   })
 
   it('Custom tile is non-interactive (role=status, not button)', () => {
@@ -275,10 +279,20 @@ describe('<BoardAccessForm> presets', () => {
     expect(status.getAttribute('aria-pressed')).toBe('true')
   })
 
-  it('Auth-only and Team-only preset tiles are removed', () => {
+  it('offers Everyone and Team only presets, named like the Boards list badges', () => {
     renderForm(PUBLIC_ACCESS)
     expect(screen.queryByRole('button', { name: 'Auth only' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Team only' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Public' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Private' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Team only' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    )
+  })
+
+  it('shows no open-to-restrictive legend', () => {
+    renderForm(PUBLIC_ACCESS)
+    expect(screen.queryByText(/More restrictive/)).not.toBeInTheDocument()
   })
 })
 
@@ -562,7 +576,7 @@ describe('<BoardAccessForm> autosave', () => {
       },
       moderation: { anonPosts: 'inherit', signedPosts: 'inherit', comments: 'inherit' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Public' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Everyone' }))
     flushAutosave()
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -49,7 +49,7 @@ async function createBoardOnAccessTab(page: Page, name: string): Promise<void> {
   await expect(page.getByText('Per-action permissions')).toBeVisible({ timeout: 5000 })
   // New boards default to the Public preset; wait for the matrix to settle on it
   // (the optimistic insert can briefly show defaults before the refetch lands).
-  await expect(page.getByRole('button', { name: 'Public', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Everyone', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
     { timeout: 10000 }
@@ -132,7 +132,7 @@ test.describe('Admin Board Management', () => {
 
     // Visibility is chosen via aria-pressed preset toggles (Public / Private);
     // the board starts Public (asserted in the create helper).
-    const privatePreset = page.getByRole('button', { name: 'Private', exact: true })
+    const privatePreset = page.getByRole('button', { name: 'Team only', exact: true })
     await expect(privatePreset).toBeVisible()
 
     // Flip to Private (a guaranteed change) and confirm it persists in-form.
@@ -225,10 +225,10 @@ test.describe('Board Access Settings', () => {
 
   test('displays the access matrix with presets and per-action permissions', async ({ page }) => {
     // Presets replace the old public/private visibility radios.
-    await expect(page.getByRole('button', { name: 'Public', exact: true })).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Everyone', exact: true })).toBeVisible({
       timeout: 5000,
     })
-    await expect(page.getByRole('button', { name: 'Private', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Team only', exact: true })).toBeVisible()
 
     // The per-action matrix and the team-bypass note identify the new control.
     await expect(page.getByText('Per-action permissions')).toBeVisible()
@@ -242,8 +242,8 @@ test.describe('Board Access Settings', () => {
     const name = `Access Persist ${Date.now()}`
     await createBoardOnAccessTab(page, name)
 
-    const publicPreset = page.getByRole('button', { name: 'Public', exact: true })
-    const privatePreset = page.getByRole('button', { name: 'Private', exact: true })
+    const publicPreset = page.getByRole('button', { name: 'Everyone', exact: true })
+    const privatePreset = page.getByRole('button', { name: 'Team only', exact: true })
     await expect(publicPreset).toHaveAttribute('aria-pressed', 'true')
 
     // Flip to Private and save.
@@ -380,8 +380,8 @@ test.describe('Create Board Dialog', () => {
     await expect(dialog.getByLabel('Description')).toBeVisible()
     // Visibility is chosen via Public/Private preset tiles (aria-pressed), which
     // replaced the old "Public board" switch.
-    await expect(dialog.getByRole('button', { name: 'Public', exact: true })).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Private', exact: true })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Everyone', exact: true })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Team only', exact: true })).toBeVisible()
 
     // Check buttons
     await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible()
@@ -448,7 +448,7 @@ test.describe('Create Board Dialog', () => {
     await dialog.getByLabel('Description').fill('Board created by Playwright test')
 
     // Public preset tile is active by default.
-    await expect(dialog.getByRole('button', { name: 'Public', exact: true })).toHaveAttribute(
+    await expect(dialog.getByRole('button', { name: 'Everyone', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true'
     )
@@ -484,8 +484,8 @@ test.describe('Create Board Dialog', () => {
     await dialog.getByLabel('Description').fill('Private board for testing')
 
     // Select the Private preset (Public is active by default).
-    const publicTile = dialog.getByRole('button', { name: 'Public', exact: true })
-    const privateTile = dialog.getByRole('button', { name: 'Private', exact: true })
+    const publicTile = dialog.getByRole('button', { name: 'Everyone', exact: true })
+    const privateTile = dialog.getByRole('button', { name: 'Team only', exact: true })
     await expect(publicTile).toHaveAttribute('aria-pressed', 'true')
     await privateTile.click()
     await expect(privateTile).toHaveAttribute('aria-pressed', 'true')

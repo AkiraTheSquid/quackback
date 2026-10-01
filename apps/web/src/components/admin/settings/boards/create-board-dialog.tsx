@@ -163,14 +163,14 @@ export function CreateBoardDialog({
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <PresetTile
                         active={field.value === 'public'}
-                        label="Public"
+                        label="Everyone"
                         description="Anyone can view. Sign-in for vote, comment, submit."
                         icon={<GlobeAltIcon className="h-3.5 w-3.5" />}
                         onClick={() => field.onChange('public')}
                       />
                       <PresetTile
                         active={field.value === 'private'}
-                        label="Private"
+                        label="Team only"
                         description="Workspace members only. Hidden from the portal."
                         icon={<LockClosedIcon className="h-3.5 w-3.5" />}
                         onClick={() => field.onChange('private')}
