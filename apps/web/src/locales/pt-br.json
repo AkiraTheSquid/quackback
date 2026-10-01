@@ -534,7 +534,7 @@
   "widget.messenger.online": "Estamos online",
   "widget.messenger.placeholder": "Mensagem...",
   "widget.messenger.replyTime.away": "Estamos ausentes no momento. Retornaremos assim que estivermos online novamente.",
-  "widget.messenger.replyTime.online": "Estamos online — normalmente respondemos em menos de uma hora.",
+  "widget.messenger.replyTime.online": "Estamos online, normalmente respondemos em menos de uma hora.",
   "widget.messenger.seen": "Visto",
   "widget.messenger.send": "Enviar",
   "widget.messenger.startPrompt": "Envie-nos uma mensagem e retornaremos para você.",

@@ -109,7 +109,7 @@ describe('conversational block messages (Phase C, slice C-1) render from content
       }),
       msg({
         senderType: 'agent',
-        content: "We're online — typically replies in under an hour.",
+        content: "We're online, typically replies in under an hour.",
         block: {
           v: 1,
           runId: 'workflow_run_1',
@@ -146,7 +146,7 @@ describe('conversational block messages (Phase C, slice C-1) render from content
       [
         'Customer: I need help',
         'Agent: How can we help?\n[Billing] [Technical issue]',
-        "Agent: We're online — typically replies in under an hour.",
+        "Agent: We're online, typically replies in under an hour.",
         'Agent: How would you rate this conversation?\n😞 🙁 😐 🙂 😄',
         'Customer: Billing',
       ].join('\n')

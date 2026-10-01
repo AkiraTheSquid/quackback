@@ -534,7 +534,7 @@
   "widget.messenger.online": "我们在线",
   "widget.messenger.placeholder": "输入消息…",
   "widget.messenger.replyTime.away": "我们目前不在线。我们回来后会尽快与你联系。",
-  "widget.messenger.replyTime.online": "我们在线——通常会在一小时内回复。",
+  "widget.messenger.replyTime.online": "我们在线，通常会在一小时内回复。",
   "widget.messenger.seen": "已读",
   "widget.messenger.send": "发送",
   "widget.messenger.startPrompt": "给我们发消息，我们会尽快回复你。",

@@ -534,7 +534,7 @@
   "widget.messenger.online": "Мы в сети",
   "widget.messenger.placeholder": "Сообщение...",
   "widget.messenger.replyTime.away": "Нас сейчас нет на месте. Мы ответим вам, как только снова будем на связи.",
-  "widget.messenger.replyTime.online": "Мы на связи — обычно отвечаем менее чем за час.",
+  "widget.messenger.replyTime.online": "Мы на связи, обычно отвечаем менее чем за час.",
   "widget.messenger.seen": "Просмотрено",
   "widget.messenger.send": "Отправить",
   "widget.messenger.startPrompt": "Напишите нам, и мы вам ответим.",
