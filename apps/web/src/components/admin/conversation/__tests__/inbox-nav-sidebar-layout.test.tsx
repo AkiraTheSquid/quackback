@@ -52,7 +52,7 @@ function renderSidebar() {
 describe('InboxNavSidebar layout', () => {
   it('is titled Support', () => {
     renderSidebar()
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Support')
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Support')
     expect(screen.queryByText('Inbox')).toBeNull()
   })
 
