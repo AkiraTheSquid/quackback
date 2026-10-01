@@ -376,6 +376,13 @@
   border-color: var(--border);
 }
 
+/* A danger card keeps its red tint over the shared panel border. */
+[data-visual-theme='refined']
+  [data-settings-page]
+  .rounded-xl.border.bg-card[data-settings-card][data-variant='danger'] {
+  border-color: color-mix(in oklab, var(--destructive) 40%, transparent);
+}
+
 [data-visual-theme='refined'] [data-settings-page] [data-settings-list] a:hover,
 [data-visual-theme='refined'] [data-settings-page] [data-settings-list] button:hover {
   background: var(--accent);

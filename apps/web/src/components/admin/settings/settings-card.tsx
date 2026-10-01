@@ -23,13 +23,19 @@ export function SettingsCard({
   return (
     <section
       data-settings-card=""
+      data-variant={variant}
       className={cn(
         'rounded-xl border bg-card shadow-sm overflow-hidden',
         variant === 'danger' ? 'border-destructive/40' : 'border-border/50'
       )}
     >
       {(title || description || action) && (
-        <div className="flex flex-wrap items-start justify-between gap-2 px-4 py-3 sm:px-6 sm:py-4 border-b border-border/50">
+        <div
+          className={cn(
+            'flex flex-wrap justify-between gap-2 px-4 py-3 sm:px-6 sm:py-4 border-b border-border/50',
+            description ? 'items-start' : 'items-center'
+          )}
+        >
           <div>
             {title && (
               <h2
