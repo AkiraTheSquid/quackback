@@ -120,7 +120,7 @@ test.describe('Post images stay inline', () => {
     test.setTimeout(45_000)
     const png = await stubConversationImageNetwork(page)
     await page.goto('/admin/feedback')
-    await expect(page.getByRole('heading', { name: 'Feedback', level: 1 })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Feedback', level: 2 })).toBeVisible({
       timeout: 15000,
     })
     const create = page.getByRole('button', { name: 'New post' })

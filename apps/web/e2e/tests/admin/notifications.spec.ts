@@ -166,7 +166,8 @@ test.describe('Admin Notifications — Mark All as Read', () => {
 
     const markAllBtn = page.getByRole('button', { name: 'Mark all as read' })
 
-    if ((await markAllBtn.count()) > 0) {
+    // The button stays rendered but disabled with nothing unread, so only click it when enabled
+    if (await markAllBtn.isEnabled()) {
       await markAllBtn.click()
 
       // Button becomes disabled while mutation is pending
