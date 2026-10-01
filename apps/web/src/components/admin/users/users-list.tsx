@@ -24,7 +24,10 @@ import {
   JOINED_COLUMN_WIDTH,
   COUNTRY_COLUMN_WIDTH,
 } from '@/components/admin/users/user-card'
-import { UsersActiveFiltersBar } from '@/components/admin/users/users-active-filters-bar'
+import {
+  UsersActiveFiltersBar,
+  UsersFilterButton,
+} from '@/components/admin/users/users-active-filters-bar'
 import { useUserTags } from '@/lib/client/hooks/use-user-tags'
 import { MobileSegmentSelector } from '@/components/admin/users/users-segment-nav'
 import type { PortalUserListItemView } from '@/lib/shared/types'
@@ -317,6 +320,7 @@ export function UsersList({
         onSortChange={(value) => handleSortChange(value as UsersFilters['sort'])}
         filters={
           <>
+            <UsersFilterButton filters={filters} onFiltersChange={onFiltersChange} />
             <UserTagFilterDropdown
               selectedTagIds={filters.tagIds ?? []}
               onChange={(tagIds) =>
@@ -346,8 +350,7 @@ export function UsersList({
           )
         }
       >
-        {/* Active Filters Bar - Always visible */}
-        <div className="mt-2">
+        <div className="mt-2 empty:hidden">
           <UsersActiveFiltersBar
             filters={filters}
             onFiltersChange={onFiltersChange}

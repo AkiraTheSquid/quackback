@@ -663,8 +663,8 @@ test.describe('Admin Users - Advanced Filters', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('Add filter button opens a popover with filter categories', async ({ page }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+  test('Filter button opens a popover with filter categories', async ({ page }) => {
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -674,7 +674,7 @@ test.describe('Admin Users - Advanced Filters', () => {
   })
 
   test('can filter by verified email status', async ({ page }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -693,7 +693,7 @@ test.describe('Admin Users - Advanced Filters', () => {
   })
 
   test('can filter by post count', async ({ page }) => {
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()
@@ -715,7 +715,7 @@ test.describe('Admin Users - Advanced Filters', () => {
 
   test('can clear an individual filter chip', async ({ page }) => {
     // Apply a verified filter first
-    const addFilterButton = page.getByRole('button', { name: /add filter/i })
+    const addFilterButton = page.getByRole('button', { name: 'Filter', exact: true })
     if ((await addFilterButton.count()) === 0) return
 
     await addFilterButton.click()

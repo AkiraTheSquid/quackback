@@ -270,7 +270,8 @@ function CustomAttrFilterInput({
   )
 }
 
-function AddFilterButton({
+/** The Filter control that opens the category menu; lives in the list toolbar. */
+export function UsersFilterButton({
   onFiltersChange,
   filters,
 }: {
@@ -353,7 +354,7 @@ function AddFilterButton({
           )}
         >
           <PlusIcon className="h-3 w-3" />
-          Add filter
+          Filter
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-52 p-0">
@@ -688,21 +689,13 @@ export function UsersActiveFiltersBar({
     [filters, onFiltersChange]
   )
 
-  if (activeFilters.length === 0) {
-    return (
-      <div className="flex items-center">
-        <AddFilterButton onFiltersChange={onFiltersChange} filters={filters} />
-      </div>
-    )
-  }
+  if (activeFilters.length === 0) return null
 
   return (
     <div className="flex flex-wrap gap-1 items-center">
       {activeFilters.map(({ key, type, ...filterProps }) => (
         <FilterChip key={key} icon={getFilterIcon(type)} {...filterProps} />
       ))}
-
-      <AddFilterButton onFiltersChange={onFiltersChange} filters={filters} />
 
       {activeFilters.length > 1 && (
         <button

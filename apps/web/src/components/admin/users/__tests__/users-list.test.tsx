@@ -119,6 +119,14 @@ describe('<UsersList> toolbar', () => {
     expect(changes).toContainEqual({ sort: 'most_active' })
   })
 
+  it('puts a Filter control on the toolbar row after Sort, with no Add filter line', () => {
+    renderList(USERS, { onNewPerson: () => {} })
+    const toolbar = document.querySelector('[data-slot="admin-list-search"]')!.parentElement!
+    const labels = Array.from(toolbar.querySelectorAll('button')).map((b) => b.textContent?.trim())
+    expect(labels.slice(0, 2)).toEqual(['Sort: Newest', 'Filter'])
+    expect(screen.queryByText('Add filter')).toBeNull()
+  })
+
   it('names the create action New user and runs it', () => {
     let opened = 0
     renderList(USERS, { onNewPerson: () => opened++ })
