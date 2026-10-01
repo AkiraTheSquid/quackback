@@ -270,8 +270,8 @@ function FullContent({
         variant="full"
       />
 
-      {/* End margin on the time reserves room for the archive button so
-          long titles and timestamps never run underneath it. */}
+      {/* The time sits on the row's right edge and fades while the archive
+          button, which takes its place, is showing. */}
       <div className="min-w-0 flex-1">
         {/* The dot is aria-hidden, so this plain-English label is the only
             unread signal exposed to screen readers. Both surfaces share this
@@ -286,7 +286,7 @@ function FullContent({
           >
             {notification.title}
           </p>
-          <span className="me-9 flex shrink-0 items-center gap-2">
+          <span className="flex shrink-0 items-center gap-2 transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
             {isUnread && (
               <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             )}
