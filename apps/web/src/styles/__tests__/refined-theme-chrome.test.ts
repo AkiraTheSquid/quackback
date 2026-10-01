@@ -27,9 +27,8 @@ describe('refined theme chrome tokens', () => {
     ['--chrome-icon', '#8b8b93', '#71717a'],
     ['--chrome-label', '#5f5f68', '#8b8b94'],
     ['--chrome-hover', 'rgba(0, 0, 0, 0.04)', 'rgba(255, 255, 255, 0.04)'],
-    ['--chrome-active-background', '#ffffff', '#1f1f23'],
-    ['--chrome-active-border', '#d4d4d8', '#45454d'],
-    ['--chrome-active-shadow', '0 1px 2px rgba(0, 0, 0, 0.08)', '0 1px 2px rgba(0, 0, 0, 0.5)'],
+    ['--chrome-active-background', '#e4e4e7', '#18181b'],
+    ['--chrome-active-shadow', 'inset 0 1px 2px rgba(0, 0, 0, 0.1)', 'inset 0 1px 2px rgba(0, 0, 0, 0.6)'],
     ['--chrome-active-text', '#09090b', '#fafafa'],
     ['--chrome-active-icon', '#9a6c00', '#ffcf20'],
     ['--chrome-pane-active-background', '#f4f4f5', '#1f1f23'],
@@ -51,7 +50,7 @@ describe('refined theme chrome rules', () => {
   it('raises the active rail item into an outlined pill with the yellow icon', () => {
     const active = block(`${R} [data-admin-rail-item][data-active] {`)
     expect(active).toContain('background: var(--chrome-active-background)')
-    expect(active).toContain('border-color: var(--chrome-active-border)')
+    expect(active).not.toContain('border-color')
     expect(active).toContain('box-shadow: var(--chrome-active-shadow)')
     expect(active).toContain('font-weight: 500')
     expect(block(`${R} [data-admin-rail-item][data-active] > svg {`)).toContain(
