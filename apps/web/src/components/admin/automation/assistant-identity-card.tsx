@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { toast } from 'sonner'
-import { ArrowPathIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/solid'
+import { ArrowPathIcon, PhotoIcon } from '@heroicons/react/24/solid'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -255,13 +255,12 @@ export function AssistantIdentityCard() {
               {draft.avatarUrl && (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive"
+                  className="text-muted-foreground"
                   disabled={avatarActionsDisabled}
                   onClick={removeAvatar}
                 >
-                  <TrashIcon className="size-4" />
                   {intl.formatMessage({
                     id: 'automation.agent.identity.avatarRemove',
                     defaultMessage: 'Remove image',

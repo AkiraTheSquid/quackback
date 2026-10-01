@@ -39,7 +39,7 @@ function AutomationPerformancePage() {
       page="/admin/automation/performance"
       area="automation"
       actions={
-        <span className="text-[13px] text-muted-foreground">
+        <span className="inline-flex h-8 items-center text-[13px] text-muted-foreground">
           {intl.formatMessage({
             id: 'automation.performance.period',
             defaultMessage: 'Last 30 days',

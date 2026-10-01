@@ -177,21 +177,6 @@ function AssistantAgentSettings() {
               </TabsContent>
 
               <TabsContent value="guidance" keepMounted className="space-y-6">
-                <div className="space-y-1">
-                  <h2 className="text-sm font-medium">
-                    {intl.formatMessage({
-                      id: 'automation.agent.guidanceLayers.title',
-                      defaultMessage: 'How guidance is applied',
-                    })}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {intl.formatMessage({
-                      id: 'automation.agent.guidanceLayers.description',
-                      defaultMessage:
-                        "Writing guidelines set the baseline. Situational guidance follows each rule's conditions and scope.",
-                    })}
-                  </p>
-                </div>
                 <GuidanceRulesCard agent="agent" />
               </TabsContent>
             </Tabs>

@@ -145,21 +145,6 @@ function AssistantCopilotSettings() {
               </TabsContent>
 
               <TabsContent value="guidance" keepMounted className="space-y-6">
-                <div className="space-y-1">
-                  <h2 className="text-sm font-medium">
-                    {intl.formatMessage({
-                      id: 'automation.agent.guidanceLayers.title',
-                      defaultMessage: 'How guidance is applied',
-                    })}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {intl.formatMessage({
-                      id: 'automation.copilot.guidanceLayers.description',
-                      defaultMessage:
-                        'Situational guidance follows each rule’s conditions and scope when Copilot answers a teammate.',
-                    })}
-                  </p>
-                </div>
                 <GuidanceRulesCard agent="copilot" />
               </TabsContent>
             </Tabs>

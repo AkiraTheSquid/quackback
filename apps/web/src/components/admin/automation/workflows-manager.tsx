@@ -35,7 +35,7 @@ import {
   PlusIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline'
-import { BoltIcon, ChevronDownIcon, EllipsisVerticalIcon } from '@heroicons/react/24/solid'
+import { BoltIcon, ChevronDownIcon } from '@heroicons/react/24/solid'
 import type { WorkflowDTO } from '@/lib/server/functions/workflows'
 import { workflowsQuery } from '@/lib/client/queries/workflows'
 import { workflowEffectivenessQuery } from '@/lib/client/queries/workflow-reporting'
@@ -68,6 +68,7 @@ import { isPlanRefusal } from '@/lib/shared/describe-upgrade'
 import { WorkflowRunsSheet } from './workflow-runs-sheet'
 import { cn } from '@/lib/shared/utils'
 import { SettingsPage } from '@/components/admin/settings/settings-page'
+import { RowActions } from '@/components/admin/settings/settings-list'
 import { WorkflowFilters } from './workflow-filters'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -78,7 +79,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
@@ -485,7 +485,7 @@ export function WorkflowsManager({
             })}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border">
+          <div className="overflow-hidden rounded-xl border border-border/50">
             {groups.map((group, groupIndex) => {
               const isCustomerFacing = group.cls.value === 'customer_facing'
               const reorderMode: 'enabled' | 'filtered' | 'none' = !isCustomerFacing
@@ -496,7 +496,10 @@ export function WorkflowsManager({
                     ? 'filtered'
                     : 'enabled'
               return (
-                <div key={group.cls.value} className={groupIndex > 0 ? 'border-t' : undefined}>
+                <div
+                  key={group.cls.value}
+                  className={groupIndex > 0 ? 'border-t border-border/50' : undefined}
+                >
                   <GroupHeader
                     label={
                       group.cls.value === 'customer_facing'
@@ -726,37 +729,23 @@ function WorkflowRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              aria-label={`Actions for ${workflow.name}`}
-            >
-              <EllipsisVerticalIcon className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onNavigate(workflow.id)}>Edit</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewRuns(workflow)}>View runs</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {STATUSES.filter((s) => s !== workflow.status).map((s) => (
-              <DropdownMenuItem key={s} onClick={() => onSetStatus(workflow.id, s)}>
-                {STATUS_ACTION_LABEL[s]}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            {/* Same one-tick deferral as the gallery item above: the confirm
-                dialog must open after the menu's teardown, not during it. */}
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setTimeout(() => onDelete(workflow), 0)}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <RowActions
+          label={workflow.name}
+          items={[
+            { label: 'Edit', onSelect: () => onNavigate(workflow.id) },
+            { label: 'View runs', onSelect: () => onViewRuns(workflow) },
+            ...STATUSES.filter((s) => s !== workflow.status).map((s) => ({
+              label: STATUS_ACTION_LABEL[s],
+              onSelect: () => onSetStatus(workflow.id, s),
+            })),
+            // The confirm dialog opens one tick after the menu's teardown, not during it.
+            {
+              label: 'Delete',
+              destructive: true,
+              onSelect: () => setTimeout(() => onDelete(workflow), 0),
+            },
+          ]}
+        />
         <ChevronRightIcon className="size-3.5 text-muted-foreground" aria-hidden />
       </div>
     </div>

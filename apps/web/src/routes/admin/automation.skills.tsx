@@ -138,8 +138,7 @@ function SkillsPage() {
       area="automation"
       description={intl.formatMessage({
         id: 'automation.skills.description',
-        defaultMessage:
-          'Procedures Quinn follows for specific situations. Loaded only when relevant.',
+        defaultMessage: 'Procedures Quinn follows for specific situations.',
       })}
       actions={newButton}
     >
