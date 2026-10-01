@@ -384,9 +384,9 @@ export function RoleEditor(props: RoleEditorProps) {
           <div className="flex gap-2">
             {!isCreate && (
               <Button
-                variant="outline"
+                variant="outline-destructive"
                 size="sm"
-                className="mr-auto border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="mr-auto"
                 onClick={() => setDeleteOpen(true)}
               >
                 Delete role

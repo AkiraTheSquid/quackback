@@ -34,8 +34,7 @@ export function WorkspaceDangerCard({ cloudEnabled }: { cloudEnabled: boolean })
         control={
           <Button
             size="sm"
-            variant="outline"
-            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            variant="outline-destructive"
             disabled={busy}
             onClick={() => setWipeOpen(true)}
           >

@@ -56,9 +56,8 @@ export function DeleteBoardForm({ board }: DeleteBoardFormProps) {
           control={
             <Button
               type="button"
-              variant="outline"
+              variant="outline-destructive"
               size="sm"
-              className="border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setOpen(true)}
             >
               Delete board

@@ -25,6 +25,9 @@ const buttonVariants = cva(
           'bg-destructive text-white shadow-xs hover:bg-destructive/90 hover:shadow-sm active:bg-destructive/85 focus-visible:ring-destructive/40',
         outline:
           'border border-border/50 bg-transparent hover:bg-muted/40 hover:border-border/70 active:bg-muted/60',
+        // Danger-zone actions: outlined red, never a filled button.
+        'outline-destructive':
+          'border border-destructive/40 bg-transparent text-destructive hover:border-destructive/60 hover:bg-destructive/10 active:bg-destructive/15 focus-visible:ring-destructive/40',
         secondary: 'bg-muted text-foreground hover:bg-muted/80 active:bg-muted/70',
         ghost: 'text-muted-foreground hover:text-foreground hover:bg-muted/40 active:bg-muted/60',
         link: 'text-primary underline-offset-4 hover:underline',

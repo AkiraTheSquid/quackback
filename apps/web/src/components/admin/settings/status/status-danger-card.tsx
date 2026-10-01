@@ -34,9 +34,8 @@ export function StatusDangerCard() {
         description="Deletes resolved incidents, their updates and uptime history"
         control={
           <Button
-            variant="outline"
+            variant="outline-destructive"
             size="sm"
-            className="text-destructive border-destructive/30"
             onClick={() => setConfirmOpen(true)}
           >
             Clear history
