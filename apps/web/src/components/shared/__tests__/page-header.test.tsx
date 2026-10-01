@@ -81,6 +81,20 @@ describe('PageHeader', () => {
     expect(status.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('lets the title row wrap so badges drop under the title on narrow screens', () => {
+    render(
+      <PageHeader
+        title="Okta"
+        logo={<span>logo</span>}
+        badge={<span>No client secret</span>}
+        actions={<button>Test</button>}
+      />
+    )
+    const row = screen.getByRole('heading', { name: 'Okta' }).parentElement!
+    expect(row.className).toContain('flex-wrap')
+    expect(row.contains(screen.getByText('No client secret'))).toBe(true)
+  })
+
   it('renders a badge beside the title', () => {
     render(<PageHeader title="Owner" badge={<span>Preset</span>} />)
     const heading = screen.getByRole('heading', { level: 1, name: 'Owner' })
