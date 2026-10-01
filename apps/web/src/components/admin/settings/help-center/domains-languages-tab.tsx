@@ -5,6 +5,7 @@ import { SettingRow, SettingRows } from '@/components/admin/settings/setting-row
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { InlineSpinner } from '@/components/admin/settings/inline-spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -169,10 +170,7 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
   }
 
   return (
-    <SettingsCard
-      title="Custom domain"
-      description="Serve the help center on your own subdomain instead of the default host"
-    >
+    <SettingsCard title="Custom domain" description="Serve the help center on your own subdomain.">
       <div className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="hc-domain" className="text-sm font-medium">
@@ -221,21 +219,31 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
           </div>
         )}
 
-        <div className="space-y-1.5 rounded-lg bg-muted/30 p-4 text-xs text-muted-foreground">
-          <p>
-            Point a CNAME for your domain at this instance. TLS terminates at your own reverse proxy
-            (Caddy, nginx, Traefik). Quackback does not issue certificates.
-          </p>
-          <p>
-            Article content stores absolute image URLs. Changing the domain does not rewrite
-            existing article images, so keep the old host reachable or re-upload affected images.
-          </p>
-          <p>
-            If you self-host branding fonts, keep doing so on the new domain too. Never link a
-            Google Fonts stylesheet from the help center.
-          </p>
-          <p>Once verified, /hc pages on the default host redirect to this domain automatically.</p>
-        </div>
+        <Collapsible>
+          <CollapsibleTrigger className="text-[13px] font-medium text-primary underline-offset-2 hover:underline">
+            DNS setup
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 space-y-1.5 text-[13px] text-muted-foreground">
+              <p>
+                Point a CNAME for your domain at this instance. TLS terminates at your own reverse
+                proxy (Caddy, nginx, Traefik). Quackback does not issue certificates.
+              </p>
+              <p>
+                Article content stores absolute image URLs. Changing the domain does not rewrite
+                existing article images, so keep the old host reachable or re-upload affected
+                images.
+              </p>
+              <p>
+                If you self-host branding fonts, keep doing so on the new domain too. Never link a
+                Google Fonts stylesheet from the help center.
+              </p>
+              <p>
+                Once verified, /hc pages on the default host redirect to this domain automatically.
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </SettingsCard>
   )
@@ -265,22 +273,17 @@ function RedirectRulesCard() {
   return (
     <SettingsCard
       title="Redirect rules"
-      description="301 an old /hc path to a published article or category"
+      description="Redirect an old /hc path to a published article or category."
     >
-      <div className="space-y-4">
-        <CreateRedirectRuleForm />
-
+      <div className="space-y-3">
         {rulesQuery.isLoading ? (
           <div className="flex justify-center py-2">
             <InlineSpinner visible />
           </div>
         ) : rulesQuery.data && rulesQuery.data.length > 0 ? (
-          <ul className="space-y-2">
+          <ul className="divide-y divide-border/50">
             {rulesQuery.data.map((rule) => (
-              <li
-                key={rule.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/50 p-3"
-              >
+              <li key={rule.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
                   <code className="text-xs font-medium">{rule.path}</code>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -301,8 +304,9 @@ function RedirectRulesCard() {
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground">No redirect rules yet.</p>
+          <p className="text-[13px] text-muted-foreground">No redirect rules yet.</p>
         )}
+        <CreateRedirectRuleForm />
       </div>
       <ConfirmDialog
         open={deletingRuleId !== null}
@@ -359,8 +363,8 @@ function CreateRedirectRuleForm() {
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-border/50 p-3">
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr]">
+    <div className="space-y-2 border-t border-border/50 pt-3">
+      <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr_auto]">
         <Input
           value={path}
           onChange={(e) => setPath(e.target.value)}
@@ -394,6 +398,10 @@ function CreateRedirectRuleForm() {
             ))}
           </SelectContent>
         </Select>
+        <Button size="sm" disabled={!canSubmit || createRule.isPending} onClick={handleSubmit}>
+          <InlineSpinner visible={createRule.isPending} />
+          Add rule
+        </Button>
       </div>
       {createRule.isError && (
         <p className="flex items-center gap-1 text-xs text-destructive">
@@ -401,10 +409,6 @@ function CreateRedirectRuleForm() {
           {createRule.error instanceof Error ? createRule.error.message : 'Could not create rule'}
         </p>
       )}
-      <Button size="sm" disabled={!canSubmit || createRule.isPending} onClick={handleSubmit}>
-        <InlineSpinner visible={createRule.isPending} />
-        Add rule
-      </Button>
     </div>
   )
 }
@@ -454,12 +458,12 @@ function LocalesCard({ locales }: { locales: HelpCenterConfig['locales'] }) {
       description="Add a locale to translate articles and categories into it"
     >
       <div className="space-y-4">
-        <ul className="space-y-2">
-          <li className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+        <ul className="divide-y divide-border/50">
+          <li className="flex items-center justify-between py-3">
             <span className="text-sm font-medium">
               {LOCALE_LABELS[locales.default] ?? locales.default}
             </span>
-            <span className="text-xs text-muted-foreground">Default</span>
+            <span className="text-[13px] text-muted-foreground">Default</span>
           </li>
           {locales.additional.map((locale) => (
             <LocaleRow
@@ -565,7 +569,7 @@ function LocaleRow({
   }
 
   return (
-    <li className="rounded-lg border border-border/50 p-3">
+    <li className="py-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{LOCALE_LABELS[locale] ?? locale}</span>
         <div className="flex items-center gap-2">
