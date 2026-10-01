@@ -310,7 +310,8 @@ function SortableStatusItem({
     opacity: isDragging ? 0.5 : 1,
   }
 
-  // The default status is locked; the last status in a category cannot go either.
+  // The default status and the last status in a category cannot be deleted; both show a lock.
+  const locked = status.isDefault || !canDelete
   const actions = [
     { label: 'Edit', onSelect: onEdit },
     ...(status.isDefault
@@ -350,14 +351,18 @@ function SortableStatusItem({
         title={
           <span className="inline-flex items-center gap-1.5">
             {status.name}
-            {status.isDefault && (
+            {locked && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <LockClosedIcon aria-label="Locked" className="size-3 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Default status for new posts. It cannot be removed.</p>
+                    <p>
+                      {status.isDefault
+                        ? 'Default status for new posts. It cannot be removed.'
+                        : 'The last status in a category cannot be removed.'}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

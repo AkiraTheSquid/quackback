@@ -98,10 +98,22 @@ describe('StatusesSettingsPage', () => {
     expect(screen.getAllByText('Roadmap')).toHaveLength(3)
   })
 
+  it('locks every status that cannot be deleted and no other', () => {
+    renderPage()
+    // Open is the default; Closed is the only status in its category. Complete
+    // has a sibling, so it can be deleted and stays unlocked.
+    const lockedRows = screen
+      .getAllByLabelText('Locked')
+      .map((lock) => lock.closest('[data-slot="settings-list-row"]')?.textContent)
+    expect(lockedRows).toHaveLength(2)
+    expect(lockedRows[0]).toContain('Open')
+    expect(lockedRows[1]).toContain('Closed')
+  })
+
   it('shows a lock and no Delete item for the default status', async () => {
     const user = userEvent.setup()
     renderPage()
-    expect(screen.getByLabelText('Locked')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('Locked').length).toBeGreaterThan(0)
     await user.click(screen.getByRole('button', { name: 'Actions for Open' }))
     expect(await screen.findByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull()

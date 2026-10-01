@@ -7,7 +7,8 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest'
 import type { ReactElement } from 'react'
 import { Suspense } from 'react'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import type { DragEndEvent } from '@dnd-kit/core'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -57,6 +58,20 @@ const STAGE_LABELS = {
   resolved: 'Resolved',
 }
 
+// Drag gestures need layout, which happy-dom lacks: capture the drag-end handler
+// the list gives the DndContext and call it with a real event shape.
+const dnd = vi.hoisted(() => ({ onDragEnd: null as ((event: DragEndEvent) => void) | null }))
+vi.mock('@dnd-kit/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@dnd-kit/core')>()
+  return {
+    ...actual,
+    DndContext: (props: { onDragEnd?: (event: DragEndEvent) => void; children: never }) => {
+      dnd.onDragEnd = props.onDragEnd ?? null
+      return <actual.DndContext {...props} />
+    },
+  }
+})
+
 vi.mock('@/lib/server/functions/tickets', () => ({
   listTicketStatusesFn: vi.fn(async () => FIXTURE_STATUSES),
   getTicketStageLabelsFn: vi.fn(async () => STAGE_LABELS),
@@ -67,7 +82,11 @@ vi.mock('@/lib/server/functions/tickets', () => ({
   setTicketStageLabelsFn: vi.fn(),
 }))
 
-import { updateTicketStatusFn, setTicketStageLabelsFn } from '@/lib/server/functions/tickets'
+import {
+  updateTicketStatusFn,
+  setTicketStageLabelsFn,
+  reorderTicketStatusesFn,
+} from '@/lib/server/functions/tickets'
 import { TicketStatusList } from '../ticket-status-list'
 import { StageLabelsCard } from '../stage-labels-card'
 
@@ -106,6 +125,29 @@ describe('TicketStatusList', () => {
     expect(screen.getByText('Closed · SLA stops')).toBeInTheDocument()
     // No table chrome: the category column and its chips are gone.
     expect(screen.queryByText('Category')).toBeNull()
+  })
+
+  it('shows a named drag grip on every row, not only on hover', async () => {
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await screen.findByText('Triage')
+    for (const name of ['Triage', 'Escalated', 'Done']) {
+      const grip = screen.getByRole('button', { name: `Reorder ${name}` })
+      expect(grip.querySelector('svg')?.getAttribute('class')).not.toMatch(/opacity-0/)
+    }
+  })
+
+  it('saves the new order of a category after a drag', async () => {
+    vi.mocked(reorderTicketStatusesFn).mockResolvedValue(undefined as never)
+    renderWithClient(<TicketStatusList creating={false} onCreatingChange={noop} />)
+    await screen.findByText('Triage')
+    dnd.onDragEnd?.({
+      active: { id: 'ticket_status_3' },
+      over: { id: 'ticket_status_1' },
+    } as DragEndEvent)
+    await waitFor(() => expect(reorderTicketStatusesFn).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(reorderTicketStatusesFn).mock.calls[0][0]).toEqual({
+      data: { orderedIds: ['ticket_status_3', 'ticket_status_1'] },
+    })
   })
 
   it('marks the default status with a lock, not a Default chip', async () => {

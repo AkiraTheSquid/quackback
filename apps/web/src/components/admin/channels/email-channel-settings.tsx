@@ -108,8 +108,9 @@ function InboundRouteSection({
       description="Forward your support inbox here so replies become conversations."
     >
       {platformAddress && (
-        <p className="text-sm">
-          Email to <span className="font-medium">{platformAddress}</span> becomes a conversation.
+        <p className="mb-4 text-[13px] text-muted-foreground">
+          Email to <span className="font-medium text-foreground">{platformAddress}</span> becomes a
+          conversation.
         </p>
       )}
       {forwardingTarget && !editing ? (
