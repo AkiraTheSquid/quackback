@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
-import { Bars3Icon } from '@heroicons/react/24/solid'
+import { Bars3Icon, PlusIcon } from '@heroicons/react/24/solid'
 import {
   DndContext,
   closestCenter,
@@ -17,7 +17,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { NewButton } from '@/components/shared/new-button'
 import { SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -109,13 +108,17 @@ export function HomeCardsList({ cards, onChange, disabled = false }: HomeCardsLi
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium">Home cards</Label>
-        <NewButton
-          noun="link card"
+        <Button
+          variant="outline"
+          size="sm"
           disabled={disabled || cards.length >= MAX_HOME_CARDS}
           onClick={() =>
             onChange([...cards, { id: crypto.randomUUID(), type: 'link', title: '', url: '' }])
           }
-        />
+        >
+          <PlusIcon className="size-3.5 me-1.5" />
+          Add link card
+        </Button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border/50">

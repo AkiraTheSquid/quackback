@@ -397,7 +397,12 @@ function CreateRedirectRuleForm() {
             ))}
           </SelectContent>
         </Select>
-        <Button size="sm" disabled={!canSubmit || createRule.isPending} onClick={handleSubmit}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!canSubmit || createRule.isPending}
+          onClick={handleSubmit}
+        >
           <InlineSpinner visible={createRule.isPending} />
           Add rule
         </Button>

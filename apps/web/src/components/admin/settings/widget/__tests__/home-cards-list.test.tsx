@@ -143,7 +143,7 @@ describe('HomeCardsList', () => {
 
   it('adds a blank link card', async () => {
     const { onChange, user } = setup()
-    await user.click(screen.getByRole('button', { name: 'New link card' }))
+    await user.click(screen.getByRole('button', { name: 'Add link card' }))
     const next = onChange.mock.calls[0][0] as WidgetHomeCard[]
     expect(next).toHaveLength(4)
     expect(next[3]).toMatchObject({ type: 'link', title: '', url: '' })
@@ -157,7 +157,7 @@ describe('HomeCardsList', () => {
       url: 'https://x.test',
     }))
     setup({ cards: many })
-    expect(screen.getByRole('button', { name: 'New link card' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add link card' })).toBeDisabled()
   })
 
   it('shows a non-default audience in the row meta', () => {
