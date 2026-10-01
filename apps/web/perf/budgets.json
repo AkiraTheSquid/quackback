@@ -150,8 +150,8 @@
     "ui:admin-inbox-load": {
       "dbQueries": 22,
       "serverRequests": 1,
-      "requests": 212,
-      "jsRequests": 206,
+      "requests": 213,
+      "jsRequests": 207,
       "jsKB": 815.9,
       "htmlTransferKB": 34.1,
       "componentRenders": 632
@@ -190,7 +190,7 @@
       "jsRequests": 0,
       "jsKB": 0,
       "htmlTransferKB": 0,
-      "componentRenders": 409
+      "componentRenders": 451
     },
     "ui:admin-inbox-open-conversation": {
       "dbQueries": 29,
@@ -295,7 +295,7 @@
       "serverRequests": 1,
       "requests": 124,
       "jsRequests": 119,
-      "jsKB": 428.9,
+      "jsKB": 446.6,
       "htmlTransferKB": 27,
       "componentRenders": 579
     },
@@ -308,7 +308,7 @@
       "serverRequests": 3,
       "requests": 125,
       "jsRequests": 118,
-      "jsKB": 428.3,
+      "jsKB": 445.5,
       "htmlTransferKB": 28.2,
       "componentRenders": 459
     },
@@ -334,7 +334,7 @@
       "serverRequests": 3,
       "requests": 121,
       "jsRequests": 114,
-      "jsKB": 410.3,
+      "jsKB": 427.5,
       "htmlTransferKB": 27.9,
       "componentRenders": 380
     },
@@ -371,8 +371,8 @@
     "sweep:ui:admin:/admin/automation/workflows": {
       "dbQueries": 13,
       "serverRequests": 2,
-      "requests": 138,
-      "jsRequests": 132,
+      "requests": 139,
+      "jsRequests": 133,
       "jsKB": 446.2,
       "htmlTransferKB": 29.5,
       "componentRenders": 414
@@ -384,11 +384,11 @@
     "sweep:ui:admin:/admin/changelog": {
       "dbQueries": 20,
       "serverRequests": 3,
-      "requests": 106,
-      "jsRequests": 99,
+      "requests": 107,
+      "jsRequests": 100,
       "jsKB": 383.4,
       "htmlTransferKB": 27.1,
-      "componentRenders": 419
+      "componentRenders": 464
     },
     "sweep:doc:admin:/admin/feedback": {
       "dbQueries": 25,
@@ -423,8 +423,8 @@
     "sweep:ui:admin:/admin/inbox": {
       "dbQueries": 22,
       "serverRequests": 1,
-      "requests": 212,
-      "jsRequests": 206,
+      "requests": 213,
+      "jsRequests": 207,
       "jsKB": 815.9,
       "htmlTransferKB": 34.1,
       "componentRenders": 632
@@ -475,8 +475,8 @@
     "sweep:ui:admin:/admin/settings/billing": {
       "dbQueries": 17,
       "serverRequests": 1,
-      "requests": 103,
-      "jsRequests": 98,
+      "requests": 106,
+      "jsRequests": 101,
       "jsKB": 395.9,
       "htmlTransferKB": 28.4,
       "componentRenders": 348
@@ -501,9 +501,9 @@
     "sweep:ui:admin:/admin/settings/changelog": {
       "dbQueries": 8,
       "serverRequests": 1,
-      "requests": 122,
-      "jsRequests": 117,
-      "jsKB": 412.8,
+      "requests": 124,
+      "jsRequests": 119,
+      "jsKB": 424.3,
       "htmlTransferKB": 30.4,
       "componentRenders": 399
     },
@@ -553,8 +553,8 @@
     "sweep:ui:admin:/admin/settings/channels/messenger": {
       "dbQueries": 6,
       "serverRequests": 1,
-      "requests": 106,
-      "jsRequests": 101,
+      "requests": 107,
+      "jsRequests": 102,
       "jsKB": 391.9,
       "htmlTransferKB": 29.9,
       "componentRenders": 380
@@ -570,7 +570,7 @@
       "jsRequests": 119,
       "jsKB": 413.1,
       "htmlTransferKB": 28.9,
-      "componentRenders": 372
+      "componentRenders": 416
     },
     "sweep:doc:admin:/admin/settings/conversation-data": {
       "dbQueries": 7,
@@ -592,8 +592,8 @@
     "sweep:ui:admin:/admin/settings/developers": {
       "dbQueries": 8,
       "serverRequests": 1,
-      "requests": 128,
-      "jsRequests": 123,
+      "requests": 130,
+      "jsRequests": 125,
       "jsKB": 426.5,
       "htmlTransferKB": 34.3,
       "componentRenders": 431
@@ -605,8 +605,8 @@
     "sweep:ui:admin:/admin/settings/domains": {
       "dbQueries": 6,
       "serverRequests": 1,
-      "requests": 101,
-      "jsRequests": 96,
+      "requests": 103,
+      "jsRequests": 98,
       "jsKB": 390.3,
       "htmlTransferKB": 28.2,
       "componentRenders": 346
@@ -631,9 +631,9 @@
     "sweep:ui:admin:/admin/settings/help-center": {
       "dbQueries": 6,
       "serverRequests": 1,
-      "requests": 119,
-      "jsRequests": 114,
-      "jsKB": 411.7,
+      "requests": 123,
+      "jsRequests": 118,
+      "jsKB": 420.7,
       "htmlTransferKB": 29.4,
       "componentRenders": 393
     },
@@ -787,8 +787,8 @@
     "sweep:ui:admin:/admin/settings/security/authentication": {
       "dbQueries": 11,
       "serverRequests": 1,
-      "requests": 154,
-      "jsRequests": 149,
+      "requests": 156,
+      "jsRequests": 151,
       "jsKB": 452.4,
       "htmlTransferKB": 31,
       "componentRenders": 427
@@ -800,8 +800,8 @@
     "sweep:ui:admin:/admin/settings/security/sso/new": {
       "dbQueries": 6,
       "serverRequests": 1,
-      "requests": 118,
-      "jsRequests": 113,
+      "requests": 120,
+      "jsRequests": 115,
       "jsKB": 418.8,
       "htmlTransferKB": 30.7,
       "componentRenders": 416
@@ -813,8 +813,8 @@
     "sweep:ui:admin:/admin/settings/sla": {
       "dbQueries": 8,
       "serverRequests": 1,
-      "requests": 119,
-      "jsRequests": 114,
+      "requests": 120,
+      "jsRequests": 115,
       "jsKB": 415.3,
       "htmlTransferKB": 29.6,
       "componentRenders": 430
@@ -830,7 +830,7 @@
       "jsRequests": 112,
       "jsKB": 422.1,
       "htmlTransferKB": 30.5,
-      "componentRenders": 512
+      "componentRenders": 569
     },
     "sweep:doc:admin:/admin/settings/tags": {
       "htmlKB": 163.3,
@@ -891,8 +891,8 @@
     "sweep:ui:admin:/admin/settings/widget/install": {
       "dbQueries": 17,
       "serverRequests": 1,
-      "requests": 137,
-      "jsRequests": 132,
+      "requests": 138,
+      "jsRequests": 133,
       "jsKB": 447.1,
       "htmlTransferKB": 33.1,
       "componentRenders": 413
@@ -1053,8 +1053,8 @@
     "ui:admin-settings-tour": {
       "dbQueries": 52,
       "serverRequests": 10,
-      "requests": 87,
-      "jsRequests": 77,
+      "requests": 88,
+      "jsRequests": 78,
       "jsKB": 135.5,
       "htmlTransferKB": 0,
       "componentRenders": 977
