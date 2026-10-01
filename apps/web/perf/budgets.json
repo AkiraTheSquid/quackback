@@ -293,8 +293,8 @@
     "sweep:ui:admin:/admin/automation": {
       "dbQueries": 8,
       "serverRequests": 1,
-      "requests": 124,
-      "jsRequests": 119,
+      "requests": 125,
+      "jsRequests": 120,
       "jsKB": 446.6,
       "htmlTransferKB": 27,
       "componentRenders": 579
@@ -306,8 +306,8 @@
     "sweep:ui:admin:/admin/automation/agent": {
       "dbQueries": 16,
       "serverRequests": 3,
-      "requests": 125,
-      "jsRequests": 118,
+      "requests": 126,
+      "jsRequests": 119,
       "jsKB": 445.5,
       "htmlTransferKB": 28.2,
       "componentRenders": 459
@@ -332,8 +332,8 @@
     "sweep:ui:admin:/admin/automation/copilot": {
       "dbQueries": 16,
       "serverRequests": 3,
-      "requests": 121,
-      "jsRequests": 114,
+      "requests": 122,
+      "jsRequests": 115,
       "jsKB": 427.5,
       "htmlTransferKB": 27.9,
       "componentRenders": 380
@@ -371,8 +371,8 @@
     "sweep:ui:admin:/admin/automation/workflows": {
       "dbQueries": 13,
       "serverRequests": 2,
-      "requests": 139,
-      "jsRequests": 133,
+      "requests": 140,
+      "jsRequests": 134,
       "jsKB": 446.2,
       "htmlTransferKB": 29.5,
       "componentRenders": 414
