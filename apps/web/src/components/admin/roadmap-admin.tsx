@@ -184,23 +184,25 @@ export function RoadmapAdmin() {
         {selectedRoadmap ? (
           <>
             <div className="border-b border-border/50">
-              <div className="px-3 pt-3.5">
+              <div className="px-4 pt-3.5 sm:px-6">
                 <PageHeader
                   title={selectedRoadmap.name}
                   description={selectedRoadmap.description ?? undefined}
                 />
               </div>
-              <RoadmapFiltersBar
-                filters={filters}
-                onFiltersChange={setFilters}
-                onClearAll={clearFilters}
-                boards={boards}
-                tags={tags}
-                segments={segments}
-                onToggleBoard={toggleBoard}
-                onToggleTag={toggleTag}
-                onToggleSegment={toggleSegment}
-              />
+              <div className="px-1 sm:px-3">
+                <RoadmapFiltersBar
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  onClearAll={clearFilters}
+                  boards={boards}
+                  tags={tags}
+                  segments={segments}
+                  onToggleBoard={toggleBoard}
+                  onToggleTag={toggleTag}
+                  onToggleSegment={toggleSegment}
+                />
+              </div>
             </div>
 
             <DndContext
