@@ -199,14 +199,13 @@ function CountsCard({
             key={metric.key}
             link={metric.link}
             onClick={() => onFilter(metric.filter)}
-            className="flex min-w-0 items-center gap-3 bg-card px-3 py-3.5 transition-colors hover:bg-muted/40 sm:gap-4 sm:px-5 sm:py-5"
+            className="flex min-w-0 flex-col gap-2 bg-card px-5 py-4 transition-colors hover:bg-muted/40"
           >
-            <span className="shrink-0 text-3xl font-semibold leading-none tabular-nums tracking-tight sm:text-4xl">
-              {metric.count.toLocaleString()}
+            <span className="truncate text-[13px] text-muted-foreground">
+              {`${metric.label} ${metric.detail}`.replace(/^./, (c) => c.toUpperCase())}
             </span>
-            <span className="min-w-0 text-sm leading-snug text-muted-foreground">
-              <span className="block">{metric.label}</span>
-              <span className="block">{metric.detail}</span>
+            <span className="text-2xl leading-none font-bold tabular-nums tracking-tight sm:text-3xl">
+              {metric.count.toLocaleString()}
             </span>
           </OverviewNavLink>
         ))}

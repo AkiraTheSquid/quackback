@@ -115,17 +115,14 @@ vi.mock('@tanstack/react-router', () => ({
 import { OverviewDashboard } from '../admin-overview'
 
 describe('OverviewDashboard', () => {
-  it('renders each count with a two-line item description', () => {
+  it('renders each count under a single-line label', () => {
     const { container } = render(<OverviewDashboard />)
 
     expect(screen.getByText('3')).toBeInTheDocument()
-    expect(screen.getByText('conversations')).toBeInTheDocument()
-    expect(screen.getByText('waiting for reply')).toBeInTheDocument()
-    expect(screen.getAllByText('feedback posts')).toHaveLength(2)
-    expect(screen.getByText('to review')).toBeInTheDocument()
-    expect(screen.getByText('with no changelog')).toBeInTheDocument()
-    expect(screen.getByText('help center articles')).toBeInTheDocument()
-    expect(screen.getByText('in draft')).toBeInTheDocument()
+    expect(screen.getByText('Conversations waiting for reply')).toBeInTheDocument()
+    expect(screen.getByText('Feedback posts to review')).toBeInTheDocument()
+    expect(screen.getByText('Feedback posts with no changelog')).toBeInTheDocument()
+    expect(screen.getByText('Help center articles in draft')).toBeInTheDocument()
     expect(screen.getByText('Support')).toBeInTheDocument()
     expect(screen.getByText('Feedback')).toBeInTheDocument()
 
