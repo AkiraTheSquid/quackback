@@ -201,7 +201,7 @@ function CountsCard({
             onClick={() => onFilter(metric.filter)}
             className="flex min-w-0 flex-col gap-2 bg-card px-5 py-4 transition-colors hover:bg-muted/40"
           >
-            <span className="truncate text-[13px] text-muted-foreground">
+            <span className="line-clamp-2 min-h-[2lh] text-[13px] text-muted-foreground">
               {`${metric.label} ${metric.detail}`.replace(/^./, (c) => c.toUpperCase())}
             </span>
             <span className="text-2xl leading-none font-bold tabular-nums tracking-tight sm:text-3xl">
