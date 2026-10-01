@@ -1,3 +1,4 @@
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 /** The rules the SLA clock engine follows, one click away from the Default policy row. */
@@ -5,10 +6,7 @@ export function SlaRulesPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-        >
+        <button type="button" className={INLINE_LINK}>
           How SLAs apply
         </button>
       </PopoverTrigger>

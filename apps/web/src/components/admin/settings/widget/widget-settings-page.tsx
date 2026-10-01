@@ -923,7 +923,7 @@ function HomeCustomizationCard({
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            A backdrop for the Home tab. It fills the widget panel and fades into the background.
+            A backdrop for the Home tab that fades into the background.
           </p>
         </div>
 

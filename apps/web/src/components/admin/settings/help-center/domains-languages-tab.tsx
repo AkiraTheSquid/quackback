@@ -1,3 +1,4 @@
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TrashIcon, XCircleIcon } from '@heroicons/react/24/solid'
@@ -220,9 +221,7 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
         )}
 
         <Collapsible>
-          <CollapsibleTrigger className="text-[13px] font-medium text-primary underline-offset-2 hover:underline">
-            DNS setup
-          </CollapsibleTrigger>
+          <CollapsibleTrigger className={INLINE_LINK}>DNS setup</CollapsibleTrigger>
           <CollapsibleContent>
             <div className="mt-2 space-y-1.5 text-[13px] text-muted-foreground">
               <p>

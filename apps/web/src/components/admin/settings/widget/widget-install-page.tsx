@@ -1,3 +1,4 @@
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 import { useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
@@ -77,12 +78,7 @@ export function WidgetInstallPage() {
       <CopyAgentPromptButton getPrompt={agentPrompt} disabled={mintInstallCode.isPending} />
       <p className="mt-3 text-xs text-muted-foreground">
         The agent installs the widget and turns it on. You never paste the signing secret.{' '}
-        <a
-          href={WIDGET_SKILL_REPO}
-          target="_blank"
-          rel="noreferrer"
-          className="underline underline-offset-2"
-        >
+        <a href={WIDGET_SKILL_REPO} target="_blank" rel="noreferrer" className={INLINE_LINK}>
           What the agent does
         </a>
       </p>

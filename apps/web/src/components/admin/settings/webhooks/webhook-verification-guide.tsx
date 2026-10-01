@@ -1,3 +1,4 @@
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 import { useState, useMemo } from 'react'
 import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/solid'
 import {
@@ -221,9 +222,7 @@ const WEBHOOK_HEADERS = [
 export function WebhookVerificationGuide() {
   return (
     <Collapsible>
-      <CollapsibleTrigger className="text-[13px] font-medium text-primary underline-offset-2 hover:underline">
-        How to verify signatures
-      </CollapsibleTrigger>
+      <CollapsibleTrigger className={INLINE_LINK}>How to verify signatures</CollapsibleTrigger>
       <CollapsibleContent>
         <div className="pt-3">
           <VerificationCard />
