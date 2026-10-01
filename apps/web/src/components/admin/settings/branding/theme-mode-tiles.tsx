@@ -1,4 +1,4 @@
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { RADIO_TILE_DOT, RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/shared/utils'
 import type { ThemeMode } from '@/lib/shared/theme'
 
@@ -51,7 +51,7 @@ export function ThemeModeTiles({
           >
             <Swatch mode={option.value} />
             <span className="flex items-center gap-2 text-[13px] font-medium">
-              <RadioGroupItem value={option.value} className="[&_div]:bg-foreground" />
+              <RadioGroupItem value={option.value} className={RADIO_TILE_DOT} />
               {option.label}
             </span>
           </label>

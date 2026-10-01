@@ -1,9 +1,10 @@
+import { cn } from '@/lib/shared/utils'
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useIntl } from 'react-intl'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import { Button } from '@/components/ui/button'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { RADIO_TILE_DOT, RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { assistantQueries } from '@/lib/client/queries/assistant'
 import { useUpdateAssistantVoice } from '@/lib/client/mutations/assistant'
 import {
@@ -185,7 +186,7 @@ export function AssistantVoiceCard() {
                   <RadioGroupItem
                     value={value}
                     aria-describedby={descriptionId}
-                    className="mt-0.5"
+                    className={cn('mt-0.5', RADIO_TILE_DOT)}
                   />
                   <span>
                     <span className="block text-sm font-medium">
@@ -235,7 +236,7 @@ export function AssistantVoiceCard() {
                   <RadioGroupItem
                     value={value}
                     aria-describedby={descriptionId}
-                    className="mt-0.5"
+                    className={cn('mt-0.5', RADIO_TILE_DOT)}
                   />
                   <span>
                     <span className="block text-sm font-medium">
