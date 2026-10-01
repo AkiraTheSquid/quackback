@@ -272,7 +272,7 @@ describe('AdminSidebar — AI & Automation visibility', () => {
   })
 })
 
-describe('AdminSidebar — rail', () => {
+describe('AdminSidebar rail', () => {
   afterEach(() => {
     mockPending.current = 0
     cleanup()

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * <UsersSegmentNav> — the Users side pane: a labelled Directory section and
+ * <UsersSegmentNav>: the Users side pane, a labelled Directory section and
  * a Segments section whose rows carry an icon and whose "+" names its action.
  */
 import { describe, it, expect, vi } from 'vitest'
