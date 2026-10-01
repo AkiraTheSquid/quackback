@@ -474,7 +474,7 @@ function EmptyList({
 function SkeletonRow() {
   return (
     <div className="flex w-full items-start border-b border-border/30">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-1.5 pr-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-3 pr-3">
         <Skeleton className="size-8 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
@@ -586,7 +586,7 @@ export const ConversationRow = memo(function ConversationRow({
         onMouseLeave={onPrefetchCancel}
         onFocus={onPrefetch ? () => onPrefetch(id) : undefined}
         onBlur={onPrefetchCancel}
-        className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-1.5 pr-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-3 pr-3 text-left"
       >
         <Avatar
           src={c.visitor.avatarUrl}
@@ -683,7 +683,7 @@ const TicketRow = memo(function TicketRow({
         onMouseLeave={onPrefetchCancel}
         onFocus={onPrefetch ? () => onPrefetch(id) : undefined}
         onBlur={onPrefetchCancel}
-        className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-1.5 pr-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-2.5 py-3 pl-3 pr-3 text-left"
       >
         <TicketTypeGlyph type={t.type} />
         <div className="min-w-0 flex-1">
