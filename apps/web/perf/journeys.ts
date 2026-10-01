@@ -190,7 +190,7 @@ const SWEEP_PAGES: { path: string; as: Actor }[] = [
     'feedback',
     'help-center',
     'inbox',
-    'moderation',
+    'feedback/moderation',
     'notifications',
     'roadmap',
     'users?sort=newest',
