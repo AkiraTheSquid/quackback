@@ -91,7 +91,7 @@ describe('generateThemeCSS with a partially-specified config', () => {
     expect(readVar(css, ':root', '--muted-foreground')).toBe('oklch(0.45 0 0)')
     expect(readVar(css, ':root', '--border')).toBe('oklch(0.87 0 0)')
     expect(readVar(css, ':root', '--destructive')).toBe('oklch(0.577 0.245 27)')
-    expect(readVar(css, ':root', '--success')).toBe('oklch(0.62 0.149 163)')
+    expect(readVar(css, ':root', '--success')).toBe('oklch(0.49 0.115 165.6)')
     // Derived variables follow the colour that was chosen, not the base's.
     // (Only the pass-through ones: the derivations that read a colour's
     // lightness and hue expect oklch, and fall back when handed hex.)

@@ -45,7 +45,7 @@ export const DEFAULT_LIGHT_BASE: ThemeColorBase = {
   mutedForeground: 'oklch(0.45 0 0)',
   border: 'oklch(0.87 0 0)',
   destructive: 'oklch(0.577 0.245 27)',
-  success: 'oklch(0.62 0.149 163)',
+  success: 'oklch(0.49 0.115 165.6)',
 }
 
 export const DEFAULT_DARK_BASE: ThemeColorBase = {
@@ -76,7 +76,7 @@ export const REFINED_LIGHT_BASE: ThemeColorBase = {
   mutedForeground: '#525252',
   border: '#d4d4d4',
   destructive: 'oklch(0.577 0.245 27)',
-  success: 'oklch(0.62 0.149 163)',
+  success: 'oklch(0.49 0.115 165.6)',
 }
 
 export const REFINED_DARK_BASE: ThemeColorBase = {
