@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { SETTINGS_PAGES, type SettingsPagePath } from './settings-pages'
+import { SETTINGS_PAGE_ICONS } from './settings-page-icons'
 import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types'
 
 export interface SettingsModulePage {
@@ -21,13 +22,13 @@ export interface SettingsModule {
 
 /** A module page whose label and icon come from the page registry. */
 function modulePage(to: SettingsPagePath, description?: string): SettingsModulePage {
-  const { label, icon } = SETTINGS_PAGES[to]
-  return { label, to, icon, description }
+  const { label } = SETTINGS_PAGES[to]
+  return { label, to, icon: SETTINGS_PAGE_ICONS[to], description }
 }
 
 function moduleHead(to: SettingsPagePath) {
-  const { label, icon } = SETTINGS_PAGES[to]
-  return { label, icon }
+  const { label } = SETTINGS_PAGES[to]
+  return { label, icon: SETTINGS_PAGE_ICONS[to] }
 }
 
 function pathIsUnder(pathname: string, to: string): boolean {

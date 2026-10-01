@@ -8,6 +8,7 @@ import { usePermissions } from '@/lib/client/use-permissions'
 import { PERMISSIONS, type PermissionKey } from '@/lib/shared/permissions'
 import { isProductEnabled, type FeatureFlags } from '@/lib/shared/types'
 import { SETTINGS_PAGES, type SettingsPagePath } from './settings-pages'
+import { SETTINGS_PAGE_ICONS } from './settings-page-icons'
 import {
   buildSettingsModules,
   settingsModuleActivePaths,
@@ -50,8 +51,8 @@ interface NavSection {
 
 /** A nav row whose label and icon come from the page registry. */
 function navPage(to: SettingsPagePath) {
-  const { label, icon } = SETTINGS_PAGES[to]
-  return { label, to, icon }
+  const { label } = SETTINGS_PAGES[to]
+  return { label, to, icon: SETTINGS_PAGE_ICONS[to] }
 }
 
 export function isNavGroup(entry: NavEntry): entry is NavGroup {

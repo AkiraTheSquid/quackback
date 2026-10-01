@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { buildNavSections } from '../settings-nav'
 import { buildSettingsModules } from '../settings-modules'
 import { buildAutomationNavSections } from '../../automation/automation-nav'
-import { AUTOMATION_PAGES, SETTINGS_PAGES, settingsPageLabel } from '../settings-pages'
+import {
+  AUTOMATION_PAGES,
+  SETTINGS_PAGES,
+  settingsPageLabel,
+  type SettingsPagePath,
+} from '../settings-pages'
+import { SETTINGS_PAGE_ICONS } from '../settings-page-icons'
 
 const ALL_FLAGS = {
   supportInbox: true,
@@ -34,7 +40,8 @@ describe('settings page registry', () => {
   })
 
   it('gives every page an icon', () => {
-    for (const page of Object.values(SETTINGS_PAGES)) expect(page.icon).toBeTruthy()
+    for (const path of Object.keys(SETTINGS_PAGES))
+      expect(SETTINGS_PAGE_ICONS[path as SettingsPagePath], path).toBeTruthy()
   })
 
   it('maps the six automation paths to message descriptors', () => {
@@ -82,9 +89,9 @@ describe('settings page registry', () => {
     ).flatMap((section) => section.items)
     expect(items).toHaveLength(6)
     for (const item of items) {
-      const descriptor = (AUTOMATION_PAGES as Record<string, { id: string; defaultMessage: string }>)[
-        item.to
-      ]
+      const descriptor = (
+        AUTOMATION_PAGES as Record<string, { id: string; defaultMessage: string }>
+      )[item.to]
       expect(item.labelId).toBe(descriptor!.id)
       expect(item.defaultLabel).toBe(descriptor!.defaultMessage)
     }

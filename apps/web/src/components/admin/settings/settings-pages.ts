@@ -1,85 +1,57 @@
-import type { ComponentType } from 'react'
 import { defineMessages } from 'react-intl'
-import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  BellIcon,
-  BookOpenIcon,
-  BuildingOfficeIcon,
-  ChatBubbleLeftIcon,
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
-  CodeBracketIcon,
-  Cog6ToothIcon,
-  CommandLineIcon,
-  CreditCardIcon,
-  DocumentDuplicateIcon,
-  EnvelopeIcon,
-  GlobeAltIcon,
-  MegaphoneIcon,
-  PuzzlePieceIcon,
-  QueueListIcon,
-  ShieldCheckIcon,
-  SignalIcon,
-  Squares2X2Icon,
-  TagIcon,
-  TicketIcon,
-  UserGroupIcon,
-  UsersIcon,
-} from '@heroicons/react/24/solid'
-import { GitHubIcon } from '@/components/icons/integration-icons'
 
 interface SettingsPageEntry {
   label: string
-  icon: ComponentType<{ className?: string }>
 }
 
 /**
  * The single registry of settings page labels. The settings nav, the module
  * lists and every page title read from here, so a nav label and the title of
- * the page it opens cannot differ. Keys are the page paths.
+ * the page it opens cannot differ. Keys are the page paths. It imports no
+ * icons, so a label lookup does not pull the icon set into its chunk; the nav
+ * takes icons from settings-page-icons.ts.
  */
 export const SETTINGS_PAGES = {
   // Modules
-  '/admin/settings/feedback': { label: 'Feedback & Roadmaps', icon: ChatBubbleLeftIcon },
-  '/admin/settings/support': { label: 'Support', icon: ChatBubbleLeftRightIcon },
+  '/admin/settings/feedback': { label: 'Feedback & Roadmaps' },
+  '/admin/settings/support': { label: 'Support' },
   // Feedback & Roadmaps
-  '/admin/settings/boards': { label: 'Boards', icon: Squares2X2Icon },
-  '/admin/settings/statuses': { label: 'Statuses', icon: Cog6ToothIcon },
-  '/admin/settings/tags': { label: 'Tags', icon: TagIcon },
-  '/admin/settings/moderation': { label: 'Moderation', icon: ShieldCheckIcon },
+  '/admin/settings/boards': { label: 'Boards' },
+  '/admin/settings/statuses': { label: 'Statuses' },
+  '/admin/settings/tags': { label: 'Tags' },
+  '/admin/settings/moderation': { label: 'Moderation' },
   // Support
-  '/admin/settings/channels': { label: 'Channels', icon: ChatBubbleLeftRightIcon },
-  '/admin/settings/channels/messenger': { label: 'Messenger', icon: ChatBubbleLeftRightIcon },
-  '/admin/settings/channels/email': { label: 'Email', icon: EnvelopeIcon },
-  '/admin/settings/channels/github': { label: 'GitHub', icon: GitHubIcon },
-  '/admin/settings/macros': { label: 'Macros', icon: DocumentDuplicateIcon },
-  '/admin/settings/office-hours': { label: 'Office hours', icon: ClockIcon },
-  '/admin/settings/sla': { label: 'SLA policies', icon: ShieldCheckIcon },
-  '/admin/settings/ticket-types': { label: 'Ticket types', icon: TicketIcon },
-  '/admin/settings/ticket-statuses': { label: 'Ticket statuses', icon: QueueListIcon },
+  '/admin/settings/channels': { label: 'Channels' },
+  '/admin/settings/channels/messenger': { label: 'Messenger' },
+  '/admin/settings/channels/email': { label: 'Email' },
+  '/admin/settings/channels/github': { label: 'GitHub' },
+  '/admin/settings/macros': { label: 'Macros' },
+  '/admin/settings/office-hours': { label: 'Office hours' },
+  '/admin/settings/sla': { label: 'SLA policies' },
+  '/admin/settings/ticket-types': { label: 'Ticket types' },
+  '/admin/settings/ticket-statuses': { label: 'Ticket statuses' },
   // Other product modules
-  '/admin/settings/help-center': { label: 'Help Center', icon: BookOpenIcon },
-  '/admin/settings/changelog': { label: 'Changelog', icon: MegaphoneIcon },
-  '/admin/settings/status': { label: 'Status', icon: SignalIcon },
+  '/admin/settings/help-center': { label: 'Help Center' },
+  '/admin/settings/changelog': { label: 'Changelog' },
+  '/admin/settings/status': { label: 'Status' },
   // Workspace
-  '/admin/settings/general': { label: 'General', icon: Cog6ToothIcon },
-  '/admin/settings/domains': { label: 'Domains', icon: GlobeAltIcon },
-  '/admin/settings/notifications': { label: 'Notifications', icon: BellIcon },
-  '/admin/settings/portal': { label: 'Portal', icon: GlobeAltIcon },
-  '/admin/settings/widget': { label: 'Widget', icon: ChatBubbleLeftRightIcon },
-  '/admin/settings/widget/install': { label: 'Install', icon: CodeBracketIcon },
-  '/admin/settings/members': { label: 'Members & Teams', icon: UsersIcon },
-  '/admin/settings/security/authentication': { label: 'Access & Security', icon: ShieldCheckIcon },
-  '/admin/settings/developers': { label: 'Developers', icon: CommandLineIcon },
-  '/admin/settings/labs': { label: 'Labs', icon: BeakerIcon },
-  '/admin/settings/integrations': { label: 'Integrations', icon: PuzzlePieceIcon },
-  '/admin/settings/billing': { label: 'Plan & billing', icon: CreditCardIcon },
+  '/admin/settings/general': { label: 'General' },
+  '/admin/settings/domains': { label: 'Domains' },
+  '/admin/settings/notifications': { label: 'Notifications' },
+  '/admin/settings/portal': { label: 'Portal' },
+  '/admin/settings/widget': { label: 'Widget' },
+  '/admin/settings/widget/install': { label: 'Install' },
+  '/admin/settings/members': { label: 'Members & Teams' },
+  '/admin/settings/security/authentication': { label: 'Access & Security' },
+  '/admin/settings/developers': { label: 'Developers' },
+  '/admin/settings/labs': { label: 'Labs' },
+  '/admin/settings/integrations': { label: 'Integrations' },
+  '/admin/settings/billing': { label: 'Plan & billing' },
   // Data
-  '/admin/settings/people': { label: 'Users', icon: UserGroupIcon },
-  '/admin/settings/companies': { label: 'Companies', icon: BuildingOfficeIcon },
-  '/admin/settings/conversation-data': { label: 'Conversations', icon: ChatBubbleLeftIcon },
-  '/admin/settings/imports': { label: 'Imports & exports', icon: ArrowDownTrayIcon },
+  '/admin/settings/people': { label: 'Users' },
+  '/admin/settings/companies': { label: 'Companies' },
+  '/admin/settings/conversation-data': { label: 'Conversations' },
+  '/admin/settings/imports': { label: 'Imports & exports' },
 } as const satisfies Record<string, SettingsPageEntry>
 
 export type SettingsPagePath = keyof typeof SETTINGS_PAGES
@@ -109,8 +81,4 @@ export function settingsPageLabel(path: SettingsPagePath): string {
   const page = SETTINGS_PAGES[path]
   if (!page) throw new Error(`No settings page registered for ${path}`)
   return page.label
-}
-
-export function settingsPageIcon(path: SettingsPagePath): SettingsPageEntry['icon'] {
-  return SETTINGS_PAGES[path].icon
 }
