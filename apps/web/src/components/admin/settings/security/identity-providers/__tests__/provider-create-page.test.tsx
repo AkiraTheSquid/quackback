@@ -48,14 +48,14 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
     to,
-    search: _search,
+    search,
     ...rest
   }: {
     children: React.ReactNode
     to: string
-    search?: unknown
+    search?: Record<string, string>
   }) => (
-    <a href={to} {...rest}>
+    <a href={search ? `${to}?${new URLSearchParams(search).toString()}` : to} {...rest}>
       {children}
     </a>
   ),
@@ -118,7 +118,7 @@ describe('<ProviderCreatePage>', () => {
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(crumbs).getByRole('link', { name: 'Access & Security' })).toHaveAttribute(
       'href',
-      '/admin/settings/security/authentication'
+      '/admin/settings/security/authentication?tab=sign-in'
     )
   })
 

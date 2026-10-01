@@ -125,15 +125,15 @@ vi.mock('@tanstack/react-router', () => ({
     children,
     to,
     params: _params,
-    search: _search,
+    search,
     ...rest
   }: {
     children: React.ReactNode
     to: string
     params?: unknown
-    search?: unknown
+    search?: Record<string, string>
   }) => (
-    <a href={to} {...rest}>
+    <a href={search ? `${to}?${new URLSearchParams(search).toString()}` : to} {...rest}>
       {children}
     </a>
   ),
@@ -329,7 +329,7 @@ describe('<ProviderDetailPage> page shell', () => {
     expect(screen.getByRole('heading', { name: 'Sign-in & access' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'User details' })).toBeInTheDocument()
     expect(screen.getAllByRole('navigation')).toHaveLength(1)
-    expect(screen.queryByRole('heading', { name: /Remove/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Delete|Remove|Danger/ })).not.toBeInTheDocument()
   })
 
   it('puts the provider under Access & Security in the breadcrumb', () => {
@@ -337,7 +337,7 @@ describe('<ProviderDetailPage> page shell', () => {
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(crumbs).getByRole('link', { name: 'Access & Security' })).toHaveAttribute(
       'href',
-      '/admin/settings/security/authentication'
+      '/admin/settings/security/authentication?tab=sign-in'
     )
     expect(within(crumbs).getByText('Acme SSO')).toHaveAttribute('aria-current', 'page')
   })
