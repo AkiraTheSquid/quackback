@@ -1,3 +1,4 @@
+import { FORM_WIDTH_CLASS } from '@/components/admin/settings/settings-page'
 import { useNavigate } from '@tanstack/react-router'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PortalAuthTab } from './portal-auth-tab'
@@ -71,7 +72,7 @@ export function AuthSettings({
       variant="line"
       className="space-y-6"
     >
-      <TabsList className="max-w-3xl">
+      <TabsList className={FORM_WIDTH_CLASS}>
         <TabsTrigger value="portal-access">Portal access</TabsTrigger>
         <TabsTrigger value="sign-in">Sign-in</TabsTrigger>
         <TabsTrigger value="audit-log">Audit log</TabsTrigger>

@@ -30,6 +30,9 @@ type SettingsPageProps = PageTitle & {
 
 const WIDTH_CLASS = { form: 'max-w-3xl', wide: 'max-w-5xl' } as const
 
+/** The form width, for a part of a wide page (a tab bar) that stays at form width. */
+export const FORM_WIDTH_CLASS = WIDTH_CLASS.form
+
 const BACK_LINK = {
   settings: { to: '/admin/settings', label: 'Settings' },
   automation: { to: '/admin/automation', label: 'AI & Automation' },

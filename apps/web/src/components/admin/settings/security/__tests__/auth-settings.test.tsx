@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { FORM_WIDTH_CLASS } from '@/components/admin/settings/settings-page'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { AuthConfig, PortalConfig } from '@/lib/shared/types/settings'
@@ -100,7 +101,7 @@ describe('AuthSettings audit tab', () => {
           auditEntitled
         />
       )
-      expect(screen.getByRole('tablist').className).toContain('max-w-3xl')
+      expect(screen.getByRole('tablist').className).toContain(FORM_WIDTH_CLASS)
       unmount()
     }
   })
