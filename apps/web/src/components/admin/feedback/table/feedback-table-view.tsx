@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useCallback, useEffect, type ReactNode } from 'react'
 import { useInfiniteScroll } from '@/lib/client/hooks/use-infinite-scroll'
 import { useDebouncedSearch } from '@/lib/client/hooks/use-debounced-search'
 import { Spinner } from '@/components/shared/spinner'
@@ -65,6 +65,10 @@ function FeedbackListHeader({
   action,
   children,
 }: FeedbackListHeaderProps) {
+  const handleSortChange = useCallback(
+    (value: string) => onFiltersChange({ sort: value as InboxFilters['sort'] }),
+    [onFiltersChange]
+  )
   const { value: searchValue, setValue: setSearchValue } = useDebouncedSearch({
     externalValue: search,
     onChange: (next) => onFiltersChange({ search: next }),
@@ -76,7 +80,7 @@ function FeedbackListHeader({
       onSearchChange={setSearchValue}
       sortOptions={SORT_OPTIONS}
       activeSort={sort}
-      onSortChange={(value) => onFiltersChange({ sort: value as InboxFilters['sort'] })}
+      onSortChange={handleSortChange}
       action={action}
     >
       {children}

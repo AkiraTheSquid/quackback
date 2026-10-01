@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { cn } from '@/lib/shared/utils'
 import { MENU_ROW } from '@/components/ui/menu'
 
@@ -11,12 +12,12 @@ interface FilterListProps<T extends { id: string; name: string }> {
   className?: string
 }
 
-function FilterCount({ count }: { count: number | undefined }) {
+const FilterCount = memo(function FilterCount({ count }: { count: number | undefined }) {
   if (count == null) return null
   return (
     <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">{count}</span>
   )
-}
+})
 
 export function FilterList<T extends { id: string; name: string }>({
   items,

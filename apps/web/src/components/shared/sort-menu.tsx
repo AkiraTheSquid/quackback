@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/16/solid'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,8 +15,12 @@ interface SortMenuProps {
   onChange: (value: string) => void
 }
 
-/** A small outline dropdown, "Sort: {label}", for choosing how a list is ordered. */
-export function SortMenu({ options, value, onChange }: SortMenuProps) {
+/**
+ * A small outline dropdown, "Sort: {label}", for choosing how a list is ordered.
+ * Memoised so a toolbar that renders per keystroke leaves it alone; keep
+ * `options` and `onChange` stable.
+ */
+export const SortMenu = memo(function SortMenu({ options, value, onChange }: SortMenuProps) {
   const active = options.find((o) => o.value === value) ?? options[0]
   return (
     <DropdownMenu>
@@ -36,4 +41,4 @@ export function SortMenu({ options, value, onChange }: SortMenuProps) {
       </DropdownMenuContent>
     </DropdownMenu>
   )
-}
+})
