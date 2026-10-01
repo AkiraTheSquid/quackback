@@ -148,11 +148,11 @@ export function CreateChangelogDialog({
     }
     switch (publishState.type) {
       case 'draft':
-        return 'Save Draft'
+        return 'Save draft'
       case 'scheduled':
         return 'Schedule'
       case 'published':
-        return 'Publish Now'
+        return 'Publish now'
     }
   }
 
@@ -224,7 +224,7 @@ export function CreateChangelogDialog({
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[70vh]">
                   <SheetHeader>
-                    <SheetTitle>Entry Settings</SheetTitle>
+                    <SheetTitle>Entry settings</SheetTitle>
                   </SheetHeader>
                   <div className="py-4 overflow-y-auto">
                     <ChangelogMetadataSidebarContent

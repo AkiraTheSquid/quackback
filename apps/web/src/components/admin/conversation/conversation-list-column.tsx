@@ -427,7 +427,7 @@ function EmptyList({
     : isAllClear
       ? intl.formatMessage({
           id: 'inbox.empty.allClear.title',
-          defaultMessage: 'You’re all caught up',
+          defaultMessage: 'Nothing to review',
         })
       : emptyStateMessage(nav, facet, scopeLabel)
   // First-run CTA on the unfiltered main queues (not tickets/labels).

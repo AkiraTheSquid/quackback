@@ -127,11 +127,11 @@ function UsersEmptyState({
       <div className="rounded-xl overflow-hidden shadow-sm bg-card border border-border/50">
         <EmptyState
           icon={UsersIcon}
-          title={hasActiveFilters ? 'No users match your filters' : 'No portal users yet'}
+          title={hasActiveFilters ? 'No users match your filters' : 'No users yet'}
           description={
             hasActiveFilters
               ? "Try adjusting your filters to find what you're looking for."
-              : 'Portal users will appear here when they sign up to your feedback portal.'
+              : 'Users appear here when they sign up to your feedback portal.'
           }
           action={
             hasActiveFilters ? (

@@ -48,7 +48,7 @@ export function SearchTermsTable() {
           <EmptyState
             icon={MagnifyingGlassIcon}
             title="No searches yet"
-            description="Visitor search terms show up here once people start searching your help center."
+            description="Visitor search terms show up here once users start searching your help center."
             className="h-32"
           />
         </div>

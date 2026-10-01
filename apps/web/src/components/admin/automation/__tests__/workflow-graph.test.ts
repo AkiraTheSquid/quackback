@@ -1251,7 +1251,7 @@ describe('person/company attribute condition fields', () => {
         op: 'contains',
         value: '@acme.com',
       }
-      expect(conditionSummary(condition)).toBe('Person email contains @acme.com')
+      expect(conditionSummary(condition)).toBe('User email contains @acme.com')
     })
   })
 

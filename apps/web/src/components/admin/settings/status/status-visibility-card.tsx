@@ -19,12 +19,12 @@ const AUDIENCE_OPTIONS: Array<{ value: StatusAudience; title: string; descriptio
   {
     value: 'authenticated',
     title: VISIBILITY_LABELS.signedIn,
-    description: 'Only people signed in to your portal',
+    description: 'Only users signed in to your portal',
   },
   {
     value: 'segments',
     title: VISIBILITY_LABELS.segments,
-    description: 'Only signed-in people in the segments you choose',
+    description: 'Only signed-in users in the segments you choose',
   },
 ]
 

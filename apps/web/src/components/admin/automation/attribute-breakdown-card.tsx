@@ -51,8 +51,8 @@ export function AttributeBreakdownCard() {
     >
       {selectable.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No select-type conversation attributes yet. Add one under Settings &gt; Conversation data
-          to segment reporting by it.
+          No select-type conversation attributes yet. Add one under Settings &gt; Conversations to
+          segment reporting by it.
         </p>
       ) : (
         <div className="space-y-3">

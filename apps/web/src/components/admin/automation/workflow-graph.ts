@@ -334,23 +334,23 @@ export const CONDITION_FIELD_META: Record<ConditionField, ConditionFieldMeta> = 
     ],
   },
   'person.segments': {
-    label: 'Person segments',
+    label: 'User segments',
     kind: 'list',
     placeholder: 'Segment IDs, comma-separated',
   },
   'person.email': {
-    label: 'Person email',
+    label: 'User email',
     kind: 'text',
     placeholder: 'name@example.com',
   },
   // The visitor's first-class user columns (country captured from geo-aware
   // proxy headers; locale) — free text, not a fixed choice set: the workspace
   // sees whichever ISO country / BCP-47 values its traffic carries.
-  'person.country': { label: 'Person country', kind: 'text', placeholder: 'DE' },
-  'person.locale': { label: 'Person locale', kind: 'text', placeholder: 'de-DE' },
+  'person.country': { label: 'User country', kind: 'text', placeholder: 'DE' },
+  'person.locale': { label: 'User locale', kind: 'text', placeholder: 'de-DE' },
   // The plan label stored under user.metadata's `plan` key — the same source
   // segments' plan attribute reads, so both target the same vocabulary.
-  'person.plan': { label: 'Person plan', kind: 'text', placeholder: 'enterprise' },
+  'person.plan': { label: 'User plan', kind: 'text', placeholder: 'enterprise' },
   // The workspace's ticket-type registry is live, so — like conversation.team
   // above — resolveConditionField fills `options` in from the `ticketTypes`
   // map it's passed rather than any fixed set here.
@@ -364,8 +364,8 @@ export const CONDITION_FIELD_LIST = Object.keys(CONDITION_FIELD_META) as StaticC
 /**
  * The static field picker organized by entity group (RuleGroupBuilder,
  * consumed by condition-editor.tsx / branch-editor.tsx's paths / the
- * trigger's Audience section): Conversation / Message / Person / Ticket /
- * Availability — the dynamic attribute groups (Conversation attribute / Person attribute /
+ * trigger's Audience section): Conversation / Message / User / Ticket /
+ * Availability — the dynamic attribute groups (Conversation attribute / User attribute /
  * Company attribute) render as their own SelectGroups alongside these, keyed
  * off the live registries instead of this static catalogue. A Record (not a
  * loop over CONDITION_FIELD_LIST) so a newly added static field fails
@@ -382,11 +382,11 @@ export const STATIC_CONDITION_FIELD_GROUP: Record<StaticConditionField, string> 
   'csat.rating': 'Conversation',
   'message.body': 'Message',
   'message.sender': 'Message',
-  'person.segments': 'Person',
-  'person.email': 'Person',
-  'person.country': 'Person',
-  'person.locale': 'Person',
-  'person.plan': 'Person',
+  'person.segments': 'User',
+  'person.email': 'User',
+  'person.country': 'User',
+  'person.locale': 'User',
+  'person.plan': 'User',
   'ticket.type': 'Ticket',
   office_hours: 'Availability',
 }
@@ -397,7 +397,7 @@ export const STATIC_CONDITION_FIELD_GROUP: Record<StaticConditionField, string> 
 export const CONDITION_FIELD_GROUP_ORDER = [
   'Conversation',
   'Message',
-  'Person',
+  'User',
   'Ticket',
   'Availability',
 ] as const
@@ -893,9 +893,9 @@ export type FrequencyCapType = FrequencyCap['type']
 
 export const FREQUENCY_CAP_LABELS: Record<FrequencyCapType, string> = {
   unlimited: 'No limit',
-  once: 'Once per person',
-  once_per_days: 'Once per person, every N days',
-  n_total: 'At most N times per person',
+  once: 'Once per user',
+  once_per_days: 'Once per user, every N days',
+  n_total: 'At most N times per user',
 }
 export const FREQUENCY_CAP_TYPES = Object.keys(FREQUENCY_CAP_LABELS) as FrequencyCapType[]
 
@@ -948,11 +948,11 @@ export function frequencyCapSummary(cap: FrequencyCap | undefined): string {
   if (!cap || cap.type === 'unlimited') return 'No limit'
   switch (cap.type) {
     case 'once':
-      return 'Once per person'
+      return 'Once per user'
     case 'once_per_days':
-      return `Once per person, every ${cap.days} day${cap.days === 1 ? '' : 's'}`
+      return `Once per user, every ${cap.days} day${cap.days === 1 ? '' : 's'}`
     case 'n_total':
-      return `At most ${cap.count} time${cap.count === 1 ? '' : 's'} per person`
+      return `At most ${cap.count} time${cap.count === 1 ? '' : 's'} per user`
   }
 }
 

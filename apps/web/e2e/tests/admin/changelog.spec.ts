@@ -113,7 +113,7 @@ test.describe('Changelog create entry', () => {
     await page.keyboard.press('Escape')
   })
 
-  test('create dialog has Save Draft, Schedule, and Publish Now status options in sidebar', async ({
+  test('create dialog has Save draft, Schedule, and Publish now status options in sidebar', async ({
     page,
   }) => {
     const dialog = await openCreateDialog(page)
@@ -125,7 +125,7 @@ test.describe('Changelog create entry', () => {
       await expect(statusSelect).toBeVisible()
     }
 
-    // Footer always has a submit button labeled "Save Draft" by default
+    // Footer always has a submit button labeled "Save draft" by default
     await expect(dialog.getByRole('button', { name: /save draft/i })).toBeVisible()
 
     await page.keyboard.press('Escape')
@@ -341,7 +341,7 @@ test.describe('Changelog publish and unpublish', () => {
     }
     await publishedOption.click()
 
-    // Submit button should now say "Update & Publish"
+    // Submit button should now say "Update and publish"
     const submitBtn = dialog.getByRole('button', { name: /update & publish|publish now/i })
     await expect(submitBtn).toBeVisible({ timeout: 5000 })
     await submitBtn.click()
@@ -538,7 +538,7 @@ async function createAndPublishEntry(
   }
   await publishedOption.click()
 
-  // Submit button should now say "Publish Now"
+  // Submit button should now say "Publish now"
   const publishBtn = dialog.getByRole('button', { name: /publish now/i })
   await expect(publishBtn).toBeVisible({ timeout: 5000 })
   await publishBtn.click()

@@ -175,18 +175,18 @@ function AllowMissingEmailOffer({ provider }: { provider: IdentityProvider }) {
         operations: diffClaimMappingOperations(provider.claimMapping, proposed),
         acknowledgeAdminRules: mappingSaveRisks(provider.claimMapping, proposed).hasAdminRules,
       },
-      'People can now sign in without an email address.'
+      'Users can now sign in without an email address.'
     )
   }
 
   return (
     <div className="space-y-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2.5 text-sm">
       <p>
-        If your provider does not release email addresses, you can let people sign in without one.
+        If your provider does not release email addresses, you can let users sign in without one.
         They get a permanent placeholder address and are asked for a real one afterwards.
       </p>
       <Button type="button" size="sm" variant="outline" disabled={saving} onClick={allow}>
-        Let people sign in without an email address
+        Let users sign in without an email address
       </Button>
     </div>
   )

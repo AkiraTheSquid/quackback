@@ -77,7 +77,7 @@ export function InvitationsView({ status }: InvitationsViewProps) {
           <div>
             <h1 className="text-base font-semibold">Invitations</h1>
             <p className="text-xs text-muted-foreground">
-              Portal access sent to people who don&apos;t yet have an account.
+              Portal access sent to users who don&apos;t yet have an account.
             </p>
           </div>
           <Button type="button" size="sm" onClick={portal.openDialog}>

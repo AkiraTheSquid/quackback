@@ -185,7 +185,7 @@ function ProviderPageShell({
             className="flex items-center gap-2 text-sm"
             title={isOnlyMethod ? 'At least one sign-in method must stay enabled.' : undefined}
           >
-            <span className="text-muted-foreground">{enabled ? 'Enabled' : 'Disabled'}</span>
+            <span className="text-muted-foreground">{enabled ? 'On' : 'Off'}</span>
             <Switch
               checked={enabled}
               onCheckedChange={(v) => void toggle(v)}

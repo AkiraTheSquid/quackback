@@ -102,7 +102,7 @@ describe('PortalAuthTab: visibility and autosave', () => {
     render(<PortalAuthTab portalConfig={portal} teamOpenSignup />)
     expect(screen.getByRole('radio', { name: /^Everyone/ })).toBeChecked()
     expect(
-      screen.getByRole('radio', { name: /^Only your team and people you invite/ })
+      screen.getByRole('radio', { name: /^Only your team and users you invite/ })
     ).not.toBeChecked()
     expect(screen.queryByText('Public')).toBeNull()
     expect(screen.queryByText('Private')).toBeNull()

@@ -79,7 +79,7 @@ const CUSTOM_ATTR_OPERATORS: Record<
   ],
 }
 
-/** Operators for the metadata_key (Custom Metadata Key) escape hatch */
+/** Operators for the metadata_key (Custom metadata key) escape hatch */
 const METADATA_KEY_OPERATORS: { value: RuleOperator; label: string }[] = [
   { value: 'eq', label: 'equals' },
   { value: 'neq', label: 'not equals' },
@@ -227,7 +227,7 @@ function RuleConditionRow({
                     </SelectItem>
                   ))}
                   {group === 'attribute' && (
-                    <SelectItem value="metadata_key">Custom Metadata Key</SelectItem>
+                    <SelectItem value="metadata_key">Custom metadata key</SelectItem>
                   )}
                 </SelectGroup>
               </React.Fragment>
@@ -579,7 +579,7 @@ export function SegmentFormDialog({
                 trigger evaluation.
               </p>
               <p className="text-xs text-muted-foreground">
-                Heads up: segments only include people in your audience. Your team and admins won't
+                Heads up: segments only include users in your audience. Your team and admins won't
                 show up here, even if they match the rules.
               </p>
               <RuleBuilder

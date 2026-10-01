@@ -43,7 +43,7 @@ const filters: Array<[SyncFilter, string]> = [
   ['successful', 'Successful'],
 ]
 const actionLabels: Record<SyncAction, string> = {
-  retry: 'Retry',
+  retry: 'Try again',
   cancel: 'Cancel',
   reconcile: 'Check result',
   keep_remote: 'Dismiss change',

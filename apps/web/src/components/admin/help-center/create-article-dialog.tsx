@@ -142,7 +142,7 @@ export function CreateArticleDialog({
 
             <ModalFooter
               onCancel={() => handleOpenChange(false)}
-              submitLabel={createArticleMutation.isPending ? 'Saving...' : 'Save Draft'}
+              submitLabel={createArticleMutation.isPending ? 'Saving...' : 'Save draft'}
               isPending={createArticleMutation.isPending}
             >
               <Sheet open={mobileSettingsOpen} onOpenChange={setMobileSettingsOpen}>
@@ -154,7 +154,7 @@ export function CreateArticleDialog({
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[70vh]">
                   <SheetHeader>
-                    <SheetTitle>Article Settings</SheetTitle>
+                    <SheetTitle>Article settings</SheetTitle>
                   </SheetHeader>
                   <div className="py-4 overflow-y-auto">
                     <HelpCenterMetadataSidebarContent

@@ -58,7 +58,7 @@ const MOD_RULES: readonly ModerationRuleMeta[] = [
   {
     id: 'signedPosts',
     label: 'Require approval for signed-in posts',
-    sub: 'Posts from signed-in portal users wait for review before they appear.',
+    sub: 'Posts from signed-in users wait for review before they appear.',
     icon: UserIcon,
   },
   {

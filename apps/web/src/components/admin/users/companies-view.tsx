@@ -575,7 +575,7 @@ export function CompaniesView({
               description={
                 hasActiveFilters
                   ? "Try adjusting your filters to find what you're looking for."
-                  : 'Companies appear here when people are linked to one, via the API or an agent.'
+                  : 'Companies appear here when users are linked to one, via the API or an agent.'
               }
               action={
                 hasActiveFilters ? (
@@ -601,7 +601,7 @@ export function CompaniesView({
               <span className="flex-1 min-w-0">Company</span>
               <span className="w-24 text-left">Plan</span>
               <span className="w-24 text-right">Monthly spend</span>
-              <span className="w-16 text-right">People</span>
+              <span className="w-16 text-right">Users</span>
               <span className="w-16 text-right">Source</span>
             </div>
             {companies.map((company) => (

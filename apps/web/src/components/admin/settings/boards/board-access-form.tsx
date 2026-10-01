@@ -86,7 +86,7 @@ const TIERS: readonly TierMeta[] = [
   {
     id: 'authenticated',
     label: 'Signed-in',
-    blurb: 'Any logged-in user',
+    blurb: 'Any signed-in user',
     icon: UsersIcon,
   },
   {

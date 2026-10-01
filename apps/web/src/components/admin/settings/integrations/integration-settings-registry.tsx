@@ -318,7 +318,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
             rel="noopener noreferrer"
             className="font-medium text-primary underline underline-offset-2"
           >
-            Personal Access Token
+            Personal access token
           </a>{' '}
           in Azure DevOps with{' '}
           <span className="font-medium text-foreground">Work Items (Read & Write)</span> scope.

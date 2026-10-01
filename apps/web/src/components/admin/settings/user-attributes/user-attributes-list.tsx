@@ -18,7 +18,7 @@ const COPY: ScalarAttributeCopy = {
   createTitle: 'New user attribute',
   keyHint: 'matches user.metadata field',
   keyPlaceholder: 'mrr',
-  labelPlaceholder: 'Monthly Revenue',
+  labelPlaceholder: 'Monthly revenue',
   descriptionPlaceholder: 'Monthly recurring revenue in USD',
   externalSystem: 'CDP',
   externalPlaceholder: 'monthly_recurring_revenue',

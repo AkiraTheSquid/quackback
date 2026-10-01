@@ -57,7 +57,7 @@ const VISIBILITY_OPTIONS = [
   },
   {
     value: 'private',
-    title: 'Only your team and people you invite',
+    title: 'Only your team and users you invite',
     description: 'Everyone else sees a sign-in page.',
   },
 ] satisfies { value: Visibility; title: string; description: string }[]
@@ -353,7 +353,7 @@ export function PortalAuthTab({ portalConfig, teamOpenSignup }: PortalAuthTabPro
           description={
             openSignup
               ? 'Anyone can create an account to post, vote and comment.'
-              : 'Only people you invite, and people already holding an account, can sign in.'
+              : 'Only users you invite, and users already holding an account, can sign in.'
           }
           htmlFor="portal-open-signup-toggle"
           className="py-0"
@@ -533,11 +533,11 @@ function PortalInvitesSection() {
   return (
     <SettingsCard
       title="Email invites"
-      description="Invite people by email. They get a magic link to sign in."
+      description="Invite users by email. They get a magic link to sign in."
       action={
         <Button type="button" size="sm" variant="outline" onClick={portal.openDialog}>
           <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-          Invite people
+          Invite users
         </Button>
       }
     >
@@ -600,7 +600,7 @@ function InviteSummary({
   if (totalCount === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        No invites sent yet. Use Invite people to send the first one.
+        No invites sent yet. Use Invite users to send the first one.
       </p>
     )
   }

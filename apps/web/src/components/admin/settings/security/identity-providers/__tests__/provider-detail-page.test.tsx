@@ -404,7 +404,7 @@ describe('<ProviderDetailPage> enabled toggle', () => {
   it('shows a disabled provider as disabled', () => {
     renderPage(makeProvider({ enabled: false }))
     expect(screen.getByRole('switch', { name: /enable acme sso/i })).not.toBeChecked()
-    expect(screen.getByText('Disabled')).toBeInTheDocument()
+    expect(screen.getByText('Off')).toBeInTheDocument()
   })
 
   it('flips the flag through upsert without touching another column', async () => {
@@ -551,7 +551,7 @@ describe('<ProviderDetailPage> connection', () => {
   }
   const allowWithoutEmail = () =>
     fireEvent.click(
-      screen.getByRole('button', { name: 'Let people sign in without an email address' })
+      screen.getByRole('button', { name: 'Let users sign in without an email address' })
     )
 
   it('offers to allow sign-in without email when the test account had none', async () => {
@@ -828,7 +828,7 @@ describe('<ProviderDetailPage> account options', () => {
   const openAccountOptions = () =>
     fireEvent.click(screen.getByRole('button', { name: /Account options/ }))
   const missingEmail = () =>
-    screen.getByRole('checkbox', { name: 'Let people sign in without an email address' })
+    screen.getByRole('checkbox', { name: 'Let users sign in without an email address' })
 
   it('is off and collapsed for a provider that has never been configured', () => {
     renderPage(makeProvider({ claimMapping: null }))
@@ -1148,7 +1148,7 @@ describe('<ProviderDetailPage> claim → person-attribute mapping', () => {
     expect(sent.attributes?.syncOnSignIn).toBe(true)
   })
 
-  it('points at People settings when there are no definitions left to map', () => {
+  it('points at Users settings when there are no definitions left to map', () => {
     state.userAttributes = []
     renderPage(
       makeProvider({
@@ -1159,7 +1159,7 @@ describe('<ProviderDetailPage> claim → person-attribute mapping', () => {
     )
     customize()
     fireEvent.click(screen.getByRole('button', { name: 'Add mapping' }))
-    expect(screen.getByRole('link', { name: 'Open People settings' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Open Users settings' })).toHaveAttribute(
       'href',
       '/admin/settings/people'
     )
@@ -1274,7 +1274,7 @@ describe('<ProviderDetailPage> remove', () => {
     const user = await openMenu()
     await user.click(await screen.findByRole('menuitem', { name: 'Delete provider' }))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(toastSpy.error).toHaveBeenCalledWith(expect.stringMatching(/4 people sign in/))
+    expect(toastSpy.error).toHaveBeenCalledWith(expect.stringMatching(/4 users sign in/))
     expect(deleteSpy).not.toHaveBeenCalled()
   })
 

@@ -95,7 +95,7 @@ export function NewPersonDialog({
           ? error.message
           : intl.formatMessage({
               id: 'admin.people.new.createFailed',
-              defaultMessage: 'Failed to create person',
+              defaultMessage: 'Failed to create user',
             })
       )
     },
@@ -123,7 +123,7 @@ export function NewPersonDialog({
         toast.error(
           intl.formatMessage({
             id: 'admin.people.new.checkFailed',
-            defaultMessage: 'Could not check for existing people',
+            defaultMessage: 'Could not check for existing users',
           })
         )
       } finally {
@@ -231,7 +231,7 @@ export function NewPersonDialog({
                 <ExclamationTriangleIcon className="size-4 text-destructive shrink-0" />
                 {intl.formatMessage({
                   id: 'admin.people.new.verifiedMatch',
-                  defaultMessage: 'A person with this email already exists.',
+                  defaultMessage: 'A user with this email already exists.',
                 })}
               </div>
               <div className="flex items-center justify-between gap-2 text-sm">
@@ -247,7 +247,7 @@ export function NewPersonDialog({
                 >
                   {intl.formatMessage({
                     id: 'admin.people.new.viewPerson',
-                    defaultMessage: 'View person',
+                    defaultMessage: 'View user',
                   })}
                 </Button>
               </div>

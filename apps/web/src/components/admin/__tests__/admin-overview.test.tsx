@@ -300,7 +300,7 @@ describe('OverviewDashboard', () => {
       screen.getByText('Hello! I have just created my boards in a new cloud workspace')
     ).toBeInTheDocument()
     expect(screen.getByText('Couldn’t load this section.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.queryByText('Nothing to review')).not.toBeInTheDocument()
   })
 

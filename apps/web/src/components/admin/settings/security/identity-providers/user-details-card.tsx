@@ -464,7 +464,7 @@ function UserDetailsEditor({
                 {risks.adminRules.length === 1
                   ? 'A rule grants admin access.'
                   : `${risks.adminRules.length} rules grant admin access.`}{' '}
-                Matching people become admins even when their email is outside this provider&apos;s
+                Matching users become admins even when their email is outside this provider&apos;s
                 verified domains.
               </p>
             )}

@@ -118,7 +118,7 @@ export function InvitePeopleDialog({
                 ))}
               </ul>
               <p className="mt-1.5">
-                The failed addresses have been kept in the field above. Fix and retry.
+                The failed addresses have been kept in the field above. Fix them and try again.
               </p>
             </div>
           )}

@@ -127,7 +127,7 @@ export function OverviewDashboard({
                   {feedError && attention.length > 0 ? (
                     <p className="border-b border-border px-3 py-2.5 text-sm text-muted-foreground sm:px-4">
                       {feedError}{' '}
-                      <RetryButton onClick={() => void overview.refetch()}>Retry</RetryButton>
+                      <RetryButton onClick={() => void overview.refetch()}>Try again</RetryButton>
                     </p>
                   ) : null}
                   {attention.length > 0 ? (
@@ -139,7 +139,7 @@ export function OverviewDashboard({
                   ) : feedError ? (
                     <Quiet>
                       {feedError}{' '}
-                      <RetryButton onClick={() => void overview.refetch()}>Retry</RetryButton>
+                      <RetryButton onClick={() => void overview.refetch()}>Try again</RetryButton>
                     </Quiet>
                   ) : (
                     <Quiet>Nothing to review</Quiet>
@@ -319,7 +319,7 @@ function ModuleCard<T>({
     return (
       <SettingsCard title={title} flush>
         <Quiet>
-          {error} {onRetry ? <RetryButton onClick={onRetry}>Retry</RetryButton> : null}
+          {error} {onRetry ? <RetryButton onClick={onRetry}>Try again</RetryButton> : null}
         </Quiet>
       </SettingsCard>
     )

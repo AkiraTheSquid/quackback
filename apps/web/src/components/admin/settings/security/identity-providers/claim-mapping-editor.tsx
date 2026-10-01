@@ -185,7 +185,7 @@ export function RoleMappingRulesBody({
 
       <SettingRow
         label="Reapply roles on every sign-in"
-        description={`Off, existing people keep their current role.${
+        description={`Off, existing users keep their current role.${
           autoCreateUsers === false ? ' Roles are not applied while account creation is off.' : ''
         }`}
         htmlFor="claim-mapping-sync"

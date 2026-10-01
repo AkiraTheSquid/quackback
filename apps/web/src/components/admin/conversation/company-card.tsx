@@ -206,7 +206,7 @@ function QualificationEditor({
         {saving ? 'Saving...' : 'Save company'}
       </Button>
       <p className="text-[11px] leading-snug text-muted-foreground">
-        Saving links this person to an existing company with the same name, or creates one.
+        Saving links this user to an existing company with the same name, or creates one.
       </p>
     </div>
   )

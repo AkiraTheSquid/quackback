@@ -709,7 +709,7 @@ function CopilotTurnView({
           <div className="space-y-2">
             <p className="text-sm text-destructive">{turn.errorMessage ?? GENERIC_ERROR}</p>
             <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-              Retry
+              Try again
             </Button>
           </div>
         ) : turn.suppressed ? (

@@ -149,7 +149,7 @@ function ConnectorsPage() {
                       return
                     }
                     refresh.mutate(connector.id, {
-                      onError: () => toast.error('Could not retry'),
+                      onError: () => toast.error('Could not refresh the connection. Try again.'),
                     })
                   }}
                 >
@@ -165,7 +165,7 @@ function ConnectorsPage() {
                         })
                       : intl.formatMessage({
                           id: 'automation.connectors.retry',
-                          defaultMessage: 'Retry',
+                          defaultMessage: 'Try again',
                         })}
                 </Button>
               )}

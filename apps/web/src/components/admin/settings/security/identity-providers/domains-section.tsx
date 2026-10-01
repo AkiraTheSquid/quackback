@@ -87,7 +87,7 @@ export function DomainsSection({
       <div>
         <Label className="font-medium">Domains</Label>
         <p className="mt-1 text-sm text-muted-foreground">
-          People at a verified domain are sent to this provider. Require SSO to make it their only
+          Users at a verified domain are sent to this provider. Require SSO to make it their only
           way in.
         </p>
       </div>

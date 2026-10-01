@@ -334,9 +334,9 @@ export function ChangelogMetadataSidebarContent({
         )}
       </div>
 
-      {/* Linked Posts - single unified section */}
+      {/* Linked posts - single unified section */}
       <div className="space-y-2">
-        <SidebarRow icon={<DocumentTextIcon className="h-4 w-4" />} label="Linked Posts">
+        <SidebarRow icon={<DocumentTextIcon className="h-4 w-4" />} label="Linked posts">
           <Popover open={postsOpen} onOpenChange={setPostsOpen}>
             <PopoverTrigger asChild>
               <button

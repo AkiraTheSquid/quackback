@@ -47,7 +47,7 @@ export function ProviderMenu({
   const blockedReason = isOnlyMethod
     ? 'This is the only enabled sign-in method. Enable another before deleting it.'
     : accountCount > 0
-      ? `${accountCount} ${accountCount === 1 ? 'person signs' : 'people sign'} in through this provider. Disable it instead, or remove those accounts first.`
+      ? `${accountCount} ${accountCount === 1 ? 'user signs' : 'users sign'} in through this provider. Disable it instead, or remove those accounts first.`
       : null
 
   const handleDelete = async () => {

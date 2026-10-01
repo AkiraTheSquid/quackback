@@ -100,7 +100,7 @@ export function SignInCard({ provider }: { provider: IdentityProvider }) {
             disabled={saving}
             description={
               !showButton && provider.domains.some((d) => d.verifiedAt)
-                ? 'People at a verified domain are still sent here from the email step.'
+                ? 'Users at a verified domain are still sent here from the email step.'
                 : undefined
             }
           />
@@ -177,11 +177,11 @@ export function SignInCard({ provider }: { provider: IdentityProvider }) {
               checked={allowMissingEmail}
               onCheckedChange={(v) => setAllowMissingEmail(v === true)}
               disabled={saving}
-              aria-label="Let people sign in without an email address"
+              aria-label="Let users sign in without an email address"
               className="mt-0.5"
             />
             <span>
-              Let people sign in without an email address
+              Let users sign in without an email address
               {allowMissingEmail && (
                 <span className="mt-1 block text-muted-foreground">
                   They get a permanent placeholder address and are asked for a real one afterwards.
