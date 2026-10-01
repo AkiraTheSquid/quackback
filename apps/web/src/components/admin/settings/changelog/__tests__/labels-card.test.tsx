@@ -118,11 +118,18 @@ describe('LabelsCard', () => {
     expect(rowNames()).toEqual(['Fixed', 'New', 'Improved'])
   })
 
-  it('sends nothing when a label is dropped where it started', () => {
+  it('sends nothing when a label is dropped where it started', async () => {
     renderCard(LABELS)
     dnd.onDragEnd?.({ active: { id: 'cat_new' }, over: { id: 'cat_new' } } as DragEndEvent)
     dnd.onDragEnd?.({ active: { id: 'cat_new' }, over: null } as DragEndEvent)
-    expect(fns.reorder).not.toHaveBeenCalled()
+    // A real drag after the no-op drops flushes the mutation queue: only it may reach the server.
+    dnd.onDragEnd?.({ active: { id: 'cat_fixed' }, over: { id: 'cat_new' } } as DragEndEvent)
+    await waitFor(() => expect(fns.reorder).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(fns.reorder).toHaveBeenCalledTimes(1)
+    expect(fns.reorder).toHaveBeenCalledWith({
+      data: { ids: ['cat_fixed', 'cat_new', 'cat_improved'] },
+    })
   })
 
   it('restores the order and toasts once when the reorder fails', async () => {
