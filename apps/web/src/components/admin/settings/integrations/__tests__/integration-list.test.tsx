@@ -52,8 +52,8 @@ describe('IntegrationList', () => {
   it('filters with a chip row of sentence-case categories instead of a sidebar', () => {
     render(<IntegrationList catalog={catalog} integrations={[]} />)
     const chips = screen.getByRole('group', { name: 'Categories' })
-    expect(within(chips).getByRole('button', { name: 'All' })).toBeInTheDocument()
-    fireEvent.click(within(chips).getByRole('button', { name: 'Issue tracking' }))
+    expect(within(chips).getByRole('button', { name: 'All 3' })).toBeInTheDocument()
+    fireEvent.click(within(chips).getByRole('button', { name: 'Issue tracking 2' }))
     expect(screen.queryByText('Slack')).toBeNull()
     expect(screen.getByText('Linear')).toBeInTheDocument()
     expect(screen.getByText('Jira')).toBeInTheDocument()

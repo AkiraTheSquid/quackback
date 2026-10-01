@@ -70,10 +70,11 @@ export function IntegrationList({ catalog, integrations }: IntegrationListProps)
     <div className="space-y-4">
       <div role="group" aria-label="Categories" className="flex flex-wrap gap-1.5">
         {[
-          { id: 'all' as const, label: 'All' },
+          { id: 'all' as const, label: 'All', count: catalog.length },
           ...populatedCategories.map((cat) => ({
             id: cat,
             label: INTEGRATION_CATEGORIES[cat].label,
+            count: categoryCounts.get(cat) ?? 0,
           })),
         ].map((chip) => (
           <button
@@ -88,7 +89,8 @@ export function IntegrationList({ catalog, integrations }: IntegrationListProps)
                 : 'border-border/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
             )}
           >
-            {chip.label}
+            {chip.label}{' '}
+            <span className="ml-0.5 tabular-nums text-muted-foreground">{chip.count}</span>
           </button>
         ))}
       </div>
