@@ -33,10 +33,14 @@ export const Route = createFileRoute('/admin/feedback/moderation')({
   // The queue arrives with the page; a failed read is left to the page's own
   // query.
   loader: async ({ context }) => {
-    const { queryClient } = context
+    const { queryClient, permissions } = context
     // Imported here rather than at the top: route loaders ship in the entry
     // chunk every page loads.
-    const { moderationQueueQueries } = await import('@/lib/client/queries/moderation')
+    const [{ moderationQueueQueries }, { defaultInboxFilters, inboxFacetCountsOptions }] =
+      await Promise.all([
+        import('@/lib/client/queries/moderation'),
+        import('@/lib/client/hooks/use-inbox-query'),
+      ])
     await Promise.all([
       warmQuery(queryClient, moderationQueueQueries.posts()),
       warmQuery(queryClient, moderationQueueQueries.comments()),
@@ -44,6 +48,11 @@ export const Route = createFileRoute('/admin/feedback/moderation')({
       warmQuery(queryClient, adminQueries.boards()),
       warmQuery(queryClient, adminQueries.tags()),
       warmQuery(queryClient, adminQueries.statuses()),
+      warmQuery(queryClient, inboxFacetCountsOptions(defaultInboxFilters)),
+      // The segment filter, which listSegmentsFn serves only with segment.view.
+      permissions?.includes(PERMISSIONS.SEGMENT_VIEW)
+        ? warmQuery(queryClient, adminQueries.segments())
+        : undefined,
     ])
   },
   component: ModerationPage,
