@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
+import { render, screen, cleanup, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CompaniesView } from '../companies-view'
 import type { CompanyWithMemberCountDTO } from '@/lib/server/functions/companies'
@@ -54,34 +54,16 @@ const ROWS = [
   company('c3', 'Charlie', { mrrCents: 20000, memberCount: 5 }),
 ]
 
-function rowNames(): string[] {
-  return screen
-    .getAllByRole('button')
-    .map((b) => b.textContent ?? '')
-    .filter((t) => /^(Alpha|Bravo|Charlie)/.test(t))
-    .map((t) => t.match(/^(Alpha|Bravo|Charlie)/)![1])
-}
-
 describe('<CompaniesView> toolbar', () => {
-  it('puts Sort and Filter on the toolbar row before the actions, with no Add filter line', () => {
+  it('puts Filter on the toolbar row before the actions, with no Sort and no Add filter line', () => {
     renderView(ROWS)
     const toolbar = document.querySelector('[data-slot="admin-list-search"]')!.parentElement!
     const labels = Array.from(toolbar.querySelectorAll('button, a')).map((b) =>
       b.textContent?.trim()
     )
-    expect(labels).toEqual(['Sort: Name', 'Filter', 'Export CSV', 'New company'])
+    expect(labels).toEqual(['Filter', 'Export CSV', 'New company'])
     expect(screen.queryByText('Add filter')).toBeNull()
-  })
-
-  it('orders the loaded companies from the Sort menu', async () => {
-    renderView(ROWS)
-    expect(rowNames()).toEqual(['Alpha', 'Bravo', 'Charlie'])
-    fireEvent.click(screen.getByRole('button', { name: /Sort: Name/ }))
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Monthly spend' }))
-    expect(rowNames()).toEqual(['Bravo', 'Charlie', 'Alpha'])
-    fireEvent.click(screen.getByRole('button', { name: /Sort: Monthly spend/ }))
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Users' }))
-    expect(rowNames()).toEqual(['Alpha', 'Bravo', 'Charlie'])
+    expect(screen.queryByRole('button', { name: /Sort/ })).toBeNull()
   })
 })
 

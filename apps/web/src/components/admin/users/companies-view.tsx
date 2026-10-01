@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   BuildingOffice2Icon,
   PlusIcon,
@@ -465,25 +465,6 @@ function NewCompanyDialog({
   )
 }
 
-type CompanySort = 'name' | 'spend' | 'users'
-
-const SORT_OPTIONS: Array<{ value: CompanySort; label: string }> = [
-  { value: 'name', label: 'Name' },
-  { value: 'spend', label: 'Monthly spend' },
-  { value: 'users', label: 'Users' },
-]
-
-/** Orders the loaded rows; the server pages by name, so Name keeps its order. */
-function sortCompanies(
-  companies: CompanyWithMemberCountDTO[] | undefined,
-  sort: CompanySort
-): CompanyWithMemberCountDTO[] | undefined {
-  if (!companies || sort === 'name') return companies
-  const key = (c: CompanyWithMemberCountDTO) =>
-    sort === 'spend' ? (c.mrrCents ?? -1) : c.memberCount
-  return [...companies].sort((a, b) => key(b) - key(a))
-}
-
 interface CompaniesViewProps {
   companies: CompanyWithMemberCountDTO[] | undefined
   isLoading: boolean
@@ -519,7 +500,6 @@ export function CompaniesView({
   canManage,
 }: CompaniesViewProps) {
   const [createOpen, setCreateOpen] = useState(false)
-  const [sort, setSort] = useState<CompanySort>('name')
   const { value: searchValue, setValue: setSearchValue } = useDebouncedSearch({
     externalValue: search,
     onChange: (value) => onSearchChange(value),
@@ -535,7 +515,6 @@ export function CompaniesView({
   // Count line prefers the directory-wide total; without it, the loaded count.
   const total = totalCount ?? companies?.length ?? 0
   const hasActiveFilters = !!(search || companyAttrs)
-  const sortedCompanies = useMemo(() => sortCompanies(companies, sort), [companies, sort])
 
   return (
     <div className="max-w-5xl w-full">
@@ -543,9 +522,6 @@ export function CompaniesView({
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         searchPlaceholder="Search companies..."
-        sortOptions={SORT_OPTIONS}
-        activeSort={sort}
-        onSortChange={(value) => setSort(value as CompanySort)}
         filters={
           <AddCompanyFilterButton companyAttrs={companyAttrs} onChange={onCompanyAttrsChange} />
         }
@@ -584,7 +560,7 @@ export function CompaniesView({
               </div>
             ))}
           </div>
-        ) : !sortedCompanies || sortedCompanies.length === 0 ? (
+        ) : !companies || companies.length === 0 ? (
           <div className="rounded-xl overflow-hidden shadow-sm bg-card border border-border/50">
             <EmptyState
               icon={BuildingOffice2Icon}
@@ -621,7 +597,7 @@ export function CompaniesView({
               <span className="w-16 text-right">Users</span>
               <span className="w-16 text-right">Source</span>
             </div>
-            {sortedCompanies.map((company) => (
+            {companies.map((company) => (
               <button
                 key={company.id}
                 type="button"
