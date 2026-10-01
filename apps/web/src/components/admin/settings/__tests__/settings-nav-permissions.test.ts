@@ -33,6 +33,7 @@ describe('navSectionsFor', () => {
       'General',
       'Notifications',
       'Widget',
+      'Labs',
     ])
     expect(labels(only(PERMISSIONS.SETTINGS_MANAGE), 'Data')).toEqual(['Imports & exports'])
     expect(labels(only(PERMISSIONS.SETTINGS_BRANDING), 'Workspace')).toEqual([

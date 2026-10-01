@@ -36,6 +36,7 @@ describe('settings page registry', () => {
       '/admin/settings/widget/install': 'Install',
       '/admin/settings/security/authentication': 'Access & Security',
       '/admin/settings/imports': 'Imports & exports',
+      '/admin/settings/labs': 'Labs',
     })
   })
 

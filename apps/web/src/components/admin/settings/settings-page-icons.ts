@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import {
   ArrowDownTrayIcon,
+  BeakerIcon,
   BellIcon,
   BookOpenIcon,
   BuildingOfficeIcon,
@@ -64,6 +65,7 @@ export const SETTINGS_PAGE_ICONS: Record<
   '/admin/settings/members': UsersIcon,
   '/admin/settings/security/authentication': ShieldCheckIcon,
   '/admin/settings/developers': CommandLineIcon,
+  '/admin/settings/labs': BeakerIcon,
   '/admin/settings/integrations': PuzzlePieceIcon,
   '/admin/settings/billing': CreditCardIcon,
   '/admin/settings/people': UserGroupIcon,

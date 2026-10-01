@@ -126,6 +126,10 @@ export function buildNavSections(
           permission: PERMISSIONS.API_KEY_MANAGE,
         },
         {
+          ...navPage('/admin/settings/labs'),
+          permission: PERMISSIONS.SETTINGS_MANAGE,
+        },
+        {
           ...navPage('/admin/settings/integrations'),
           permission: PERMISSIONS.INTEGRATION_VIEW,
         },
