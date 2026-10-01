@@ -4,8 +4,6 @@ import type { RuleName } from './admin-consistency.rules'
 export const ALLOWLIST: Record<RuleName, string[]> = {
   'page-shell': ['components/admin/settings/labs/labs-settings.tsx'],
   'page-width': [
-    'components/admin/automation/workflow-builder/version-history-sheet.tsx',
-    'components/admin/automation/workflow-runs-sheet.tsx',
     'components/admin/settings/labs/labs-settings.tsx',
   ],
   'registry-pages': ['/admin/settings/feedback', '/admin/settings/labs', '/admin/settings/support'],

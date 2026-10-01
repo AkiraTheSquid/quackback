@@ -1,9 +1,11 @@
 /**
  * The rules behind the admin consistency guard. Paths are relative to
  * `apps/web/src`. Kept apart from the test so the allowlist generator script
- * runs the same matchers.
+ * runs the same matchers. Sources are parsed with @babel/parser, so the rules
+ * read real syntax: string literals, template text and JSX text, never comments.
  */
 import { readdirSync, readFileSync } from 'node:fs'
+import { parse, type ParserPlugin } from '@babel/parser'
 import { join, relative } from 'node:path'
 
 export const RULE_NAMES = [
@@ -21,46 +23,144 @@ export type RuleName = (typeof RULE_NAMES)[number]
 /** Rules whose allowlist holds source files (registry-pages lists registry paths). */
 export type FileRuleName = Exclude<RuleName, 'registry-pages'>
 
-/** Blanks out comments, keeping strings, template text and line numbers intact. */
-export function stripComments(src: string): string {
-  let out = ''
-  let i = 0
-  while (i < src.length) {
-    const c = src[i]!
-    const next = src[i + 1]
-    if (c === '/' && next === '/') {
-      while (i < src.length && src[i] !== '\n') i++
-    } else if (c === '/' && next === '*') {
-      const end = src.indexOf('*/', i + 2)
-      const stop = end === -1 ? src.length : end + 2
-      out += src.slice(i, stop).replace(/[^\n]/g, ' ')
-      i = stop
-    } else if (c === "'" || c === '"') {
-      let j = i + 1
-      while (j < src.length && src[j] !== c && src[j] !== '\n') j += src[j] === '\\' ? 2 : 1
-      out += src.slice(i, j + 1)
-      i = j + 1
-    } else if (c === '`') {
-      let j = i + 1
-      while (j < src.length && src[j] !== '`') j += src[j] === '\\' ? 2 : 1
-      out += src.slice(i, j + 1)
-      i = j + 1
-    } else {
-      out += c
-      i++
-    }
+type Node = { type: string; [key: string]: unknown }
+
+/** What the rules read from one source file, collected in a single parse. */
+interface Analysis {
+  /** String literals, template text and JSX text (whitespace collapsed in JSX text). */
+  texts: string[]
+  /** String literals and template text, where class names live. */
+  classTexts: string[]
+  /** The class texts that sit outside a dialog, sheet, popover or tooltip. */
+  pageClassTexts: string[]
+  importsPageHeader: boolean
+  rendersH1: boolean
+  rendersSwitch: boolean
+  usesSettingRow: boolean
+  tabTriggerElementChild: boolean
+  pageProps: string[]
+}
+
+/** Overlay containers: a width on these (or inside them) is not a page width. */
+const OVERLAY =
+  /^(?:(?:AlertDialog|Dialog|Sheet|Popover|Tooltip|DropdownMenu|ContextMenu|Select|HoverCard)(?:Sub)?(?:Content|Popup)|Tooltip|Dialog|AlertDialog|Sheet|Popover)$/
+
+function jsxName(node: Node): string | null {
+  const name = node.name as Node | undefined
+  if (!name) return null
+  if (name.type === 'JSXIdentifier') return name.name as string
+  if (name.type === 'JSXMemberExpression') return (name.property as Node).name as string
+  return null
+}
+
+function parseSource(file: string, src: string): Node {
+  const plugins: ParserPlugin[] = file.endsWith('.tsx') ? ['typescript', 'jsx'] : ['typescript']
+  try {
+    return parse(src, { sourceType: 'module', plugins, errorRecovery: false }) as unknown as Node
+  } catch (error) {
+    throw new Error(`admin consistency guard could not parse ${file}: ${(error as Error).message}`)
   }
+}
+
+const SKIPPED_KEYS = new Set(['loc', 'extra', 'leadingComments', 'trailingComments', 'innerComments'])
+
+function analyse(file: string, src: string): Analysis {
+  const out: Analysis = {
+    texts: [],
+    classTexts: [],
+    pageClassTexts: [],
+    importsPageHeader: false,
+    rendersH1: false,
+    rendersSwitch: false,
+    usesSettingRow: false,
+    tabTriggerElementChild: false,
+    pageProps: [],
+  }
+  // Ancestors that are overlay elements, and TabsTrigger elements, at the current position.
+  let overlayDepth = 0
+  let tabTriggerDepth = 0
+
+  const visit = (node: Node) => {
+    let overlay = false
+    let tabTrigger = false
+    switch (node.type) {
+      case 'StringLiteral': {
+        const value = node.value as string
+        out.texts.push(value)
+        out.classTexts.push(value)
+        if (overlayDepth === 0) out.pageClassTexts.push(value)
+        break
+      }
+      case 'TemplateElement': {
+        const value = ((node.value as { cooked?: string; raw: string }).cooked ??
+          (node.value as { raw: string }).raw) as string
+        out.texts.push(value)
+        out.classTexts.push(value)
+        if (overlayDepth === 0) out.pageClassTexts.push(value)
+        break
+      }
+      case 'JSXText':
+        out.texts.push((node.value as string).replace(/\s+/g, ' '))
+        break
+      case 'ImportSpecifier': {
+        const imported = node.imported as Node
+        if ((imported.name ?? imported.value) === 'PageHeader') out.importsPageHeader = true
+        break
+      }
+      case 'Identifier':
+      case 'JSXIdentifier':
+        if (node.name === 'SettingRow') out.usesSettingRow = true
+        break
+      case 'JSXAttribute': {
+        const name = node.name as Node
+        const value = node.value as Node | null
+        if (name.type === 'JSXIdentifier' && name.name === 'page' && value) {
+          const literal = value.type === 'JSXExpressionContainer' ? (value.expression as Node) : value
+          if (literal.type === 'StringLiteral') out.pageProps.push(literal.value as string)
+        }
+        break
+      }
+      case 'JSXElement': {
+        const opening = node.openingElement as Node
+        const name = jsxName(opening)
+        if (name === 'h1') out.rendersH1 = true
+        if (name === 'Switch') out.rendersSwitch = true
+        if (tabTriggerDepth > 0) out.tabTriggerElementChild = true
+        if (name === 'TabsTrigger') tabTrigger = true
+        if (name && OVERLAY.test(name)) overlay = true
+        break
+      }
+    }
+    if (overlay) overlayDepth++
+    if (tabTrigger) tabTriggerDepth++
+    for (const [key, value] of Object.entries(node)) {
+      if (SKIPPED_KEYS.has(key) || value === null || typeof value !== 'object') continue
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === 'object' && typeof (item as Node).type === 'string') {
+            visit(item as Node)
+          }
+        }
+      } else if (typeof (value as Node).type === 'string') {
+        visit(value as Node)
+      }
+    }
+    if (overlay) overlayDepth--
+    if (tabTrigger) tabTriggerDepth--
+  }
+  visit(parseSource(file, src))
   return out
 }
 
-/** String literals and JSX text of comment-free source. */
-function textSegments(code: string): string[] {
-  const segments: string[] = []
-  for (const m of code.matchAll(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g)) {
-    segments.push(m[0])
+const cache = new Map<string, Analysis>()
+function analysis(file: string, src: string): Analysis {
+  const key = `${file}\0${src}`
+  let found = cache.get(key)
+  if (!found) {
+    found = analyse(file, src)
+    cache.set(key, found)
   }
-  for (const m of code.matchAll(/>([^<>{}]+)</g)) segments.push(m[1]!)
-  return segments
+  return found
 }
 
 const SKIP = /(^|\/)__tests__\/|\.test\.tsx?$|\.d\.ts$/
@@ -100,35 +200,29 @@ export function inScope(rule: FileRuleName, file: string): boolean {
 const PALETTE =
   /\b(?:text|bg|border|ring|fill|stroke)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/
 
-const TAB_TRIGGER = /<TabsTrigger\b[\s\S]*?<\/TabsTrigger>/g
+const PAGE_WIDTH = /\bmax-w-(?:2xl|3xl|4xl|5xl|6xl|7xl)\b/
 
-const MATCHERS: Record<FileRuleName, (code: string) => boolean> = {
-  'page-shell': (code) =>
-    /import\s[^;]*\bPageHeader\b[^;]*from\s/.test(code) || /<h1[\s>]/.test(code),
-  'page-width': (code) => /\bmax-w-(?:2xl|3xl|4xl|5xl|6xl|7xl)\b/.test(code),
-  'create-labels': (code) =>
-    textSegments(code).some(
-      (text) => /\bAdd new\b/.test(text) || /\b(?:New|Add|Create) [A-Z][a-z]+/.test(text)
-    ),
-  'no-dashes': (code) => textSegments(code).some((text) => /[\u2013\u2014]/.test(text)),
-  'tab-icons': (code) =>
-    (code.match(TAB_TRIGGER) ?? []).some((trigger) => /<[A-Z]\w*Icon\b/.test(trigger)),
-  'toggle-rows': (code) => /<Switch\b/.test(code) && !/\bSettingRow\b/.test(code),
-  palette: (code) => PALETTE.test(code),
+const MATCHERS: Record<FileRuleName, (a: Analysis) => boolean> = {
+  'page-shell': (a) => a.importsPageHeader || a.rendersH1,
+  'page-width': (a) => a.pageClassTexts.some((text) => PAGE_WIDTH.test(text)),
+  'create-labels': (a) =>
+    a.texts.some((text) => /\bAdd new\b/.test(text) || /\b(?:New|Add|Create) [A-Z][a-z]+/.test(text)),
+  'no-dashes': (a) => a.texts.some((text) => /[\u2013\u2014]/.test(text)),
+  'tab-icons': (a) => a.tabTriggerElementChild,
+  'toggle-rows': (a) => a.rendersSwitch && !a.usesSettingRow,
+  palette: (a) => a.classTexts.some((text) => PALETTE.test(text)),
 }
 
 /** Whether a source file breaks the rule (false for files outside its scope). */
 export function offends(rule: FileRuleName, file: string, src: string): boolean {
-  return inScope(rule, file) && MATCHERS[rule](stripComments(src))
+  return inScope(rule, file) && MATCHERS[rule](analysis(file, src))
 }
 
 /** The registry paths some file passes as `page="<path>"`. */
 export function usedRegistryPaths(files: Array<{ file: string; src: string }>): Set<string> {
   const used = new Set<string>()
-  for (const { src } of files) {
-    for (const m of stripComments(src).matchAll(/\bpage=(?:"([^"]+)"|'([^']+)')/g)) {
-      used.add((m[1] ?? m[2])!)
-    }
+  for (const { file, src } of files) {
+    for (const path of analysis(file, src).pageProps) used.add(path)
   }
   return used
 }
