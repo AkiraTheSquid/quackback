@@ -42,6 +42,7 @@ import {
   DEFAULT_BOARD_ACCESS,
 } from '@/lib/shared/db-types'
 import { accessForPreset } from '@/lib/shared/schemas/boards'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 /**
  * Per-board access form (R3 design).
@@ -418,7 +419,7 @@ export function BoardAccessForm({ board }: BoardAccessFormProps) {
             <Link
               to="/admin/settings/security/authentication"
               search={{ tab: 'portal-access' }}
-              className="ml-auto whitespace-nowrap text-primary hover:underline"
+              className={`${INLINE_LINK} ml-auto whitespace-nowrap`}
             >
               Workspace access →
             </Link>
@@ -949,7 +950,7 @@ function SegmentPicker({
             {selected.length}/{allSegments.length} selected
           </span>
         </span>
-        <Link to="/admin/users" className="text-primary hover:underline">
+        <Link to="/admin/users" className={INLINE_LINK}>
           Manage →
         </Link>
       </div>

@@ -27,6 +27,7 @@ import {
 } from '@/lib/client/queries/workflow-reporting'
 import type { WorkflowRunRow, WorkflowRunEventRow } from '@/lib/server/functions/workflow-reporting'
 import { ACTION_LABELS } from './workflow-graph'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 const RUN_STATE_META: Record<string, { label: string; dotClass: string; textClass: string }> = {
   running: {
@@ -136,7 +137,7 @@ function RunRow({
             to="/admin/inbox"
             search={{ i: run.conversationId }}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
+            className={`${INLINE_LINK} inline-flex w-fit items-center gap-1 text-xs`}
           >
             Open conversation
             <ArrowTopRightOnSquareIcon className="size-3" />

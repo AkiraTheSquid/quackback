@@ -222,7 +222,9 @@ const WEBHOOK_HEADERS = [
 export function WebhookVerificationGuide() {
   return (
     <Collapsible>
-      <CollapsibleTrigger className={INLINE_LINK}>How to verify signatures</CollapsibleTrigger>
+      <CollapsibleTrigger className={`${INLINE_LINK} text-[13px]`}>
+        How to verify signatures
+      </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="pt-3">
           <VerificationCard />

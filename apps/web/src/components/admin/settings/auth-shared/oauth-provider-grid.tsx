@@ -7,6 +7,7 @@ import { StateBadge } from '@/components/shared/state-badge'
 import { AUTH_PROVIDER_ICON_MAP } from '@/components/icons/social-provider-icons'
 import { AUTH_PROVIDERS } from '@/lib/shared/auth-providers'
 import { cn } from '@/lib/shared/utils'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 type AuthProvider = (typeof AUTH_PROVIDERS)[number]
 type AuthProviderId = AuthProvider['id']
@@ -125,7 +126,7 @@ export function OAuthProviderGrid({
                 <button
                   type="button"
                   onClick={() => onConfigure(provider)}
-                  className="text-xs text-primary hover:underline disabled:cursor-not-allowed disabled:no-underline"
+                  className={`${INLINE_LINK} text-xs disabled:cursor-not-allowed`}
                 >
                   Update credentials
                 </button>

@@ -11,6 +11,7 @@ import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { settingsQueries } from '@/lib/client/queries/settings'
 import { assistantWaitMinutes } from '@/lib/shared/workflows/abandoned-auto-close'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 export function LetAssistantAnswerEditor({
   step,
@@ -28,7 +29,7 @@ export function LetAssistantAnswerEditor({
       <p className="text-xs text-muted-foreground">
         Hands the turn to Quinn using its{' '}
         {canAgent ? (
-          <Link to="/admin/automation/agent" className="font-medium text-primary hover:underline">
+          <Link to="/admin/automation/agent" className={INLINE_LINK}>
             Agent settings
           </Link>
         ) : (

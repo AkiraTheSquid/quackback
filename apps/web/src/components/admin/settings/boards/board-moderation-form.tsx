@@ -19,6 +19,7 @@ import {
   type ModerationAxis,
   type RequireApprovalLevel,
 } from '@/lib/shared/moderation-policy'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 /**
  * Per-board moderation form (R4 design, standalone page).
@@ -142,7 +143,7 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
         </div>
         <Link
           to="/admin/settings/moderation"
-          className="text-[13px] text-primary hover:underline whitespace-nowrap"
+          className={`${INLINE_LINK} text-[13px] whitespace-nowrap`}
         >
           Workspace moderation →
         </Link>
@@ -164,7 +165,7 @@ export function BoardModerationForm({ board }: BoardModerationFormProps) {
 
       <p className="pt-2 text-[13px] text-muted-foreground">
         Held posts and comments appear in the{' '}
-        <Link to="/admin/feedback/moderation" className="text-primary hover:underline">
+        <Link to="/admin/feedback/moderation" className={INLINE_LINK}>
           review queue
         </Link>
         .

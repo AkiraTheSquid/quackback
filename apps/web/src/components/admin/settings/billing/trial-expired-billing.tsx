@@ -13,6 +13,7 @@ import {
 } from '@/lib/shared/billing/plan-action'
 import { FreeDowngradeDialog } from './free-downgrade-dialog'
 import { SubscribeDialog } from './subscribe-dialog'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 export function TrialExpiredBilling(props: {
   overview: BillingProjectionOverview
@@ -102,7 +103,7 @@ export function TrialExpiredBilling(props: {
                     <p className="mt-1 text-[13px] text-muted-foreground">{plan.bestFor}</p>
                     {plan.id === 'free' ? (
                       <span
-                        className="mt-2 inline-flex text-[13px] font-medium text-primary"
+                        className={`${INLINE_LINK} mt-2 inline-flex text-[13px]`}
                         onClick={(e) => {
                           e.stopPropagation()
                           setFreeOpen(true)

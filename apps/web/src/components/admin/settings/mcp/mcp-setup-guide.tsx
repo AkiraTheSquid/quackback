@@ -11,6 +11,7 @@ import {
 } from '@/components/admin/settings/widget/highlighted-code'
 import { cn } from '@/lib/shared/utils'
 import { useCopyToClipboard } from '@/lib/client/hooks/use-copy-to-clipboard'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 // ——————————————————————————————————————————————————
 // Client icons (Simple Icons, 24x24 viewBox)
@@ -357,7 +358,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
               <Link
                 to="/admin/settings/developers"
                 search={{ tab: 'keys' as const }}
-                className="text-primary hover:underline"
+                className={INLINE_LINK}
               >
                 API key
               </Link>{' '}
@@ -474,7 +475,7 @@ export function McpSetupGuide({ endpointUrl }: McpSetupGuideProps) {
                 href="https://www.quackback.io/docs/mcp/reference"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                className={`${INLINE_LINK} inline-flex items-center gap-1 text-[11px]`}
               >
                 Reference
                 <ArrowTopRightOnSquareIcon className="h-3 w-3" />

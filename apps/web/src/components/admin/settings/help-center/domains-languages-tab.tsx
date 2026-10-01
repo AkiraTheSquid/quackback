@@ -221,7 +221,9 @@ function DomainCard({ domain }: { domain: HelpCenterConfig['domain'] }) {
         )}
 
         <Collapsible>
-          <CollapsibleTrigger className={INLINE_LINK}>DNS setup</CollapsibleTrigger>
+          <CollapsibleTrigger className={`${INLINE_LINK} text-[13px]`}>
+            DNS setup
+          </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="mt-2 space-y-1.5 text-[13px] text-muted-foreground">
               <p>

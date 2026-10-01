@@ -21,6 +21,7 @@ import { getIntegrationIcon } from './integration-ui'
 
 // Catalogs (metadata: name/description/iconBg/docsUrl/platformCredentialFields/settingsPath).
 import * as catalogs from '@/lib/shared/integration-catalog'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 /** The `integration` object returned by `fetchIntegrationByType`. */
 export interface IntegrationSettingsData {
@@ -316,7 +317,7 @@ export const INTEGRATION_SETTINGS: Record<string, IntegrationSettingsEntry> = {
             href="https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-primary underline underline-offset-2"
+            className={INLINE_LINK}
           >
             Personal access token
           </a>{' '}

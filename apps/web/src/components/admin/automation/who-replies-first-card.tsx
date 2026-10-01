@@ -7,6 +7,7 @@ import { WHO_REPLIES_FIRST } from '@/lib/shared/assistant/who-replies-first'
 import { SettingsCard } from '@/components/admin/settings/settings-card'
 import type { FeatureFlags } from '@/lib/shared/types/settings'
 import { useWorkspaceSettings } from '@/lib/client/hooks/use-root-context'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 /**
  * The rule the server enforces: the agent answers first, and a live
@@ -62,7 +63,7 @@ export function WhoRepliesFirstCard() {
           {showManageQuinn && (
             <Link
               to="/admin/automation/agent"
-              className="font-semibold text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className={`${INLINE_LINK} focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50`}
             >
               {intl.formatMessage({
                 id: 'automation.whoRepliesFirst.manageQuinn',
@@ -73,7 +74,7 @@ export function WhoRepliesFirstCard() {
           {showManageWorkflows && (
             <Link
               to="/admin/automation/workflows"
-              className="font-semibold text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className={`${INLINE_LINK} focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50`}
             >
               {intl.formatMessage({
                 id: 'automation.whoRepliesFirst.manageWorkflows',
@@ -84,7 +85,7 @@ export function WhoRepliesFirstCard() {
           {showOfficeHours && (
             <Link
               to="/admin/settings/office-hours"
-              className="font-semibold text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              className={`${INLINE_LINK} focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50`}
             >
               {intl.formatMessage({
                 id: 'automation.whoRepliesFirst.officeHoursLink',

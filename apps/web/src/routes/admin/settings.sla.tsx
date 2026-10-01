@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { warmQuery } from '@/lib/client/queries/warm-query'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 const slaPoliciesQuery = queryOptions({
   queryKey: ['settings', 'slaPolicies'],
@@ -533,7 +534,7 @@ function PolicyEditorDialog({
               ) : (
                 <>
                   Clocks run around the clock.{' '}
-                  <Link to="/admin/settings/office-hours" className="font-medium text-primary">
+                  <Link to="/admin/settings/office-hours" className={INLINE_LINK}>
                     Set office hours
                   </Link>{' '}
                   to make clocks count only open time.

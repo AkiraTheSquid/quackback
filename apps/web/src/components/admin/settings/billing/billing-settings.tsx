@@ -27,6 +27,7 @@ import { TopUpDialog } from './topup-dialog'
 import { UsageMeter } from './usage-meter'
 import { TrialExpiredBilling } from './trial-expired-billing'
 import { PlanDowngradeDialog } from './free-downgrade-dialog'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 /** Workspace-local presentation of the control-plane billing projection. */
 export function BillingSettings() {
@@ -643,7 +644,7 @@ function PlanCard(props: {
             href="https://quackback.io/pricing"
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
+            className={`${INLINE_LINK} mt-1 inline-flex items-center gap-1 text-[13px]`}
           >
             View & compare features
           </a>

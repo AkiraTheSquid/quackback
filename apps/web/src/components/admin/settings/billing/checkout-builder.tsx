@@ -22,6 +22,7 @@ import {
   type BillingPeriod,
 } from '@/lib/shared/billing/checkout-path'
 import { FreeDowngradeDialog, PlanDowngradeDialog } from './free-downgrade-dialog'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 type CataloguePlan = BillingCatalogue['plans'][number]
 
@@ -237,7 +238,7 @@ function PlanRow(props: {
             href={COMPARE_FEATURES_HREF}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
+            className={`${INLINE_LINK} mt-1 inline-flex items-center gap-1 text-[13px]`}
             onClick={(event) => event.stopPropagation()}
           >
             View & compare features
@@ -277,7 +278,7 @@ function FreePlanRow(props: { plan: CataloguePlan; action: BillingPlanAction }) 
           href={COMPARE_FEATURES_HREF}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
+          className={`${INLINE_LINK} mt-1 inline-flex items-center gap-1 text-[13px]`}
         >
           View & compare features
           <ArrowTopRightOnSquareIcon className="size-3.5" />

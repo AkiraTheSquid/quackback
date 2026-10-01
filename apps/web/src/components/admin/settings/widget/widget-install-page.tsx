@@ -78,7 +78,12 @@ export function WidgetInstallPage() {
       <CopyAgentPromptButton getPrompt={agentPrompt} disabled={mintInstallCode.isPending} />
       <p className="mt-3 text-xs text-muted-foreground">
         The agent installs the widget and turns it on. You never paste the signing secret.{' '}
-        <a href={WIDGET_SKILL_REPO} target="_blank" rel="noreferrer" className={INLINE_LINK}>
+        <a
+          href={WIDGET_SKILL_REPO}
+          target="_blank"
+          rel="noreferrer"
+          className={`${INLINE_LINK} text-[13px]`}
+        >
           What the agent does
         </a>
       </p>

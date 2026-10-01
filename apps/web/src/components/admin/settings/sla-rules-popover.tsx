@@ -6,7 +6,7 @@ export function SlaRulesPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className={INLINE_LINK}>
+        <button type="button" className={`${INLINE_LINK} text-[13px]`}>
           How SLAs apply
         </button>
       </PopoverTrigger>

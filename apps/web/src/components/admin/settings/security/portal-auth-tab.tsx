@@ -18,6 +18,7 @@ import { usePortalInvites } from '@/components/admin/users/use-portal-invites'
 import { SegmentMultiSelect } from '@/components/admin/segments/segment-multi-select'
 import { cn } from '@/lib/shared/utils'
 import type { PortalConfig } from '@/lib/shared/types/settings'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 interface PortalAuthTabProps {
   portalConfig: PortalConfig
@@ -618,7 +619,7 @@ function InviteSummary({
       <Link
         to="/admin/users"
         search={{ invites: 'pending' as const }}
-        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline underline-offset-4"
+        className={`${INLINE_LINK} inline-flex items-center gap-1 text-xs`}
       >
         Manage invites
         <ArrowRightIcon className="h-3 w-3" />

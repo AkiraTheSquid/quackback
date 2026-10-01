@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/shared/utils'
 import { SUPPORTED_LOCALES } from '@/lib/shared/i18n'
 import { WIDGET_LOCALE_LABELS, type WidgetTranslations } from '@/lib/shared/widget/translations'
+import { INLINE_LINK } from '@/components/admin/settings/inline-link'
 
 export function MessengerChannelPage() {
   const router = useRouter()
@@ -164,7 +165,7 @@ export function MessengerChannelPage() {
             />
             <p className="text-xs text-muted-foreground">
               Shown outside{' '}
-              <Link to="/admin/settings/office-hours" className="font-medium text-primary">
+              <Link to="/admin/settings/office-hours" className={INLINE_LINK}>
                 office hours
               </Link>{' '}
               or when nobody is online.
