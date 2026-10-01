@@ -68,7 +68,9 @@ export function HeaderLinksCard({ links: initialLinks }: { links: HelpCenterHead
   return (
     <SettingsCard title="Header links" description="Up to 3 links beside the navigation">
       <div className="space-y-3">
-        {links.length === 0 && <p className="text-sm text-muted-foreground">No header links.</p>}
+        {links.length === 0 && (
+          <p className="text-[13px] text-muted-foreground">No header links yet.</p>
+        )}
         {links.map((link, index) => {
           const invalid = touched.has(index) && urlError(link.url)
           return (

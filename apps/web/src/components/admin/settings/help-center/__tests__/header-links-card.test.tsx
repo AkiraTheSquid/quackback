@@ -22,7 +22,7 @@ afterEach(() => {
 describe('HeaderLinksCard', () => {
   it('shows a muted empty line and no Save links button', () => {
     render(<HeaderLinksCard links={[]} />)
-    expect(screen.getByText('No header links.')).toBeTruthy()
+    expect(screen.getByText('No header links yet.')).toBeTruthy()
     expect(screen.queryByText('Save links')).toBeNull()
   })
 
@@ -77,7 +77,7 @@ describe('HeaderLinksCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Add link/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Remove link 1' }))
     expect(screen.queryByText('Delete link?')).toBeNull()
-    expect(screen.getByText('No header links.')).toBeTruthy()
+    expect(screen.getByText('No header links yet.')).toBeTruthy()
   })
 
   it('does not save a URL the server would reject, and says so on that row', () => {
