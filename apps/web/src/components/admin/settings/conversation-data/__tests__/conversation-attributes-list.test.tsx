@@ -174,15 +174,22 @@ describe('ConversationAttributesList', () => {
     expect(within(severityRow).queryByText('AI')).not.toBeInTheDocument()
   })
 
-  it('words the usual-source hint as muted meta text, not a badge', async () => {
+  it('words a workflow source hint as muted text and an AI source hint as an AI badge', async () => {
     hoisted.listConversationAttributesFn.mockResolvedValue([
       { ...FIXTURE_ATTRIBUTES[1], sourceHint: 'workflow' },
       { ...FIXTURE_ATTRIBUTES[0], sourceHint: 'ai', aiDetect: false },
     ])
     renderWithClient(<ConversationAttributesList />)
     expect(await screen.findByText('Usually set by a workflow')).toBeInTheDocument()
-    expect(screen.getByText('Usually set by AI')).toBeInTheDocument()
-    expect(screen.queryByText('AI')).not.toBeInTheDocument()
+    expect(screen.queryByText('Usually set by AI')).not.toBeInTheDocument()
+    const aiRow = screen
+      .getByText('Issue type')
+      .closest('[data-slot="settings-list-row"]') as HTMLElement
+    expect(within(aiRow).getByText('AI')).toBeInTheDocument()
+    const workflowRow = screen
+      .getByText('Severity')
+      .closest('[data-slot="settings-list-row"]') as HTMLElement
+    expect(within(workflowRow).queryByText('AI')).not.toBeInTheDocument()
   })
 
   it('keeps one AI badge when the source hint is ai and AI detect is on', async () => {
@@ -194,7 +201,7 @@ describe('ConversationAttributesList', () => {
       '[data-slot="settings-list-row"]'
     ) as HTMLElement
     expect(within(row).getAllByText('AI')).toHaveLength(1)
-    expect(within(row).getByText('Usually set by AI')).toBeInTheDocument()
+    expect(within(row).queryByText('Usually set by AI')).not.toBeInTheDocument()
   })
 
   it('shows Required to close as a muted badge, not the warning tone', async () => {

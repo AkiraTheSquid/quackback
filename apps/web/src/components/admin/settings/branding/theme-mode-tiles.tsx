@@ -51,7 +51,7 @@ export function ThemeModeTiles({
           >
             <Swatch mode={option.value} />
             <span className="flex items-center gap-2 text-[13px] font-medium">
-              <RadioGroupItem value={option.value} />
+              <RadioGroupItem value={option.value} className="[&_div]:bg-foreground" />
               {option.label}
             </span>
           </label>

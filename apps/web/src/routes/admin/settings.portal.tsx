@@ -476,6 +476,7 @@ function WelcomeBodyEditor({
       onDocumentChange={handleChange}
       placeholder="Tell visitors what kind of feedback you'd love to hear…"
       minHeight="160px"
+      className="[&_button]:size-6 [&_button_svg]:size-3.5"
       features={{
         headings: true,
         images: true,

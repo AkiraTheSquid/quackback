@@ -715,20 +715,22 @@ export function ConversationAttributesList() {
       muted: isArchived,
       badges: (
         <>
-          {attr.sourceHint && (
+          {attr.sourceHint && attr.sourceHint !== 'ai' && (
             <span className="text-[13px] font-normal text-muted-foreground">
               Usually set by{' '}
               {SOURCE_HINTS.find((h) => h.value === attr.sourceHint)?.usually ?? attr.sourceHint}
             </span>
           )}
-          {attr.aiDetect && (
+          {(attr.aiDetect || attr.sourceHint === 'ai') && (
             <Badge
               variant="secondary"
               size="sm"
               title={
-                attr.detectOnClose
-                  ? 'Quinn classifies this attribute and re-checks on close'
-                  : 'Quinn classifies this attribute'
+                !attr.aiDetect
+                  ? 'Usually set by AI'
+                  : attr.detectOnClose
+                    ? 'Quinn classifies this attribute and re-checks on close'
+                    : 'Quinn classifies this attribute'
               }
             >
               AI

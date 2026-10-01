@@ -57,7 +57,11 @@ export function VisibilityTiles<T extends string>({
               off ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
             )}
           >
-            <RadioGroupItem value={option.value} disabled={off} className="mt-0.5" />
+            <RadioGroupItem
+              value={option.value}
+              disabled={off}
+              className="mt-0.5 [&_div]:bg-foreground"
+            />
             <span className="min-w-0">
               <span className="block text-sm font-medium">{option.title}</span>
               {option.description && (
