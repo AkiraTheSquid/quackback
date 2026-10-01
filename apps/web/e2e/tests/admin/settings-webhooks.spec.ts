@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Admin Webhooks Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/admin/settings/webhooks')
+    await page.goto('/admin/settings/developers?tab=webhooks')
     await page.waitForLoadState('networkidle')
   })
 
@@ -309,7 +309,7 @@ test.describe('Admin Webhooks - Create Webhook Flow', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/admin/settings/webhooks')
+    await page.goto('/admin/settings/developers?tab=webhooks')
     await page.waitForLoadState('networkidle')
   })
 

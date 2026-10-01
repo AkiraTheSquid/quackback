@@ -119,12 +119,15 @@ test.describe('Admin Status Management', () => {
     let opened = false
     for (let i = 0; i < (await rowMenus.count()) && !opened; i++) {
       await rowMenus.nth(i).click()
+      await expect(page.getByRole('menuitem').first()).toBeVisible()
       const deleteItem = page.getByRole('menuitem', { name: 'Delete' })
       if ((await deleteItem.count()) > 0 && (await deleteItem.isEnabled())) {
         await deleteItem.click()
         opened = true
       } else {
         await page.keyboard.press('Escape')
+        // The closing menu still covers the next row's button until it unmounts
+        await expect(page.getByRole('menuitem')).toHaveCount(0)
       }
     }
 

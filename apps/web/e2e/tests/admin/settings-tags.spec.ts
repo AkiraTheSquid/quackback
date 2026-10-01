@@ -36,7 +36,8 @@ test.describe('Admin Tags Settings', () => {
     if ((await dots.count()) > 0) {
       await expect(dots.first()).toBeVisible()
       // Portal is the default and is not labelled
-      await expect(page.getByText('Portal', { exact: true })).toHaveCount(0)
+      // (scoped to the page content: the settings nav has a Portal link)
+      await expect(page.getByRole('main').last().getByText('Portal', { exact: true })).toHaveCount(0)
     }
   })
 
