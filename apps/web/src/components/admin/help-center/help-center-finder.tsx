@@ -29,7 +29,10 @@ import { useRestoreCategory, useRestoreArticle } from '@/lib/client/mutations/he
 import { buildAncestorChain } from '@/lib/shared/help-center-tree'
 import { useHelpCenterFilters } from './use-help-center-filters'
 import { Route } from '@/routes/admin/help-center'
-import { HelpCenterActiveFiltersBar, HelpCenterFilterButton } from './help-center-active-filters-bar'
+import {
+  HelpCenterActiveFiltersBar,
+  HelpCenterFilterButton,
+} from './help-center-active-filters-bar'
 import { useInfiniteScroll } from '@/lib/client/hooks/use-infinite-scroll'
 import { AdminListHeader } from '@/components/admin/admin-list-header'
 import { useDebouncedSearch } from '@/lib/client/hooks/use-debounced-search'
@@ -209,7 +212,7 @@ function LiveHelpCenterFinder({
       </AdminListHeader>
 
       <div className="px-3 pb-4 space-y-3">
-        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+        <div>
           {!isLoading && articles.length > 0 && (
             <div className="flex items-center justify-end px-4 pt-3 text-xs text-muted-foreground">
               {articles.length}

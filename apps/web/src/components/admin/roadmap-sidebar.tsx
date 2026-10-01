@@ -177,7 +177,7 @@ export function RoadmapSidebar({ selectedRoadmapId, onSelectRoadmap }: RoadmapSi
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 -mr-1"
+                          className="size-5 opacity-0 group-hover:opacity-100 -mr-1"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <EllipsisVerticalIcon className="h-4 w-4" />

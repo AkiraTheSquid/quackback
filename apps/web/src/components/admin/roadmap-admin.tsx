@@ -184,7 +184,7 @@ export function RoadmapAdmin() {
         {selectedRoadmap ? (
           <>
             <div className="border-b border-border/50">
-              <div className="px-4 sm:px-6 pt-3 sm:pt-4">
+              <div className="px-3 pt-3.5">
                 <PageHeader
                   title={selectedRoadmap.name}
                   description={selectedRoadmap.description ?? undefined}

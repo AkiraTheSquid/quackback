@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PlusIcon } from '@heroicons/react/16/solid'
+import { MegaphoneIcon, PlusIcon } from '@heroicons/react/16/solid'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { MENU_ROW } from '@/components/ui/menu'
 import { cn } from '@/lib/shared/utils'
@@ -29,13 +29,13 @@ export function ChangelogFiltersPanel({ status, onStatusChange }: ChangelogFilte
           onSelect={(id) => onStatusChange(id as ChangelogStatusFilter)}
           renderItem={(item) => (
             <span className="flex min-w-0 flex-1 items-center gap-2">
-              {item.color && (
-                <span
-                  className="h-2.5 w-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: item.color }}
-                  aria-hidden="true"
-                />
-              )}
+              <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+                {item.color ? (
+                  <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                ) : (
+                  <MegaphoneIcon className="size-4" />
+                )}
+              </span>
               <span className="truncate">{item.name}</span>
             </span>
           )}

@@ -188,12 +188,6 @@
   color: currentColor;
 }
 
-[data-visual-theme='refined'] .nav-row.font-medium .tabular-nums,
-[data-visual-theme='refined'] .nav-row.bg-muted .tabular-nums,
-[data-visual-theme='refined'] .nav-row[aria-selected='true'] .tabular-nums {
-  color: var(--accent-ink);
-}
-
 [data-visual-theme='refined'] .nav-section {
   font-size: 13px;
   font-weight: 600;

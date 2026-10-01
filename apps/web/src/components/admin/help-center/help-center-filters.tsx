@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { BookOpenIcon, ChartBarIcon, TrashIcon } from '@heroicons/react/16/solid'
 import { PaneAddButton } from '@/components/shared/pane-add-button'
 import { FilterSection } from '@/components/shared/filter-section'
 import { FilterList } from '@/components/admin/feedback/single-select-filter-list'
@@ -47,13 +48,13 @@ export function HelpCenterFiltersPanel({
           onSelect={(id) => onStatusChange(id as HelpCenterStatusFilter)}
           renderItem={(item) => (
             <span className="flex min-w-0 flex-1 items-center gap-2">
-              {item.color && (
-                <span
-                  className="h-2.5 w-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: item.color }}
-                  aria-hidden="true"
-                />
-              )}
+              <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+                {item.color ? (
+                  <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                ) : (
+                  <BookOpenIcon className="size-4" />
+                )}
+              </span>
               <span className="truncate">{item.name}</span>
             </span>
           )}
@@ -75,8 +76,8 @@ export function HelpCenterFiltersPanel({
       <FilterSection title="Other">
         <FilterList
           items={[
-            { id: 'performance', name: 'Article performance' },
-            { id: 'deleted', name: 'Deleted items' },
+            { id: 'performance', name: 'Article performance', icon: ChartBarIcon },
+            { id: 'deleted', name: 'Deleted items', icon: TrashIcon },
           ]}
           selectedIds={[
             ...(showPerformance ? ['performance'] : []),
