@@ -9,6 +9,7 @@ import {
   useDeleteAuthProviderCredentials,
 } from '@/lib/client/mutations'
 import { useCopyToClipboard } from '@/lib/client/hooks/use-copy-to-clipboard'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -81,6 +82,7 @@ export function AuthProviderCredentialsForm({
   const baseUrl = credentialsQuery.data.baseUrl
 
   const [isEditing, setIsEditing] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [values, setValues] = useState<Record<string, string>>({})
 
   const saveMutation = useSaveAuthProviderCredentials()
@@ -181,13 +183,22 @@ export function AuthProviderCredentialsForm({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDelete}
+            onClick={() => setConfirmRemove(true)}
             disabled={deleteMutation.isPending}
             className="text-destructive hover:text-destructive"
           >
             {deleteMutation.isPending ? 'Removing...' : 'Remove'}
           </Button>
         </div>
+        <ConfirmDialog
+          open={confirmRemove}
+          onOpenChange={setConfirmRemove}
+          variant="destructive"
+          title={`Remove ${providerName} credentials?`}
+          description="This provider stops working for sign-in until you add credentials again."
+          confirmLabel="Remove credentials"
+          onConfirm={handleDelete}
+        />
       </div>
     )
   }
