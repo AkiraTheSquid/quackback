@@ -8,7 +8,8 @@ import {
   SparklesIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/solid'
-import { MENU_ICON, MENU_LABEL, MENU_ROW } from '@/components/ui/menu'
+import { MENU_ICON, MENU_ROW } from '@/components/ui/menu'
+import { FilterSection } from '@/components/shared/filter-section'
 import { usePermission } from '@/lib/client/hooks/use-permission'
 import { PERMISSIONS } from '@/lib/shared/permissions'
 import { cn } from '@/lib/shared/utils'
@@ -109,35 +110,36 @@ export function AutomationNav() {
         id: 'automation.nav.label',
         defaultMessage: 'AI & Automation',
       })}
-      className="space-y-4"
     >
       {sections.map((section) => (
-        <div key={section.labelId} className="space-y-1">
-          <p className={cn(MENU_LABEL, 'pb-1')}>
-            {intl.formatMessage({ id: section.labelId, defaultMessage: section.defaultLabel })}
-          </p>
-          {section.items.map((item) => {
-            const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`)
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  MENU_ROW,
-                  isActive
-                    ? 'bg-muted font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                )}
-              >
-                <Icon className={MENU_ICON} />
-                <span className="min-w-0 flex-1 truncate">
-                  {intl.formatMessage({ id: item.labelId, defaultMessage: item.defaultLabel })}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
+        <FilterSection
+          key={section.labelId}
+          title={intl.formatMessage({ id: section.labelId, defaultMessage: section.defaultLabel })}
+        >
+          <div className="space-y-0.5">
+            {section.items.map((item) => {
+              const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`)
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    MENU_ROW,
+                    isActive
+                      ? 'bg-muted font-medium text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  )}
+                >
+                  <Icon className={MENU_ICON} />
+                  <span className="min-w-0 flex-1 truncate">
+                    {intl.formatMessage({ id: item.labelId, defaultMessage: item.defaultLabel })}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </FilterSection>
       ))}
     </nav>
   )
