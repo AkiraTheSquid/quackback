@@ -19,10 +19,12 @@ import {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
+  memo,
   useMemo,
   useRef,
   useState,
   type ClipboardEvent,
+  type ComponentProps,
   type DragEvent,
   type ReactNode,
   type RefObject,
@@ -492,6 +494,14 @@ export function AgentConversationThread({
   const canViewTickets = permissions.has(PERMISSIONS.TICKET_VIEW)
   const canSetTicketStatus = permissions.has(PERMISSIONS.TICKET_SET_STATUS)
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
+  const openDetailsSheet = useCallback(() => setDetailsSheetOpen(true), [])
+  const selectFromSheet = useCallback(
+    (id: Parameters<typeof onSelectItem>[0]) => {
+      setDetailsSheetOpen(false)
+      onSelectItem(id)
+    },
+    [onSelectItem]
+  )
 
   // Reply and Note each hold an independent draft (the rich doc persisted as
   // contentJson + its markdown mirror), so toggling modes preserves each mode's
@@ -1891,16 +1901,11 @@ export function AgentConversationThread({
     <div className="ml-auto flex shrink-0 items-center gap-1">
       {/* Below the inline panel width the details open in a sheet. */}
       {!detailPanelShown && (conversation || ticket) && (
-        <button
-          type="button"
-          title="Details"
-          aria-label="Details"
-          aria-expanded={detailsSheetOpen}
-          onClick={() => setDetailsSheetOpen(true)}
-          className={cn(headerIconButtonClass, 'min-[1680px]:hidden')}
-        >
-          <InformationCircleIcon className="h-4 w-4" />
-        </button>
+        <DetailsSheetTrigger
+          open={detailsSheetOpen}
+          onOpen={openDetailsSheet}
+          className={headerIconButtonClass}
+        />
       )}
       {/* B24: the ticket-status pill's interactivity follows the resolved
           permissions — the full dropdown with `ticket.set_status`, an inert
@@ -2092,10 +2097,7 @@ export function AgentConversationThread({
         {/* Narrow-viewport fallback: Properties live in the detail panel at
             1680px+; below that, priority/assignee stay reachable here. */}
         {!detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 min-[1680px]:hidden">
-            <TicketPriorityControl ticket={ticket} onChanged={onChanged} />
-            <TicketAssigneeControl ticket={ticket} onChanged={onChanged} />
-          </div>
+          <TicketTriageFallback ticket={ticket} onChanged={onChanged} />
         )}
         {headerActions}
       </div>
@@ -2136,24 +2138,14 @@ export function AgentConversationThread({
         {/* Triage controls live in the detail panel at 1680px+; below that
             (panel hidden) they stay in the header. */}
         {conversation && !detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 min-[1680px]:hidden">
-            <PriorityControl
-              conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
-              value={conversation.priority}
-              onChanged={refreshThread}
-            />
-            <AssigneeControl
-              conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
-              assignedAgent={conversation.assignedAgent}
-              onChanged={refreshThread}
-            />
-            <StatusControl
-              conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
-              status={conversation.status}
-              snoozedUntil={conversation.snoozedUntil}
-              onChanged={refreshThread}
-            />
-          </div>
+          <ConversationTriageFallback
+            conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
+            priority={conversation.priority}
+            assignedAgent={conversation.assignedAgent}
+            status={conversation.status}
+            snoozedUntil={conversation.snoozedUntil}
+            onChanged={refreshThread}
+          />
         )}
         {headerActions}
       </div>
@@ -2168,9 +2160,7 @@ export function AgentConversationThread({
             have no tags surface (§2.5's capability matrix — "tags,
             conversations only"). */}
         {!isTicket && conversation && conversationId && !detailPanelShown && (
-          <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 min-[1680px]:hidden">
-            <ConversationTagsEditor conversationId={conversationId} tags={conversation.tags} />
-          </div>
+          <ThreadTagsFallback conversationId={conversationId} tags={conversation.tags} />
         )}
 
         <ThreadMessages
@@ -2582,31 +2572,128 @@ export function AgentConversationThread({
         />
       )}
       {!detailPanelShown && ((!isTicket && conversation) || (isTicket && ticket)) && (
-        <Sheet open={detailsSheetOpen} onOpenChange={setDetailsSheetOpen}>
-          <SheetContent className="w-[22rem] max-w-[90vw] gap-0 p-0 sm:max-w-[22rem]">
-            <SheetTitle className="sr-only">Details</SheetTitle>
-            <InboxDetailPanel
-              item={item}
-              conversation={conversation}
-              ticket={panelTicket}
-              onChanged={refreshThread}
-              onSelectItem={(id) => {
-                setDetailsSheetOpen(false)
-                onSelectItem(id)
-              }}
-              onTrackAsFeedback={handleTrackAsFeedback}
-              onCreateTicket={handleCreateTicketFromPanel}
-              onInsertFromCopilot={insertFromCopilot}
-              issuePeople={issuePeople}
-              visible={detailsSheetOpen}
-              overlay
-            />
-          </SheetContent>
-        </Sheet>
+        <DetailsSheet
+          open={detailsSheetOpen}
+          onOpenChange={setDetailsSheetOpen}
+          item={item}
+          conversation={conversation}
+          ticket={panelTicket}
+          onChanged={refreshThread}
+          onSelectItem={selectFromSheet}
+          onTrackAsFeedback={handleTrackAsFeedback}
+          onCreateTicket={handleCreateTicketFromPanel}
+          onInsertFromCopilot={insertFromCopilot}
+          issuePeople={issuePeople}
+        />
       )}
     </div>
   )
 }
+
+// The header's narrow-viewport fallbacks. Each is memoised on plain props, so
+// the render a keystroke causes (the reply turning sendable or empty) leaves
+// them, and the menus inside them, alone.
+const ConversationTriageFallback = memo(function ConversationTriageFallback({
+  conversationId,
+  priority,
+  assignedAgent,
+  status,
+  snoozedUntil,
+  onChanged,
+}: {
+  conversationId: ConversationId
+  priority: ConversationDTO['priority']
+  assignedAgent: ConversationDTO['assignedAgent']
+  status: ConversationDTO['status']
+  snoozedUntil: ConversationDTO['snoozedUntil']
+  onChanged: () => void
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1.5 min-[1680px]:hidden">
+      <PriorityControl conversationId={conversationId} value={priority} onChanged={onChanged} />
+      <AssigneeControl
+        conversationId={conversationId}
+        assignedAgent={assignedAgent}
+        onChanged={onChanged}
+      />
+      <StatusControl
+        conversationId={conversationId}
+        status={status}
+        snoozedUntil={snoozedUntil}
+        onChanged={onChanged}
+      />
+    </div>
+  )
+})
+
+const TicketTriageFallback = memo(function TicketTriageFallback({
+  ticket,
+  onChanged,
+}: {
+  ticket: ComponentProps<typeof TicketPriorityControl>['ticket']
+  onChanged: () => void
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1.5 min-[1680px]:hidden">
+      <TicketPriorityControl ticket={ticket} onChanged={onChanged} />
+      <TicketAssigneeControl ticket={ticket} onChanged={onChanged} />
+    </div>
+  )
+})
+
+const ThreadTagsFallback = memo(function ThreadTagsFallback({
+  conversationId,
+  tags,
+}: ComponentProps<typeof ConversationTagsEditor>) {
+  return (
+    <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 min-[1680px]:hidden">
+      <ConversationTagsEditor conversationId={conversationId} tags={tags} />
+    </div>
+  )
+})
+
+// The sheet the Details button opens below the inline panel width. Memoised
+// with its props stable, so a keystroke does not re-render the closed sheet.
+const DetailsSheet = memo(function DetailsSheet({
+  open,
+  onOpenChange,
+  ...panelProps
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+} & Omit<ComponentProps<typeof InboxDetailPanel>, 'visible' | 'overlay' | 'openCopilotToken'>) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[22rem] max-w-[90vw] gap-0 p-0 sm:max-w-[22rem]">
+        <SheetTitle className="sr-only">Details</SheetTitle>
+        <InboxDetailPanel {...panelProps} visible={open} overlay />
+      </SheetContent>
+    </Sheet>
+  )
+})
+
+const DetailsSheetTrigger = memo(function DetailsSheetTrigger({
+  open,
+  onOpen,
+  className,
+}: {
+  open: boolean
+  onOpen: () => void
+  className: string
+}) {
+  return (
+    <button
+      type="button"
+      title="Details"
+      aria-label="Details"
+      aria-expanded={open}
+      onClick={onOpen}
+      className={cn(className, 'min-[1680px]:hidden')}
+    >
+      <InformationCircleIcon className="h-4 w-4" />
+    </button>
+  )
+})
 
 /**
  * Link previews for the draft being written, from its text once typing

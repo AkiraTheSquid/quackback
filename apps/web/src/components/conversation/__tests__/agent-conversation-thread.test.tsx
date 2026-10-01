@@ -116,18 +116,37 @@ vi.mock('../composer-ai-actions', () => ({
     return <div data-testid="composer-ai-actions" data-active-mode={activeMode} />
   },
 }))
+// Renders of the header's triage controls and tags row, by name.
+const headerRenders = vi.hoisted(() => ({ counts: {} as Record<string, number> }))
+const countRender = (name: string) => {
+  headerRenders.counts[name] = (headerRenders.counts[name] ?? 0) + 1
+}
 vi.mock('@/components/admin/conversation/priority-control', () => ({
-  PriorityControl: () => <span data-testid="priority-control" />,
+  PriorityControl: () => {
+    countRender('priority')
+    return <span data-testid="priority-control" />
+  },
 }))
 vi.mock('@/components/admin/conversation/assignee-control', () => ({
-  AssigneeControl: () => null,
+  AssigneeControl: () => {
+    countRender('assignee')
+    return null
+  },
 }))
 vi.mock('@/components/admin/conversation/channel-badge', () => ({ ChannelBadge: () => null }))
 vi.mock('@/components/admin/conversation/sla-chip', () => ({ SlaChip: () => null }))
 vi.mock('@/components/admin/conversation/conversation-tags-editor', () => ({
-  ConversationTagsEditor: () => null,
+  ConversationTagsEditor: () => {
+    countRender('tags')
+    return null
+  },
 }))
-vi.mock('@/components/admin/conversation/status-control', () => ({ StatusControl: () => null }))
+vi.mock('@/components/admin/conversation/status-control', () => ({
+  StatusControl: () => {
+    countRender('status')
+    return null
+  },
+}))
 // The detail panel renders whenever the thread does, so it doubles as the
 // thread's render counter. The editor stub hands out its latest onChange.
 const composer = vi.hoisted(() => ({
@@ -1147,6 +1166,26 @@ describe('AgentConversationThread composer typing', () => {
     composer.threadRenders = 0
     type('H', 'Hello there')
     expect(composer.threadRenders).toBe(0)
+  })
+
+  it('keeps the header controls out of the render the first character causes', async () => {
+    renderThread({ kind: 'conversation', id: 'conversation_1' })
+    await screen.findByTestId('inbox-detail-panel')
+    expect(Object.keys(headerRenders.counts).sort()).toEqual([
+      'assignee',
+      'priority',
+      'status',
+      'tags',
+    ])
+    const before = { ...headerRenders.counts }
+    composer.threadRenders = 0
+
+    type('', 'H')
+
+    // The thread did re-render (the reply became sendable) ...
+    expect(composer.threadRenders).toBeGreaterThan(0)
+    // ... and the header controls did not.
+    expect(headerRenders.counts).toEqual(before)
   })
 
   it('sends the reply as typed and empties the composer', async () => {
