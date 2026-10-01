@@ -135,11 +135,6 @@ export function InvitationsView({ status }: InvitationsViewProps) {
             icon={EnvelopeIcon}
             title={empty.title}
             description={empty.body}
-            action={
-              <NewButton noun="user" onClick={portal.openDialog}>
-                Invite users
-              </NewButton>
-            }
           />
         ) : (
           <ul className="space-y-1.5" role="list" aria-label="Portal invitations">

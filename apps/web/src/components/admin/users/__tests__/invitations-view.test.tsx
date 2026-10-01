@@ -65,12 +65,12 @@ describe('<InvitationsView>', () => {
     expect(navigate).toHaveBeenCalled()
   })
 
-  it('shows a compact empty state with a primary Invite users action', () => {
+  it('shows a compact empty state and keeps Invite users in the header only', () => {
     render(<InvitationsView status="all" />)
     expect(screen.getByRole('heading', { name: 'No invitations yet' })).toBeInTheDocument()
     const buttons = screen.getAllByRole('button', { name: 'Invite users' })
-    expect(buttons).toHaveLength(2)
-    fireEvent.click(buttons[1])
+    expect(buttons).toHaveLength(1)
+    fireEvent.click(buttons[0])
     expect(openDialog).toHaveBeenCalled()
     expect(document.querySelector('.border-dashed')).toBeNull()
   })

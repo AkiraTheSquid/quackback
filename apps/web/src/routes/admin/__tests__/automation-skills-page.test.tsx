@@ -65,10 +65,10 @@ describe('skills page', () => {
     expect(heading.previousElementSibling).toBeNull()
   })
 
-  it('shows an empty state with a New skill button and no loading explainer', async () => {
+  it('shows an empty state with the New skill button only in the header and no loading explainer', async () => {
     renderPage()
     expect(await screen.findByText('No skills yet')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'New skill' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'New skill' })).toHaveLength(1)
     expect(screen.queryByText(/full instructions load only/i)).toBeNull()
   })
 

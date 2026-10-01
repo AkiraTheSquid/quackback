@@ -170,7 +170,6 @@ function SkillsPage() {
                 id: 'automation.skills.empty',
                 defaultMessage: 'Add a procedure the agents can follow.',
               })}
-              action={newButton}
             />
           ) : (
             <SettingRows>

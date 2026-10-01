@@ -62,16 +62,7 @@ describe('MacrosManager', () => {
     listMacros.mockResolvedValue({ macros: [] })
     renderManager()
     expect(await screen.findByText('No macros yet')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /add macro/i })).toBeNull()
-  })
-
-  it('offers a New macro button in the empty state that starts creating', async () => {
-    listMacros.mockResolvedValue({ macros: [] })
-    const onCreatingChange = vi.fn()
-    renderManager({ onCreatingChange })
-    await screen.findByText('No macros yet')
-    fireEvent.click(screen.getByRole('button', { name: 'New macro' }))
-    expect(onCreatingChange).toHaveBeenCalledWith(true)
+    expect(screen.queryByRole('button', { name: /add macro|new macro/i })).toBeNull()
   })
 
   it('does not nest the actions menu inside a button row; Edit opens the dialog', async () => {

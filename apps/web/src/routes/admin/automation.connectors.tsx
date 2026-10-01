@@ -101,7 +101,6 @@ function ConnectorsPage() {
                 defaultMessage:
                   'Connectors call external servers from your workspace. Only connect servers you trust.',
               })}
-              action={addButton}
             />
           )}
           {connectors.map((connector, index) => (

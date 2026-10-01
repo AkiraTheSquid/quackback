@@ -31,7 +31,6 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { EmptyState } from '@/components/shared/empty-state'
-import { NewButton } from '@/components/shared/new-button'
 import { SettingsList, SettingsListRow } from '@/components/admin/settings/settings-list'
 import {
   Dialog,
@@ -124,7 +123,6 @@ export function MacrosManager({
           icon={DocumentDuplicateIcon}
           title="No macros yet"
           description="Save a reply you send often, with variables and actions."
-          action={<NewButton noun="macro" onClick={() => onCreatingChange(true)} />}
         />
       ) : (
         <SettingsList>
