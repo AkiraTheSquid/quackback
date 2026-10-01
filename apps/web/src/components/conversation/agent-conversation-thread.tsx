@@ -1870,7 +1870,7 @@ export function AgentConversationThread({
   // (§2.7, M5): a ticket-status pill when the item is or links a ticket, an
   // icon cluster (create ticket / save for later / snooze / overflow), then
   // the primary Close (conversations) / Resolve (tickets) button. Priority/
-  // assignee move to the detail panel's Properties row; a below-1400px fallback
+  // assignee move to the detail panel's Properties row; a below-1536px fallback
   // keeps them reachable below that breakpoint (the panel is xl-only).
   const backButton = (
     <button
@@ -1897,7 +1897,7 @@ export function AgentConversationThread({
           aria-label="Details"
           aria-expanded={detailsSheetOpen}
           onClick={() => setDetailsSheetOpen(true)}
-          className={cn(headerIconButtonClass, 'min-[1400px]:hidden')}
+          className={cn(headerIconButtonClass, '2xl:hidden')}
         >
           <InformationCircleIcon className="h-4 w-4" />
         </button>
@@ -2090,9 +2090,9 @@ export function AgentConversationThread({
           </div>
         </div>
         {/* Narrow-viewport fallback: Properties live in the detail panel at
-            1400px+; below that, priority/assignee stay reachable here. */}
+            1536px+; below that, priority/assignee stay reachable here. */}
         {!detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 min-[1400px]:hidden">
+          <div className="flex shrink-0 items-center gap-1.5 2xl:hidden">
             <TicketPriorityControl ticket={ticket} onChanged={onChanged} />
             <TicketAssigneeControl ticket={ticket} onChanged={onChanged} />
           </div>
@@ -2133,10 +2133,10 @@ export function AgentConversationThread({
             </p>
           </div>
         </div>
-        {/* Triage controls live in the detail panel at 1400px+; below that
+        {/* Triage controls live in the detail panel at 1536px+; below that
             (panel hidden) they stay in the header. */}
         {conversation && !detailPanelShown && (
-          <div className="flex shrink-0 items-center gap-1.5 min-[1400px]:hidden">
+          <div className="flex shrink-0 items-center gap-1.5 2xl:hidden">
             <PriorityControl
               conversationId={conversationId ?? INACTIVE_CONVERSATION_ID}
               value={conversation.priority}
@@ -2164,11 +2164,11 @@ export function AgentConversationThread({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {header}
 
-        {/* Conversation labels — 1400px+ shows them in the detail panel. Tickets
+        {/* Conversation labels — 1536px+ shows them in the detail panel. Tickets
             have no tags surface (§2.5's capability matrix — "tags,
             conversations only"). */}
         {!isTicket && conversation && conversationId && !detailPanelShown && (
-          <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 min-[1400px]:hidden">
+          <div className="flex items-center gap-1.5 border-b border-border/50 px-4 py-2 sm:px-5 2xl:hidden">
             <ConversationTagsEditor conversationId={conversationId} tags={conversation.tags} />
           </div>
         )}

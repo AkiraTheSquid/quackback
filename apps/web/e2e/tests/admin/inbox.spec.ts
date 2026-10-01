@@ -17,7 +17,7 @@ import { waitForToast } from '../../utils/helpers'
  * on the widget.
  */
 test.describe('Admin Support Inbox', { tag: '@smoke' }, () => {
-  // The Properties aside is `hidden min-[1400px]:flex`. Pin a desktop size so it is always shown.
+  // The Properties aside is `hidden 2xl:flex`. Pin a desktop size so it is always shown.
   test.use({ viewport: { width: 1920, height: 1080 } })
   let seeded: SeededConversation
 

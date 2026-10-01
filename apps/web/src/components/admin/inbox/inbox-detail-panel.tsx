@@ -238,7 +238,7 @@ export const InboxDetailPanel = memo(function InboxDetailPanel({
   const flags = useFeatureFlags()
   const asideClassName = overlay
     ? 'flex h-full min-h-0 w-full flex-col overflow-hidden'
-    : 'hidden h-full min-h-0 w-64 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 min-[1400px]:flex 2xl:w-96'
+    : 'hidden h-full min-h-0 w-96 shrink-0 flex-col overflow-hidden border-l border-border/50 bg-card/20 2xl:flex'
   // The flag + copilot.use gate, shared with the inbox route's
   // `copilotAvailable` so the Ask Copilot affordances can never disagree
   // with the tab actually existing.
